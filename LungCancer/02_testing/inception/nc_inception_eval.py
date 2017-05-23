@@ -33,14 +33,14 @@ from inception import inception_model as inception
 
 FLAGS = tf.app.flags.FLAGS
 
-#tf.app.flags.DEFINE_string('eval_dir', '/tmp/imagenet_eval',
+# tf.app.flags.DEFINE_string('eval_dir', '/tmp/imagenet_eval',
 #                           """Directory where to write event logs.""")
 tf.app.flags.DEFINE_string('eval_dir', '/ifs/home/coudrn01/NN/TensorFlowTest/6a_Inception_TensorFlow/models/inception/results/4_2Types/results/0_eval',
-                           """Directory where to write event logs.""")
+  """Directory where to write event logs.""")
 #tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/imagenet_train',
 #                           """Directory where to read model checkpoints.""")
 tf.app.flags.DEFINE_string('checkpoint_dir', '/ifs/home/coudrn01/NN/TensorFlowTest/6a_Inception_TensorFlow/models/inception/results/0_scratch',
-                           """Directory where to read model checkpoints.""")
+  """Directory where to read model checkpoints.""")
 
 # Flags governing the frequency of the eval.
 tf.app.flags.DEFINE_integer('eval_interval_secs', 60 * 5,
