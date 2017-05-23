@@ -2,44 +2,36 @@ The Inception network re-trained from scratch following the protocol and code in
 https://github.com/tensorflow/models/tree/master/inception.
 
 
-# Re-training from scratch:
+Re-training from scratch:
 
-Build the model. Note that we need to make sure the TensorFlow is ready to use before this as this command will not build TensorFlow.
-```shell
+# Build the model. Note that we need to make sure the TensorFlow is ready to
+# use before this as this command will not build TensorFlow.
 cd 01_training/inception
 bazel build inception/imagenet_train
-```
 
 # run it for all the training images:
-```shell
 bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory'
-```
 
 botteneck, graph, variables... are saved in the output_directory 
 
-# Evaluate as the training goes on
-Briefly, one can evaluate the model by running a test on the validation set (must be started on a different node from the one used for training):
 
-To prepare the run:
-```shell
+# Briefly, one can evaluate the model by running a test on the validation set (must be started on a different node from the one used for training):
+## to prepare the run:
 bazel build inception/imagenet_eval
-```
-To actually run it:
-```shell
+## to actually run it:
 bazel-bin/inception/imagenet_eval --checkpoint_dir='checkpoint_dir' --eval_dir='output_dir' --run_once --data_dir='validation_TFRecord_images'
-```
 
-The precision @ 1  measures how often the highest scoring prediction from the model matched the  label
-Much like the training script, imagenet_eval.py also exports summaries that may be visualized in TensorBoard:
+#(The precision @ 1  measures how often the highest scoring prediction from the model matched the  label)=
+# (=Much like the training script, imagenet_eval.py also exports summaries that may be visualized in TensorBoard:
 
-```shell
 tensorboard --logdir='checkpoint_dir'
-```
 
 
 
-------------------------------------------------------------------------------------
-Below is the original Readme file for this
+
+
+######################################################################
+#Below is the original Readme file for this
 
 # Inception in TensorFlow
 
