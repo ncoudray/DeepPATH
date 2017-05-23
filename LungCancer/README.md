@@ -52,15 +52,14 @@ cd 01_training/inception
 bazel build inception/imagenet_train
 ```
 
-# run it for all the training images:
+Run it for all the training images:
 ```shell
 bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory'
 ```
 
 botteneck, graph, variables... are saved in the output_directory 
 
-# Evaluate as the training goes on
-Briefly, one can evaluate the model by running a test on the validation set (must be started on a different node from the one used for training):
+Evaluate as the training goes on: briefly, one can evaluate the model by running a test on the validation set (must be started on a different node from the one used for training):
 
 To prepare the run:
 ```shell
