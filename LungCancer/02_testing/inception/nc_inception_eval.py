@@ -102,7 +102,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                                          start=True))
       print("-num_examples: %d" % (FLAGS.num_examples))
       # num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size))
-      num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)) * 4
+      num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)) * 1
       # Counts the number of correct predictions.
       count_top_1 = 0.0
       count_top_5 = 0.0
