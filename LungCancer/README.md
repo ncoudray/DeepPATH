@@ -40,7 +40,13 @@ python 00_preprocessing/0d_SortTiles_stage.py <tiled images path> <JsonFilePath>
 *  <JsonFilePath> file uploaded with the svs images and containing all the information regarding each slide (i.e, metadata.cart.2017-03-02T00_36_30.276824.json)
 *  <Magnification To copy> magnification at which the tiles should be considerted (example: 20)
 *  <Difference Allowed on Magnification> If the requested magnification does not exist for a given slide, take the nearest existing magnification but only if it is at +/- the amount allowed here(example: 5)
-*  <Sorting option>	SortOption = 3
+*  <Sorting option> In the current directory, create one sub-folder per class, and fill each sub-folder with train_, test_ and valid_ test files. Images will be sorted into classes depending on the sorting option:
+**  1. sort according to cancer stage (i, ii, iii or iv) for each cancer separately (classification can be done separately for each cancer)
+**  2.sort according to cancer stage (i, ii, iii or iv) for each cancer  (classification can be done on everything at once)
+**  3. sort according to type of cancer (LUSC, LUAD, or Nomal Tissue)
+**  4. sort according to type of cancer (LUSC, LUAD)
+**  5. sort according to type of cancer / Normal Tissue (2 variables per type)
+**  6. sort according to cancer / Normal Tissue (2 variables)
 *  <percentage of images for validation> (example: 15); 
 *  <Percentage of images for testing> (example: 15). All the other tiles will be used for training by default.
 
