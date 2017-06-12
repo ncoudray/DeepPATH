@@ -32,7 +32,7 @@ Each slide will have its own folder and inside, one sub-folder per magnification
 ## 0.2 Sort the tiles into train/valid/test sets according to the classes defined
 
 
-# Then sort according to cancer type:
+Then sort according to cancer type:
 ```shell
 python 00_preprocessing/0d_SortTiles_stage.py <tiled images path> <JsonFilePath> <Magnification To copy> <Difference Allowed on Magnification> <Sorting option>  <percentage of images for validation> <Percentage of imaages for testing>
 ```
@@ -78,7 +78,9 @@ The same was done for the test set:
 python  00_preprocessing/build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False
 
 ```
-IF "one_FT_per_Tile" is True, there will be 1 TFRecord file per Tile created. Otherwise, it will created 1 TFRecord file per Slide.
+If "one_FT_per_Tile" is True, there will be 1 TFRecord file per Tile created. Otherwise, it will created 1 TFRecord file per Slide.
+
+An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
 Note: This code was adapted from https://github.com/awslabs/deeplearning-benchmark/blob/master/tensorflow/inception/inception/data/build_image_data.py
 
@@ -132,6 +134,7 @@ Usage:
 ```shell
 python 02_testing/nc_imagenet_eval.py --checkpoint_dir='0_scratch/' --eval_dir='output_directory' --run_once --data_dir='test_TFperSlide'
 ```
+An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
 data_dir contains the images in TFRecord format, with 1 TFRecord file per slide.
 In the eval_dir, it will generate files:

@@ -24,10 +24,14 @@ import os
 
 FLAGS = tf.app.flags.FLAGS
 
+tf.app.flags.DEFINE_string('ImageSet_basename', 'test_',
+                           """Either 'test_', 'valid_' or 'train_'.""")
 
 def main(unused_argv=None):
 
-  input_path = os.path.join(FLAGS.data_dir, 'test_*')
+  #input_path = os.path.join(FLAGS.data_dir, 'test_*')
+  input_path = os.path.join(FLAGS.data_dir, FLAGS.ImageSet_basename + '*')
+  print(input_path)
   #FLAGS.batch_size = 30
   data_files = tf.gfile.Glob(input_path)
   print(data_files)

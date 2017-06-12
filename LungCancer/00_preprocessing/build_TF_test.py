@@ -95,6 +95,9 @@ tf.app.flags.DEFINE_integer('num_threads', 8,
 tf.app.flags.DEFINE_boolean('one_FT_per_Tile', True,
                             '1 TFrec ord per tile if True, otherwise, 1 per slide.')
 
+tf.app.flags.DEFINE_string('ImageSet_basename', 'test',
+                            'test, train or valid')
+
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
 #   dog
@@ -401,10 +404,7 @@ def _process_image_files(name, filenames, texts, labels, num_shards):
   for thread_index in range(len(ranges)):
     args = (coder, thread_index, ranges, name, filenames,
             texts, labels, num_shards)
-    if name == 'test':
-      t = threading.Thread(target=_process_image_files_batch_test, args=args)
-    else:
-      t = threading.Thread(target=_process_image_files_batch, args=args)
+    t = threading.Thread(target=_process_image_files_batch_test, args=args)
     t.start()
     threads.append(t)
 
@@ -523,8 +523,11 @@ def main(unused_argv):
   # Run it!
   #_process_dataset('valid', FLAGS.directory, FLAGS.validation_shards)
   #_process_dataset('train', FLAGS.directory, FLAGS.train_shards)
-  _process_dataset('test', FLAGS.directory,
+  #_process_dataset('test', FLAGS.directory, FLAGS.train_shards)
+  print(FLAGS.ImageSet_basename)
+  _process_dataset(FLAGS.ImageSet_basename, FLAGS.directory,
                    FLAGS.train_shards)
+
 
 
 if __name__ == '__main__':
