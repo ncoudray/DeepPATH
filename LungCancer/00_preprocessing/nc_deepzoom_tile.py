@@ -85,7 +85,7 @@ VIEWER_SLIDE_NAME = 'slide'
 class TileWorker(Process):
 	"""A child process that generates and writes tiles."""
 
-	def __init__(self, queue, slidepath, tile_size, overlap, limit_bounds,quality):
+	def __init__(self, queue, slidepath, tile_size, overlap, limit_bounds,quality, _Bkg):
 		Process.__init__(self, name='TileWorker')
 		self.daemon = True
 		self._queue = queue
@@ -95,6 +95,7 @@ class TileWorker(Process):
 		self._limit_bounds = limit_bounds
 		self._quality = quality
 		self._slide = None
+       		self._Bkg = _Bkg
 
 	def run(self):
 		self._slide = open_slide(self._slidepath)
@@ -110,7 +111,8 @@ class TileWorker(Process):
 			if last_associated != associated:
 				dz = self._get_dz(associated)
 				last_associated = associated
-			try:
+			#try:
+			if True:
 				tile = dz.get_tile(level, address)
 				# A single tile is being read
 				#nc added: check the percentage of the image with "information". Should be above 50%
@@ -119,8 +121,8 @@ class TileWorker(Process):
 				arr = np.array(np.asarray(bw))
 				avgBkg = np.average(bw)
 				bw = gray.point(lambda x: 0 if x<220 else 1, '1')
-				outfile = os.path.join(outfile, '%s.%s' % (str(round(avgBkg, 3)),format) )
-				outfile_bw = os.path.join(outfile_bw, '%s.%s' % (str(round(avgBkg, 3)),format) )
+				#outfile = os.path.join(outfile, '%s.%s' % (str(round(avgBkg, 3)),format) )
+				#outfile_bw = os.path.join(outfile_bw, '%s.%s' % (str(round(avgBkg, 3)),format) )
 				# bw.save(outfile_bw, quality=self._quality)
 				if avgBkg < (self._Bkg / 100):
 					tile.save(outfile, quality=self._quality)
@@ -128,9 +130,9 @@ class TileWorker(Process):
 				#else:
 			    		#print("%s empty: %f" %(outfile, avgBkg))
 				self._queue.task_done()
-			except:
-				print("image %s failed at dz.get_tile for level %f" % (self._slidepath, level))
-				self._queue.task_done()
+			#except:
+			#	print("image %s failed at dz.get_tile for level %f" % (self._slidepath, level))
+			#	self._queue.task_done()
 
 	def _get_dz(self, associated=None):
 		if associated is not None:
@@ -193,9 +195,9 @@ class DeepZoomImageTiler(object):
 			for row in range(rows):
 				for col in range(cols):
 					tilename = os.path.join(tiledir, '%d_%d.%s' % (
-				                    col, row))
+				                    col, row, self._format))
 					tilename_bw = os.path.join(tiledir, '%d_%d_bw.%s' % (
-				                    col, row))
+				                    col, row, self._format))
 					if not os.path.exists(tilename):
 						self._queue.put((self._associated, level, (col, row),
 				                    tilename, self._format, tilename_bw))
@@ -241,7 +243,7 @@ class DeepZoomStaticTiler(object):
 		self._dzi_data = {}
 		for _i in range(workers):
 			TileWorker(self._queue, slidepath, tile_size, overlap,
-				limit_bounds, quality).start()
+				limit_bounds, quality, self._Bkg).start()
 
 	def run(self):
 		self._run_image()
@@ -323,7 +325,7 @@ class DeepZoomStaticTiler(object):
 
 if __name__ == '__main__':
     parser = OptionParser(usage='Usage: %prog [options] <slide>')
-    parser.add_option('-B', '--ignore-bounds', dest='limit_bounds',
+    parser.add_option('-L', '--ignore-bounds', dest='limit_bounds',
                 default=True, action='store_false',
                 help='display entire scan area')
     parser.add_option('-e', '--overlap', metavar='PIXELS', dest='overlap',
@@ -346,7 +348,7 @@ if __name__ == '__main__':
     parser.add_option('-s', '--size', metavar='PIXELS', dest='tile_size',
                 type='int', default=254,
                 help='tile size [254]')
-    parser.add_option('-Bkg', '--Background', metavar='PIXELS', dest='Bkg',
+    parser.add_option('-B', '--Background', metavar='PIXELS', dest='Bkg',
                 type='float', default=50,
                 help='Max background threshold [50]')
 

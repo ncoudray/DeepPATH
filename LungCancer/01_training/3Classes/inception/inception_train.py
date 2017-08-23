@@ -34,10 +34,10 @@ from inception.slim import slim
 FLAGS = tf.app.flags.FLAGS
 
 #tf.app.flags.DEFINE_string('train_dir', '/tmp/imagenet_train',
-tf.app.flags.DEFINE_string('train_dir', '/ifs/home/coudrn01/NN/TensorFlowTest/6a_Inception_TensorFlow/models/inception/results/0_scratch',
+tf.app.flags.DEFINE_string('train_dir', '/ifs/home/coudrn01/NN/TensorFlowTest/8a_3Classes/inception//results/8a_scratch',
                            """Directory where to write event logs """
                            """and checkpoint.""")
-tf.app.flags.DEFINE_integer('max_steps', 10000000,
+tf.app.flags.DEFINE_integer('max_steps', 1000000,
                             """Number of batches to run.""")
 tf.app.flags.DEFINE_string('subset', 'train',
                            """Either 'train' or 'validation'.""")

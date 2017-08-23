@@ -84,7 +84,10 @@ if __name__ == '__main__':
 			print("EXISTS")
 		else:
 			print("Not Found")
-		cmd = "python ../../nc_deepzoom_tile.py -e %d -j %d -f jpeg -s %d -Bkg %f %s " %(overlap, NbrCPU, tile_size, MaxBkg, filename) 
+		#cmd = "python ../../nc_deepzoom_tile.py -e %d -j %d -f jpeg -s %d -Bkg %f %s " %(overlap, NbrCPU, tile_size, MaxBkg, filename) 
+		# cmd = "python /ifs/home/coudrn01/NN/Lung/nc_deepzoom_tile.py -e %d -j %d -f jpeg -s %d -B %f %s " %(overlap, NbrCPU, tile_size, MaxBkg, filename) 
+		# NYU:
+		cmd = "python /ifs/home/coudrn01/NN/Lung/nc_deepzoom_tile_NYU.py -e %d -j %d -f jpeg -s %d -B %f %s " %(overlap, NbrCPU, tile_size, MaxBkg, filename) 
 		dz_queue.put(cmd)
 
 	dz_queue.join()

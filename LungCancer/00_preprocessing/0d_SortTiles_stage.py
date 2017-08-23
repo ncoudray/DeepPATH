@@ -15,15 +15,13 @@
 		It should not enclose any other folder
 		The output folder from which the script is run should be empty
 
-	Modifications:
-
 '''
 import json
 from glob import glob
 import os
 import sys
-
-
+import random
+import numpy as np
 
 if __name__ == '__main__':
 	## Initialization
@@ -51,6 +49,7 @@ if __name__ == '__main__':
 		print("        4. sort according to type of cancer (LUSC, LUAD)")
 		print("        5. sort according to type of cancer / Normal Tissue (2 variables per type)")
 		print("        6. sort according to cancer / Normal Tissue (2 variables)")
+		print("        7. Random labels (3 variables for false positive control)")
 		sys.exit()
 
 	SourceFolder = str(sys.argv[1])
@@ -78,6 +77,7 @@ if __name__ == '__main__':
 	NbrTilesCateg = {}
 	PercentTilesCateg = {}
 	NbrImagesCateg = {}
+	coMatrix = np.zeros((3,3))
 
 	print("******************")
 	print(imgFolders)
@@ -162,7 +162,7 @@ if __name__ == '__main__':
 				IsHealthy = False
 				SubDir = os.path.join(cancer, cancer)
 		elif SortOption == 6:
-			# Classify according to type of cancer or Normal tissue (3 classes)
+			# Classify according to type of cancer or Normal tissue (2 classes)
 			SubDir = cancer
 			if sample_type.find("Normal") > -1:
 				IsHealthy = True
@@ -170,6 +170,19 @@ if __name__ == '__main__':
 			else:
 				SubDir = "cancer"
 				IsHealthy = False
+		elif SortOption == 7:
+			# Random classification
+			# First, check the real label:
+			SubDir_temp = cancer
+			if sample_type.find("Normal") > -1:
+				IsHealthy = True
+				SubDir_temp = sample_type.replace(" ", "_")
+			else:
+				IsHealthy = False
+			# Assign a random label
+			AllOptions= ['TCGA-LUAD', 'TCGA-LUSC', 'Solid_Tissue_Normal']
+			SubDir = AllOptions[random.randint(0,2)]
+			coMatrix[AllOptions.index(SubDir_temp)][random.randint(0,2)] += 1
 		else:
 			sys.exit('Error: Option unknown')
 					
@@ -250,6 +263,8 @@ if __name__ == '__main__':
 		print("Train / Test / Validation sets for %s = %f %%  / %f %% / %f %%" % (SubDir, PercentTilesCateg.get(SubDir + "_train"), PercentTilesCateg.get(SubDir + "_test"), PercentTilesCateg.get(SubDir + "_valid") ) )
 
 
+	print("CoMatrix")
+	print(coMatrix)
 	for k, v in sorted(NbrTilesCateg.iteritems()):
 		    print k, v
 	for k, v in sorted(PercentTilesCateg.iteritems()):
