@@ -164,7 +164,7 @@ def _eval_once(saver, summary_writer, summary_op, max_percent_op, all_filenames,
       print("-num_examples: %d" % (FLAGS.num_examples))
       # num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size))
       if "test" in FLAGS.ImageSet_basename:
-        num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size))
+        num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)+1)
       else:
         num_iter = int(math.ceil(35000 / FLAGS.batch_size))
       # Counts the number of correct predictions.
@@ -283,28 +283,13 @@ def _eval_once(saver, summary_writer, summary_op, max_percent_op, all_filenames,
                myfile.write("\n")
 
 
-        """
         with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
           for kk in range(len(out_filenames)):
               myfile.write(out_filenames[kk].decode('UTF-8') + "\t")
-              myfile.write(str(top_1[kk]) + "\t")
-              myfile.write(str(max_percent[kk]) + "\n")
+              myfile.write(str(labels[kk]) + "\t")
+              myfile.write(" ".join(str(max_percent[kk]).splitlines()) + "\t")        
 
-              print(max_percent[kk][0])
-              print(max_percent[kk][1])
-              print(max_percent[kk][2])
-              class_1 = float(max_percent[kk][1])
-              class_2 = float(max_percent[kk][2])
-              sum_class = class_1 + class_2
-              class_1 = class_1 / sum_class
-              class_2 = class_2 / sum_class
-              if top_1[kk] == True:
-                current_score.append(max(class_1, class_2))
-                print("True found; score is %f" % (max(class_1, class_2)))
-              else:
-                current_score.append(min(class_1, class_2))
-                print("False found; score is %f" % (min(class_1, class_2)))
-        """
+
 
 
 
