@@ -198,7 +198,7 @@ In the eval_dir, it will generate files:
 
 # 3 - Analyze the outcome
 
-Code in 03_postprocessing/2Classes for 2 classes:
+## Code in 03_postprocessing/2Classes for 2 classes:
 Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
 ```shell
 python 0f_HeatMap.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0 --output_dir 'result_folder' --tiles_stats 'out_filename_Stats.txt' --resample_factor 4 --tiles_filter 'TCGA-05-5425'
@@ -209,7 +209,7 @@ python 0f_HeatMap.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0
 * ```--tiles_filter```: to be used if you want to process only some of the images
 
 
-Code in 03_postprocessing/3Classes for 3 classes:
+## Code in 03_postprocessing/3Classes for 3 classes:
 ROC curves:
 ```shell
 python 0h_ROC_sklearn.py  --file_stats out_filename_Stats3.txt  --output_dir 'output folder'
@@ -223,7 +223,7 @@ Generate probability distribution with means for each class for each slide:
 python 0f_ProbHistogram.py --output_dir='result folder' --tiles_stats='out_filename_Statsout_filename_Stats.txt'
 ```
 
-Code in 03_postprocessing/multiClasses for 10-multi-output classification:
+## Code in 03_postprocessing/multiClasses for 10-multi-output classification:
 ```shell
 python  0h_ROC_MultiOutput.py  --file_stats 'MultiOuput/out_filename_Stats3.txt  --output_dir 'output folder' --labels_names label_names.txt --ref_stats 'LUAD/out_filename_Stats3.txt'
 ```
