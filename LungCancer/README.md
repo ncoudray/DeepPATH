@@ -196,7 +196,7 @@ In the eval_dir, it will generate files:
 
 
 
-# 3 - Analyze the outcome by creating heat-maps
+# 3 - Analyze the outcome
 
 Code in 03_postprocessing/2Classes for 2 classes:
 Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
