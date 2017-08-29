@@ -104,6 +104,7 @@ python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_
 
 
 # 1 - Re-training from scratch
+## 1.1 Training
 
 Code in one of the subfolders of 01_training (depending on the type of run: 2 classes, 3 classes, or 10 multiclass outputs with softmax layer replaced by sigmoid)
 
@@ -138,6 +139,35 @@ Much like the training script, imagenet_eval.py also exports summaries that may 
 ```shell
 tensorboard --logdir='checkpoint_dir'
 ```
+
+## 1.2 Validation
+
+Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise). Same code as for testing (see section 2.), but without the ```--run_once``` option (the program will run in an infinite loop and will need to be killed manually). 
+
+## 1.3 Comments on the code
+
+This is inception v3 developped by google.  Full documentation on (re)-training can be found here: https://github.com/tensorflow/models/tree/master/inception
+
+
+Main modifications when adjusting the code:
+* in slim/inception_model.py: default ```num_classes``` in ```def inception_v3```
+* in inception_train.py: default ```max_steps``` in  ```tf.app.flags.DEFINE_integer``` definition
+* in imagenet_data.py: 
+** default number of classes in  ```def num_classes(self):```
+** size of the train and validation subsets in ```def num_examples_per_epoch(self)```
+* Other changes for multi-output classification: 
+** - in slim/inception_model.py:
+*** line 329 changed from ```end_points['predictions'] = tf.nn.softmax(logits, name='predictions')``` to ```end_points['predictions'] = tf.nn.sigmoid(logits, name='predictions')```
+** in slim/losses.py:
+*** in ```def cross_entropy_loss`` (line 142 and next ones): ```tf.contrib.nn.deprecated_flipped_softmax_cross_entropy_with_logits``` replaced by  ```tf.contrib.nn.deprecated_flipped_sigmoid_cross_entropy_with_logits```
+** in ```image_processing.py``` (line 378):
+*** ```'image/class/label': tf.FixedLenFeature([1], dtype=tf.int64, default_value=-1)``` changed to ```'image/class/label': tf.FixedLenFeature([FLAGS.nbr_of_classes+1], dtype=tf.int64, default_value=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])```
+*** line 513: replaced ```return images, tf.reshape(label_index_batch, [batch_size])``` with ```return images, tf.reshape(label_index_batch, [batch_size, FLAGS.nbr_of_classes+1])```
+** in ```inception/inception_model.py``` ```sparse_labels = tf.reshape(labels, [batch_size, 1])  [....]  dense_labels = tf.sparse_to_dense(concated,
+ [batch_size, num_classes], 1.0, 0.0)``` replaced by ```dense_labels = tf.reshape(labels, [batch_size, FLAGS.nbr_of_classes+1])```
+
+
+
 
 
 
