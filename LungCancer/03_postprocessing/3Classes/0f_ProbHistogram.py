@@ -121,7 +121,7 @@ def main(tiles_stats, output_dir, ctype, filter_file):
 		for nCl in range(NbrOfClasses):
 			y,x = np.histogram( np.array(dict[img])[:,nCl], np.arange(0,1.1,0.02) )
 			ymax = max(ymax, max(y/sum(y)))
-			lineL[nCl] = plt.plot(x[:-1]*100,y/sum(y)*100, color[nCl], label=labels[nCl])
+			lineL[nCl] = plt.plot(x[:-1]*100,y/sum(y)*100, color[nCl], label="%s (%.3f)" % (labels[nCl], meanV) )
 			meanV = np.mean(np.array(dict[img])[:,nCl])*100
 			plt.plot([meanV, meanV],[0, 100], ':'+color[nCl])
 

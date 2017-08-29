@@ -302,17 +302,17 @@ def main(_):
 			if FLAGS.resample_factor > 0:
 				#print("old / new r&cTile")
 				#print(rTile, cTile)
-				rTile = round(rTile / FLAGS.resample_factor)
-				cTile = round(cTile / FLAGS.resample_factor)
+				rTile = int(rTile / FLAGS.resample_factor)
+				cTile = int(cTile / FLAGS.resample_factor)
 				#print(rTile, cTile)
 				im2s = scipy.misc.imresize(im2, (cTile, rTile))
 				rTile = im2s.shape[1]
 				cTile = im2s.shape[0]
 
-				ixTile = round(ixTile / FLAGS.resample_factor)
-				iyTile = round(iyTile / FLAGS.resample_factor)
-				xTile = round(xTile / FLAGS.resample_factor)
-				yTile = round(yTile / FLAGS.resample_factor)
+				ixTile = int(ixTile / FLAGS.resample_factor)
+				iyTile = int(iyTile / FLAGS.resample_factor)
+				xTile = int(xTile / FLAGS.resample_factor)
+				yTile = int(yTile / FLAGS.resample_factor)
 				req_xLength = xTile + rTile
 				req_yLength = yTile + cTile
 			else:
