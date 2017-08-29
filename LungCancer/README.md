@@ -144,6 +144,9 @@ tensorboard --logdir='checkpoint_dir'
 
 Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise). Same code as for testing (see section 2.), but without the ```--run_once``` option (the program will run in an infinite loop and will need to be killed manually). 
 
+Note: The current validation code only saves the validation accuracy, not the loss. The code still needs to be changed for that. 
+
+
 ## 1.3 Comments on the code
 
 This is inception v3 developped by google.  Full documentation on (re)-training can be found here: https://github.com/tensorflow/models/tree/master/inception
