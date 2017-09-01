@@ -69,15 +69,14 @@ from tensorflow.python.platform import gfile
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+
 import scipy.misc
 from scipy.misc import imsave
 from scipy.misc import imread
 
 FLAGS = None
 
-# pylint: disable=line-too-long
-# DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
-# pylint: enable=line-too-long
 
 
 class NodeLookup(object):
@@ -129,14 +128,26 @@ def create_graph():
     _ = tf.import_graph_def(graph_def, name='')
 
 
+def make_colormap(seq):
+    """Return a LinearSegmentedColormap
+    seq: a sequence of floats and RGB-tuples. The floats should be increasing
+    and in the interval (0,1).
+    """
+    seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
+    cdict = {'red': [], 'green': [], 'blue': []}
+    for i, item in enumerate(seq):
+        if isinstance(item, float):
+            r1, g1, b1 = seq[i - 1]
+            r2, g2, b2 = seq[i + 1]
+            cdict['red'].append([item, r1, r2])
+            cdict['green'].append([item, g1, g2])
+            cdict['blue'].append([item, b1, b2])
+    return mcolors.LinearSegmentedColormap('CustomMap', cdict)
 
-def get_inference_from_file(test_filename, cTileRootName, label_name, AllLabels):
 
-	for nClass in AllLabels.keys():
-		if nClass == label_name:
-			TP_name = label_name
-		else:
-			TN_name = nClass
+
+def get_inference_from_file(test_filename, cTileRootName):
+
 
 
 	basename = os.path.basename(test_filename)
@@ -145,38 +156,128 @@ def get_inference_from_file(test_filename, cTileRootName, label_name, AllLabels)
 	print("basename is :" + basename)
 	current_score = -1
 	oClass = -1
+	cmap = plt.get_cmap('binary')
 	with open(FLAGS.tiles_stats) as f:
 		Found = False
+		Mutation = False
 		for line in f:
 			if basename in line:
-				Found = True
 				line = line.replace('[','').replace(']','').split()
+				Found = True
 				print(line)
-				is_TP = line[1]
-				class_1 = float(line[3])
-				class_2 = float(line[4])
-				class_3 = float(line[5])
-				sum_class = class_1 + class_2 + class_3
-				class_1 = class_1 / sum_class
-				class_2 = class_2 / sum_class
-				class_3 = class_3 / sum_class
-				current_score = max(class_1, class_2, class_3)
-				if current_score == class_1:
+				if FLAGS.map == 'CancerType':
+					is_TP = line[1]
+					class_1 = float(line[3])
+					class_2 = float(line[4])
+					class_3 = float(line[5])
+					sum_class = class_1 + class_2 + class_3
+					class_1 = class_1 / sum_class
+					class_2 = class_2 / sum_class
+					class_3 = class_3 / sum_class
+					current_score = max(class_1, class_2, class_3)
+					if current_score == class_1:
+						oClass = 1
+					elif current_score == class_2:
+						oClass = 2
+					else:
+						oClass = 3
+					if oClass == 1:
+						cmap = plt.get_cmap('binary')
+					elif oClass == 2:
+						cmap = plt.get_cmap('OrRd')
+					else:
+						cmap = plt.get_cmap('Blues')
+					break
+				elif FLAGS.map == 'EGFR':
+					Mutation = True
+					cmap = plt.get_cmap('Reds')
+					oClass = 0
+				elif FLAGS.map == 'FAT1':
+					Mutation = True
+					cmap = plt.get_cmap('Oranges')
 					oClass = 1
-				elif current_score == class_2:
+				elif FLAGS.map == 'FAT4':
+					Mutation = True
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('yellow')])
 					oClass = 2
-				else:
+				elif FLAGS.map == 'KEAP1':
+					Mutation = True
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('green')])
 					oClass = 3
-	
+				elif FLAGS.map == 'KRAS':
+					Mutation = True
+					cmap = plt.get_cmap('Greens')
+					oClass = 4
+				elif FLAGS.map == 'LRP1B':
+					Mutation = True
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('blue')])
+					oClass = 5
+				elif FLAGS.map == 'NF1':
+					Mutation = True
+					cmap = plt.get_cmap('Blues')
+					oClass = 6
+				elif FLAGS.map == 'SETBP1':
+					Mutation = True
+					cmap = plt.get_cmap('Purples')
+					oClass = 7
+				elif FLAGS.map == 'STK11':
+					Mutation = True
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('magenta')])
+					oClass = 8
+				elif FLAGS.map == 'TP53':
+					Mutation = True
+					cmap = plt.get_cmap('Greys')
+					oClass = 9
+
+				
+				if Mutation:
+					analyze = True
+					if os.path.isfile(FLAGS.filter_tile):
+						with open(FLAGS.filter_tile) as fstat2:
+							for line2 in fstat2:
+								print(line2)
+								print(".".join(line[0].split(".")[:-1]))
+								if ".".join(line[0].split(".")[:-1]) in line2:
+									ref = line2.replace('[','').replace(']','').split()
+									nMax = max([float(ref[3]), float(ref[4]), float(ref[5])])
+									LUAD = float(ref[4])
+									print("Found:")
+									print(line2, nMax, LUAD)
+									if LUAD != nMax:
+										analyze = False
+										current_score = -1
+									#print(analyze)
+									break
+					if analyze == False:
+						#print("continue")
+						continue
+
+					EGFR = float(line[13])
+					FAT1 = float(line[14])
+					FAT4 = float(line[15])
+					KEAP1 = float(line[16])
+					KRAS = float(line[17])
+					LRP1B = float(line[18])
+					NF1 = float(line[19])
+					SETBP1 = float(line[20])
+					STK11 = float(line[21])
+					TP53 = float(line[22])
+					Alldata = [EGFR, FAT1, FAT4, KEAP1, KRAS, LRP1B, NF1, SETBP1, STK11, TP53]
+					current_score = Alldata[oClass]
 				break
+
 		if Found ==False:
 			print("image not found in text file... and that's weird...")
 
 	print(oClass, current_score)
-	return oClass, current_score 
+	return oClass, cmap, current_score 
 
 
-def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, label_name, NewSlide):
+def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide):
 	# save the previous heat maps if any
 	HeatMap_divider = HeatMap_divider_p * 1.0 + 0.0
 	HeatMap_0 = HeatMap_0_p
@@ -191,9 +292,7 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, label_n
 	else:
 		os.makedirs(heatmap_path)
 	
-	label_name = re.sub(r"[^\w\s]", '_', label_name)
-	label_name = re.sub(r"\s+", '_', label_name)
-	filename = os.path.join(heatmap_path, cTileRootName + "_" + label_name + "_heatmap.jpg")
+	filename = os.path.join(heatmap_path, FLAGS.map + "_" + cTileRootName + "_heatmap.jpg")
 	#print(cTileRootName + "_heatmap.jpg")
 #	try:
 #		os.remove(filename)
@@ -238,39 +337,28 @@ def main(_):
 
 
 	# Read the name of the folder (= class names)
-	sub_dirs = []
 	if FLAGS.tiles_stats == '':
 		create_graph()
-	for item in os.listdir(image_dir):
-    		if os.path.isdir(os.path.join(image_dir, item)):
-        		sub_dirs.append(os.path.join(image_dir,item))
+	sub_dirs = [image_dir]
 
 	print("sub_dirs:")
 	print(sub_dirs)
 	SlideRootName = ''
 	SlideNames = []
-	AllLabels = {}
 	skip = False
 	# get all the label names
-	for sub_dir in sub_dirs:
-		dir_name = os.path.basename(sub_dir)
-		label_name = re.sub(r'[^a-z0-9]+', ' ', dir_name.lower())
-		AllLabels[label_name] = {}
 
-	print("AllLabels:")
-	print(AllLabels)
 	# For each class
 	for sub_dir in list(sub_dirs):
 	#for sub_dir in list(reversed(sub_dirs)):
 		dir_name = os.path.basename(sub_dir)
-		label_name = re.sub(r'[^a-z0-9]+', ' ', dir_name.lower())
 		extensions = ['jpg', 'jpeg', 'JPG', 'JPEG']
 		file_list = []
 
 		print("list the images in folder %s..." % (dir_name) )
 		for extension in extensions:
       			#file_glob = os.path.join(image_dir, dir_name, 'test_*.' + extension)
-      			file_glob = os.path.join(image_dir, dir_name, 'test_*' + FLAGS.tiles_filter + '*.' + extension)
+      			file_glob = os.path.join(image_dir, dir_name, FLAGS.slide_filter + '*.' + extension)
       			file_list.extend(gfile.Glob(file_glob))
 		if not file_list:
       			print('No images found')
@@ -336,7 +424,7 @@ def main(_):
 				elif skip==False:
 					# For previous the slide which is now finished, compute the averages 
 
-					skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, label_name, NewSlide)
+					skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide)
 
 				NewSlide = True
 				skip = False
@@ -352,7 +440,7 @@ def main(_):
 			# print("FLAGS.tiles_stats")
 			# print(FLAGS.tiles_stats)
 			# text file with stats from fully retrained network
-			oClass, current_score = get_inference_from_file(test_filename, cTileRootName, label_name, AllLabels)
+			oClass, cmap, current_score = get_inference_from_file(test_filename, cTileRootName)
 	
 
 			# prepare heatmap
@@ -387,24 +475,19 @@ def main(_):
 
 				#heattile = np.ones([512,512]) * current_score
 				heattile = np.ones([req_xLength-xTile,req_yLength-yTile]) * current_score
-				if oClass == 1:
-					cmap = plt.get_cmap('binary')
-				elif oClass == 2:
-					cmap = plt.get_cmap('OrRd')
-				else:
-					cmap = plt.get_cmap('Blues')
+
 				heattile = cmap(heattile)
 				heattile = heattile[:,:,0:3]
 
 				HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] + heattile
 				HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] + 1
 
-				skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, label_name, NewSlide)
+				skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide)
 				if skip:
 					continue
 		
 
-		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, label_name, NewSlide)
+		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide)
 
 
 
@@ -435,18 +518,6 @@ if __name__ == '__main__':
       help='Absolute path to image file.'
   )
   parser.add_argument(
-      '--num_top_predictions',
-      type=int,
-      default=2,
-      help='Display this many predictions.'
-  )
-  parser.add_argument(
-      '--tensor_name',
-      type=str,
-      default='3_Lung_1634:0',
-      help='Name of the tensor.'
-  )
-  parser.add_argument(
       '--tiles_overlap',
       type=int,
       default=0,
@@ -471,12 +542,24 @@ if __name__ == '__main__':
       help='text file where tile statistics are saved.'
   )
   parser.add_argument(
-      '--tiles_filter',
+      '--slide_filter',
       type=str,
       default='',
-      help='process only images with this name.'
+      help='process only images with this basename.'
   )
+  parser.add_argument(
+      '--filter_tile',
+      type=str,
+      default='',
+      help='if map is a mutation, apply cmap of mutations only if tiles are LUAD.'
+  )
+  parser.add_argument(
+      '--map',
+      type=str,
+      default='CancerType',
+      help='can be CancerType, of the name of a mutation (TP53, EGFR...)'
+  )
+
   FLAGS, unparsed = parser.parse_known_args()
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
-
 
