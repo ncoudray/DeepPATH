@@ -118,12 +118,19 @@ def main(tiles_stats, output_dir, ctype, filter_file):
 			print("type of classification not recognized !!!!")
 			continue
 
-		for nCl in range(NbrOfClasses):
-			y,x = np.histogram( np.array(dict[img])[:,nCl], np.arange(0,1.1,0.02) )
-			ymax = max(ymax, max(y/sum(y)))
-			lineL[nCl] = plt.plot(x[:-1]*100,y/sum(y)*100, color[nCl], label="%s (%.3f)" % (labels[nCl], meanV) )
-			meanV = np.mean(np.array(dict[img])[:,nCl])*100
-			plt.plot([meanV, meanV],[0, 100], ':'+color[nCl])
+		with open(os.path.join(output_dir, img +  "_" + ctype + "_histo.txt"), "a") as myfile:
+			for nCl in range(NbrOfClasses):
+				y,x = np.histogram( np.array(dict[img])[:,nCl], np.arange(0,1.1,0.01) )
+				ymax = max(ymax, max(y/sum(y)))
+				meanV = np.mean(np.array(dict[img])[:,nCl])*100
+				lineL[nCl] = plt.plot(x[:-1]*100,y/sum(y)*100, color[nCl], label="%s (%.3f)" % (labels[nCl], meanV) )
+				plt.plot([meanV, meanV],[0, 100], ':'+color[nCl])
+
+				myfile.write(labels[nCl] + "\t")
+				myfile.write(" ".join(str(y/sum(y)*100).splitlines()) + "\n")
+
+			myfile.write("x-axis\t")
+			myfile.write(" ".join(str(x[:-1]*100).splitlines()) + "\n")
 
 		#plt.legend([lineL[0], lineL[1], lineL[2]], ['Normal', 'LUAD', 'LUSC'])
 		lgd = plt.legend(loc=9, bbox_to_anchor=(0.5, -0.1))
@@ -133,6 +140,9 @@ def main(tiles_stats, output_dir, ctype, filter_file):
 		plt.axis([0, 100, 0, ymax*100])
 		plt.xticks(np.arange(0, 105, 5.0))
 		plt.savefig(os.path.join(output_dir, img +  "_" + ctype + "_histo.jpeg"), bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+
+		
 
 
 
@@ -172,5 +182,4 @@ if __name__ == '__main__':
   )
   args = parser.parse_args()
   main(args.tiles_stats, args.output_dir, args.ctype, args.filter_file)
-
 
