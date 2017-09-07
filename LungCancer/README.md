@@ -168,7 +168,10 @@ tensorboard --logdir='checkpoint_dir'
 
 ## 1.2 Validation
 
-Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise). Same code as for testing (see section 2.), but without the ```--run_once``` option (the program will run in an infinite loop and will need to be killed manually). 
+Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise). Same code as for testing (see section 2.).
+You need to either:
+* run it manually once in a while and keep track of the evolution of validation score.
+* or run the script without the ```--run_once``` option (the program will run in an infinite loop and will need to be killed manually). To set how often the validation script needs to be run, you need to modify the code: in file ```02_testing/2Classes/inception/nc_inception_eval.py```, line 46, the default value of ```eval_interval_secs``` set to 5 minutes by default (for very long jobs, every 1 or 5 hours may be enough).
 
 Note: The current validation code only saves the validation accuracy, not the loss. The code still needs to be changed for that. 
 
