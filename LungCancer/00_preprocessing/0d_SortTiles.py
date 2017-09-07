@@ -208,7 +208,8 @@ if __name__ == '__main__':
             Classes[SubDir] = [imgRootName]
 
         # Check in the reference directories if there is a set of tiles at the desired magnification
-        AvailMagsDir = os.listdir(cFolderName)
+        AvailMagsDir = [x for x in os.listdir(cFolderName)
+                        if os.path.isdir(os.path.join(cFolderName, x))]
         AvailMags = tuple(float(x) for x in AvailMagsDir)
         # check if the mag was known for that slide
         if max(AvailMags) < 0:
