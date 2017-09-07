@@ -122,22 +122,7 @@ bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='out
 
 botteneck, graph, variables... are saved in the output_directory 
 
-Evaluate as the training goes on: briefly, one can evaluate the model by running a test on the validation set (must be started on a different node from the one used for training):
 
-To prepare the run:
-```shell
-bazel build inception/imagenet_eval
-```
-To actually run it:
-```shell
-bazel-bin/inception/imagenet_eval --checkpoint_dir='0_scratch/' --eval_dir='output_directory' --run_once --data_dir='validation_TFRecord_images'
-```
-
-The precision @ 1  measures how often the highest scoring prediction from the model matched the  label
-Much like the training script, imagenet_eval.py also exports summaries that may be visualized in TensorBoard:
-
-```shell
-tensorboard --logdir='checkpoint_dir'
 ```
 
 ## 1.2 Validation
