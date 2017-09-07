@@ -126,9 +126,10 @@ python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_
 Code in one of the subfolders of 01_training (depending on the type of run: 2 classes, 3 classes, or 10 multiclass outputs with softmax layer replaced by sigmoid).
 
 
-Build the model. Note that we need to make sure the TensorFlow is ready to use before this as this command will not build TensorFlow.
+Build the model (the following two commands must be run from the proper directory, for example ```cd 01_training/2Classes
+```):
+
 ```shell
-cd 01_training/inception
 bazel build inception/imagenet_train
 ```
 
