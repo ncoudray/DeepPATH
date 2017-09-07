@@ -53,7 +53,7 @@ python 00_preprocessing/0d_SortTiles_stage.py <tiled images path> <JsonFilePath>
 The output will be generated in the current directory where the program is launched (so start it from a new empty folder). Images will not be copied but a symbolic link will be created toward the <tiled images path>. The links will be renamed ```<type>_<slide_root_name>_<x>_<y>.jpeg``` with <type> being 'train_', 'test_' or 'valid_' followed by the svs name and the tile ID. 
 
 
-## 0.3 Convert the JPEG tiles into TFRecord format
+## 0.3a Convert the JPEG tiles into TFRecord format for 2 or 3 classes jobs
 
 
 Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at classifying 2 or 3 different classes:
@@ -72,17 +72,34 @@ The name of the tiles are :
 with type being "test", "train" or "valid", name the TCGA name of the slide, x and y the tile coordinates.
 
 
-The same was done for the test set:
+The same was done for the test set with this eslightly modified script:
 ```shell
 python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False
 
 ```
-If "one_FT_per_Tile" is True, there will be 1 TFRecord file per Tile created. Otherwise, it will created 1 TFRecord file per Slide.
+The difference is that for the train and validation set, the tiles are randomly assigned to the TFRecord files. For the test set, if "one_FT_per_Tile" is True, there will be 1 TFRecord file per Tile created. Otherwise, it will created 1 TFRecord file per Slide (solution prefered).
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
 Note: This code was adapted from https://github.com/awslabs/deeplearning-benchmark/blob/master/tensorflow/inception/inception/data/build_image_data.py
 
+Example of qsub script to submit this script on Phoenix cluster:
+
+```shell
+#!/bin/tcsh
+#$ -pe openmpi 4
+#$ -A TensorFlow
+#$ -N rqsub_TFRec_Normal
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q 
+
+module load cuda/8.0
+module load python/3.5.3
+
+```
+
+## 0.3a Convert the JPEG tiles into TFRecord format for a multi-ouput prediction (example mutations)
 
 
 Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at multi-output classsification with 10 possibly concurent sclasses:
@@ -120,7 +137,7 @@ Run it for all the training images:
 bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory'
 ```
 
-Example of qsub script header to submit those two jobs on the cluster:
+Example of qsub script header to submit those two jobs on the Phoenix cluster:
 
 ```shelll
 #!/bin/tcsh
@@ -135,9 +152,9 @@ Example of qsub script header to submit those two jobs on the cluster:
 module load cuda/8.0
 module load python/3.5.3
 module load bazel/0.4.4
-
-
 ```
+
+Note: it is best to reserve a whole node (it will crash if not enough space of if another job uses the GPU)
 
 botteneck, graph, variables... are saved in the output_directory 
 
@@ -203,7 +220,21 @@ In the eval_dir, it will generate files:
 *  node2048/: a subfolder where each file correspond to a tile such as the filenames are ```test_<svs name>_<tile ID x>_<tile ID y>.net2048``` and the first line of the file contains: ``` <True / False> \tab [<Background prob> <Prob class 1> <Prob class 2>]  <TP prob>```, and the next 2048 lines correspond to the output of the last-but-one layer
 
 
+Example of qsub submission script header on the Phoenix cluster:
 
+```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rq_9aTst
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+
+module load cuda/8.0
+module load python/3.5.3
+
+```
 
 # 3 - Analyze the outcome
 
