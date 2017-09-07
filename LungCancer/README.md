@@ -106,7 +106,7 @@ python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_
 # 1 - Re-training from scratch
 ## 1.1 Training
 
-Code in one of the subfolders of 01_training (depending on the type of run: 2 classes, 3 classes, or 10 multiclass outputs with softmax layer replaced by sigmoid)
+Code in one of the subfolders of 01_training (depending on the type of run: 2 classes, 3 classes, or 10 multiclass outputs with softmax layer replaced by sigmoid).
 
 
 Build the model. Note that we need to make sure the TensorFlow is ready to use before this as this command will not build TensorFlow.
@@ -118,6 +118,25 @@ bazel build inception/imagenet_train
 Run it for all the training images:
 ```shell
 bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory'
+```
+
+Example of qsub script header to submit those two jobs on the cluster:
+
+```shelll
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqs8b_bazel
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+#$ -l excl=true
+
+module load cuda/8.0
+module load python/3.5.3
+module load bazel/0.4.4
+
+
 ```
 
 botteneck, graph, variables... are saved in the output_directory 
