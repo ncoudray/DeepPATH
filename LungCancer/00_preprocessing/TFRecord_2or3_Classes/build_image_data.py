@@ -341,7 +341,7 @@ def _process_image_files(name, filenames, texts, labels, num_shards):
 
   # Wait for all the threads to terminate.
   coord.join(threads)
-  print('%s: Finished writing all %d images in data set.' %
+  print('%s: Finished dealing with all %d images in data set.' %
         (datetime.now(), len(filenames)))
   sys.stdout.flush()
 
@@ -453,8 +453,8 @@ def main(unused_argv):
                    FLAGS.validation_shards)
   _process_dataset('train', FLAGS.directory,
                    FLAGS.train_shards)
-  _process_dataset('test', FLAGS.directory,
-                   FLAGS.test_shards)
+  #_process_dataset('test', FLAGS.directory,
+  #                 FLAGS.test_shards)
 
 
 if __name__ == '__main__':
