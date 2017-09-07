@@ -148,7 +148,7 @@ if __name__ == '__main__':
     ## Parse Arguments
     args = parser.parse_args()
 
-    SourceFolder = args.SourceFolder
+    SourceFolder = os.path.abspath(args.SourceFolder)
     imgFolders = glob(os.path.join(SourceFolder, "*_files"))
     random.shuffle(imgFolders)  # randomize order of images
 
