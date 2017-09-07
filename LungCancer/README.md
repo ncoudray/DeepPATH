@@ -4,6 +4,9 @@ module load cuda/8.0
 module load python/3.5.3
 module load bazel/0.4.4
 
+For the path, it is advised to always put the full path name and not the relative paths.
+
+For all the steps below, always submit the jobs via a qsub script (if on Pheonix) and always check the output and error log files are fine. 
 
 # 0 - Prepare the images.
 
@@ -55,6 +58,9 @@ The output will be generated in the current directory where the program is launc
 
 ## 0.3a Convert the JPEG tiles into TFRecord format for 2 or 3 classes jobs
 
+Notes:
+* This code was adapted from https://github.com/awslabs/deeplearning-benchmark/blob/master/tensorflow/inception/inception/data/build_image_data.py
+
 
 Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at classifying 2 or 3 different classes:
 
@@ -81,7 +87,6 @@ The difference is that for the train and validation set, the tiles are randomly 
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
-Note: This code was adapted from https://github.com/awslabs/deeplearning-benchmark/blob/master/tensorflow/inception/inception/data/build_image_data.py
 
 Example of qsub script to submit this script on Phoenix cluster:
 
@@ -99,7 +104,9 @@ module load python/3.5.3
 
 ```
 
-## 0.3a Convert the JPEG tiles into TFRecord format for a multi-ouput prediction (example mutations)
+expected processing time for this step: a few seconds to a few minutes. Check the resulting directory that the images have been properly linked
+
+## 0.3b Convert the JPEG tiles into TFRecord format for a multi-ouput prediction (example mutations)
 
 
 Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at multi-output classsification with 10 possibly concurent sclasses:
@@ -118,6 +125,7 @@ python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_
 
 
 
+expected processing time for this step: a few seconds to a few minutes. Check the output log files and the resulting directory (check that the sizes of the created TFRecord files make sense)
 
 
 # 1 - Re-training from scratch
@@ -166,6 +174,10 @@ The script also exports summaries that may be visualized in TensorBoard:
 ```shell
 tensorboard --logdir='checkpoint_dir'
 ```
+
+expected processing time for this step: depends on the number of images. From a few hours to several days or weeks. As the process goes on, regularly check the evolution of the loss of the training and the accuracy of the validation (see step 1.2): they should both converge. If the training  loss converges but not the validation accuracy/loss, there may be an overfitting and the default training parameters need to be adjusted
+
+
 
 ## 1.2 Validation
 
@@ -239,6 +251,9 @@ module load cuda/8.0
 module load python/3.5.3
 
 ```
+
+expected processing time for this step: on a gpu, about 1000 tiles per minute.
+
 
 # 3 - Analyze the outcome
 
