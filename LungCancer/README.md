@@ -123,6 +123,11 @@ bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='out
 botteneck, graph, variables... are saved in the output_directory 
 
 
+The precision @ 1  measures how often the highest scoring prediction from the model matched the  label
+The script also exports summaries that may be visualized in TensorBoard:
+
+```shell
+tensorboard --logdir='checkpoint_dir'
 ```
 
 ## 1.2 Validation
