@@ -18,18 +18,33 @@ See from https://github.com/tensorflow/models/blob/master/inception/README.md fo
 
 This step also required ```module load openjpeg/2.1.1```.
 ```shell
-python 00_preprocessing/0b_tileLoop_deepzoom.py <svs images path> <tile_size> <overlap> <number of processes> <number of threads> <Max Percentage of Background>')
+python /path_to/0b_tileLoop_deepzoom2.py  -s 512 -e 0 -j 32 -B 25 -o "full_path_to_output_folder" "full_path_to_input_slides/*/*svs"  
 ```
 Example of parameters:
 *  <svs images path> example: "/ifs/home/kerbosID/NN/Lung/RawImages/*/*svs"
-*  <tile_size> 512 (512x512 pixel tiles)
-*  <overlap> 0 (no overlap between adjacent tiles)
-*  <number of processes> 4 
-*  <number of threads> 10
-*  <Max Percentage of Background> 30 (tiles removed if background percentage above this value)
+*  s is tile_size: 512 (512x512 pixel tiles)
+*  -e is overlap, 0 (no overlap between adjacent tiles)
+*  -j is number of threads: 32 (for a full GPU node on gpu0.q)
+*  B is Max Percentage of Background: 25% (tiles removed if background percentage above this value)
 
 The output will be generated in the current directory where the program is launched (so start it from a new empty folder).
 Each slide will have its own folder and inside, one sub-folder per magnification. Inside each magnification folder, tiles are named according to their index within the slide: ```<x>_<y>.jpeg```.
+
+
+Example of qsub script to submit this script on Phoenix cluster (python 2.7 used):
+
+
+```shell
+#!/bin/tcsh
+#$ -pe openmpi 32
+#$ -A TensorFlow
+#$ -N rqsub_tile
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+#$ -l excl=true
+```
+
 
 
 ## 0.2 Sort the tiles into train/valid/test sets according to the classes defined
