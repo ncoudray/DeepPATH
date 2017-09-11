@@ -163,7 +163,7 @@ bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='out
 
 Example of qsub script header to submit those two jobs on the Phoenix cluster:
 
-```shelll
+```shell
 #!/bin/tcsh
 #$ -pe openmpi 1
 #$ -A TensorFlow
@@ -309,6 +309,4 @@ Generate probability distribution with means for each class for each slide:
 ```shell
 python 0f_ProbHistogram.py --output_dir='result folder' --tiles_stats='out_filename_Stats.txt of mutations' --ctype='Mutations' --filter_file='out_filename_Stats.txt of 3-class classification'
 ```
-
-x
 
