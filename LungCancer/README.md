@@ -137,7 +137,7 @@ For the test and validation sets:
 ```shell
 python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test' --labels_names=label_names.txt --labels=labels_files.txt
 ```
-
+Change to ```--ImageSet_basename='valid'``` for validation set
 
 
 expected processing time for this step: a few seconds to a few minutes. Check the output log files and the resulting directory (check that the sizes of the created TFRecord files make sense)

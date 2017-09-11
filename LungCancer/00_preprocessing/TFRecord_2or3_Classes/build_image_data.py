@@ -449,8 +449,8 @@ def main(unused_argv):
   print('Saving results to %s' % FLAGS.output_directory)
 
   # Run it!
-  _process_dataset('valid', FLAGS.directory,
-                   FLAGS.validation_shards)
+  #_process_dataset('valid', FLAGS.directory,
+  #                 FLAGS.validation_shards)
   _process_dataset('train', FLAGS.directory,
                    FLAGS.train_shards)
   #_process_dataset('test', FLAGS.directory,
