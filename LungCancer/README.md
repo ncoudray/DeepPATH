@@ -189,8 +189,9 @@ The script also exports summaries that may be visualized in TensorBoard:
 ```shell
 tensorboard --logdir='checkpoint_dir'
 ```
+Once TensorBoard is running, navigate your web browser (firefox) to localhost:6006 to view the TensorBoard.
 
-expected processing time for this step: depends on the number of images. From a few hours to several days or weeks. As the process goes on, regularly check the evolution of the loss of the training and the accuracy of the validation (see step 1.2): they should both converge. If the training  loss converges but not the validation accuracy/loss, there may be an overfitting and the default training parameters need to be adjusted
+Note: expected processing time for this step: depends on the number of images. From a few hours to several days or weeks. As the process goes on, regularly check the evolution of the loss of the training and the accuracy of the validation (see step 1.2): they should both converge. If the training  loss converges but not the validation accuracy/loss, there may be an overfitting and the default training parameters need to be adjusted
 
 
 
