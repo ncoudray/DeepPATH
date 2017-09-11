@@ -52,13 +52,15 @@ Example of qsub script to submit this script on Phoenix cluster (python 2.7 used
 
 Then sort according to cancer type:
 ```shell
-python 00_preprocessing/0d_SortTiles_stage.py <tiled images path> <JsonFilePath> <Magnification To copy> <Difference Allowed on Magnification> <Sorting option>  <percentage of images for validation> <Percentage of imaages for testing>
+python /ifs/home/coudrn01/NN/Lung/0d_SortTiles.py --SourceFolder=<tiled images path> --JsonFile=<JsonFilePath> --Magnification=<Magnification To copy>  --MagDiffAllowed=<Difference Allowed on Magnification> --SortingOption=<Sorting option> --PercentTest=15 --PercentValid=15
 ```
 *  <tiled images path> output of ``` 00_preprocessing/0b_tileLoop_deepzoom.py```, that is the main folder where the svs images were tiled
 *  <JsonFilePath> file uploaded with the svs images and containing all the information regarding each slide (i.e, metadata.cart.2017-03-02T00_36_30.276824.json)
 *  <Magnification To copy> magnification at which the tiles should be considerted (example: 20)
 *  <Difference Allowed on Magnification> If the requested magnification does not exist for a given slide, take the nearest existing magnification but only if it is at +/- the amount allowed here(example: 5)
 *  <Sorting option> In the current directory, create one sub-folder per class, and fill each sub-folder with train_, test_ and valid_ test files. Images will be sorted into classes depending on the sorting option:
+* --TMB: addional option for optioin 8: path to json file with mutational loads
+
 **  1. sort according to cancer stage (i, ii, iii or iv) for each cancer separately (classification can be done separately for each cancer)
 **  2.sort according to cancer stage (i, ii, iii or iv) for each cancer  (classification can be done on everything at once)
 **  3. sort according to type of cancer (LUSC, LUAD, or Nomal Tissue)
@@ -290,7 +292,7 @@ python 0h_ROC_sklearn.py  --file_stats out_filename_Stats3.txt  --output_dir 'ou
 ```
 Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
 ```shell
-python 0f_0f_HeatMap_3classes.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0 --output_dir 'result_folder' --tiles_stats 'out_filename_Stats.txt' --resample_factor 4 --tiles_filter 'TCGA-05-5425'
+python 0f_HeatMap_3classes.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0 --output_dir 'result_folder' --tiles_stats 'out_filename_Stats.txt' --resample_factor 4 --tiles_filter 'TCGA-05-5425'
 ```
 Generate probability distribution with means for each class for each slide:
 ```shell

@@ -1,6 +1,5 @@
 '''
-    File name: nc
-    Modified by: Nicolas Coudray
+    Authors: Nicolas Coudray, Theodoros Sakellaropoulos
     Date created: March/2017
     Python Version: 2.7 (native on the cluster)
 
@@ -115,11 +114,13 @@ sort_options = [
 ]
 
 if __name__ == '__main__':
-    descr = """
-    Example: python 0d_SortTiles_stage.py '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/512pxTiled' '/ifs/home/coudrn01/NN/Lung/RawImages/metadata.cart.2017-03-02T00_36_30.276824.json' 20 5 3 15 15
+# python 0d_SortTiles_stage.py '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/512pxTiled' '/ifs/home/coudrn01/NN/Lung/RawImages/metadata.cart.2017-03-02T00_36_30.276824.json' 20 5 3 15 15
 
-    The images are expected to be in folders in this directory: '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/512pxTiled'
-    Each images should have its own folder with the svs image name followed by '_files'
+    descr = """
+    Example: python /ifs/home/coudrn01/NN/Lung/0d_SortTiles.py --SourceFolder='/ifs/data/abl/deepomics/pancreas/images_TCGA/512pxTiled_b' --JsonFile='/ifs/data/abl/deepomics/pancreas/images_TCGA/Raw/metadata.cart.2017-09-08T14_46_02.589953.json' --Magnification=20 --MagDiffAllowed=5 --SortingOption=3 --PercentTest=100 --PercentValid=0
+
+    In this example, the images are expected to be in folders in this directory: '/ifs/data/abl/deepomics/pancreas/images_TCGA/512pxTiled_b'
+    Each images should have its own sub-folder with the svs image name followed by '_files'
     Each images should have subfolders with names corresponding to the magnification associated with the jpeg tiles saved inside it
     The sorting will be done using tiles corresponding to a magnification of 20 (+/- 5 if the 20 folder does not exist)
     15%% will be put for validation, 15%% for testing and the leftover for training
@@ -136,18 +137,20 @@ if __name__ == '__main__':
     """
     ## Define Arguments
     parser = ArgumentParser(description=descr)
-    parser.add_argument("SourceFolder", help="path to tiled images")
-    parser.add_argument("JsonFile", help="path to metadata json file")
-    parser.add_argument("Magnification", help="magnification to use", type=float)
-    parser.add_argument("MagDiffAllowed", help="difference allwed on Magnification", type=float)
-    parser.add_argument("SortingOption", help="see option at the epilog", type=int)
-    parser.add_argument("PercentValid", help="percentage of images for validation (between 0 and 100)", type=float)
-    parser.add_argument("PercentTest", help="percentage of images for testing (between 0 and 100)", type=float)
-    parser.add_argument("--TMB", help="path to json file with mutational loads")
+    
+    parser.add_argument("--SourceFolder", help="path to tiled images", dest='SourceFolder')
+    parser.add_argument("--JsonFile", help="path to metadata json file", dest='JsonFile')
+    parser.add_argument("--Magnification", help="magnification to use", type=float, dest='Magnification')
+    parser.add_argument("--MagDiffAllowed", help="difference allwed on Magnification", type=float, dest='MagDiffAllowed')
+    parser.add_argument("--SortingOption", help="see option at the epilog", type=int, dest='SortingOption')
+    parser.add_argument("--PercentValid", help="percentage of images for validation (between 0 and 100)", type=float, dest='PercentValid')
+    parser.add_argument("--PercentTest", help="percentage of images for testing (between 0 and 100)", type=float, dest='PercentTest')
+    parser.add_argument("--TMB", help="path to json file with mutational loads", dest='TMB')
 
     ## Parse Arguments
     args = parser.parse_args()
-
+    
+ 
     SourceFolder = os.path.abspath(args.SourceFolder)
     imgFolders = glob(os.path.join(SourceFolder, "*_files"))
     random.shuffle(imgFolders)  # randomize order of images
@@ -167,10 +170,10 @@ if __name__ == '__main__':
         raise ValueError("Uknown sort option")
 
     PercentValid = args.PercentValid / 100.
-    if not 0 < PercentValid < 1:
+    if not 0 <= PercentValid <= 1:
         raise ValueError("PercentValid is not between 0 and 100")
     PercentTest = args.PercentTest / 100.
-    if not 0 < PercentTest < 1:
+    if not 0 <= PercentTest <= 1:
         raise ValueError("PercentTest is not between 0 and 100")
     # Tumor mutational burden dictionary
     TMBFile = args.TMB
