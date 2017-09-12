@@ -382,6 +382,7 @@ def _find_image_files(name, data_dir):
   for item in os.listdir(data_dir):
   	if os.path.isdir(os.path.join(data_dir, item)):
   		unique_labels.append(os.path.join(item))
+  unique_labels.sort()
   print("unique_labels:")
   print(unique_labels)
   labels = []
