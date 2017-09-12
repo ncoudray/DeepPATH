@@ -130,14 +130,18 @@ class DeepZoomImageTiler(object):
         Factors = self._slide.level_downsamples
         try:
             Objective = float(self._slide.properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER])
+            print(self._basename + " - Obj information found")
         except:
             print(self._basename + " - No Obj information found")
-            Objective = -40
+            return
         #calculate magnifications
         Available = tuple(Objective / x for x in Factors)
         #find highest magnification greater than or equal to 'Desired'
         Mismatch = tuple(x-Magnification for x in Available)
         AbsMismatch = tuple(abs(x) for x in Mismatch)
+        if len(AbsMismatch) < 1:
+          print(self._basename + " - Objective field empty!")
+          return
         if(min(AbsMismatch) <= tol):
             Level = int(AbsMismatch.index(min(AbsMismatch)))
             Factor = 1
@@ -156,10 +160,19 @@ class DeepZoomImageTiler(object):
             cols, rows = self._dz.level_tiles[level]
             for row in range(rows):
                 for col in range(cols):
-                    tilename = os.path.join(tiledir, '%s_%d_%d.%s' % (
-                                    self._basenameJPG, col, row, self._format))
-                    tilename_bw = os.path.join(tiledir, '%s_%d_%d_bw.%s' % (
-                                    self._basenameJPG, col, row, self._format))
+                    InsertBaseName = False
+                    if InsertBaseName:
+                      tilename = os.path.join(tiledir, '%s_%d_%d.%s' % (
+                                      self._basenameJPG, col, row, self._format))
+                      tilename_bw = os.path.join(tiledir, '%s_%d_%d_bw.%s' % (
+                                      self._basenameJPG, col, row, self._format))
+                    else:
+                      tilename = os.path.join(tiledir, '%d_%d.%s' % (
+                                      col, row, self._format))
+                      tilename_bw = os.path.join(tiledir, '%d_%d_bw.%s' % (
+                                      col, row, self._format))
+
+
                     if not os.path.exists(tilename):
                         self._queue.put((self._associated, level, (col, row),
                                     tilename, self._format, tilename_bw))
