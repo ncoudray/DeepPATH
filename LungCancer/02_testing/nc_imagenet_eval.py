@@ -14,12 +14,13 @@ import pickle
 import csv
 
 import tensorflow as tf
-
+import argparse
+import sys
 from inception import nc_inception_eval
 from inception.nc_imagenet_data import ImagenetData
 import numpy as np
-#from inception import inception_eval
-#from inception.imagenet_data import ImagenetData
+# from inception import inception_eval
+# from inception.imagenet_data import ImagenetData
 import os
 
 FLAGS = tf.app.flags.FLAGS
@@ -262,4 +263,22 @@ def main(unused_argv=None):
   """
 
 if __name__ == '__main__':
-  tf.app.run()
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+    '--checkpoint_dir',
+    type=str,
+    default='/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/0_scratch',
+    help='Directory to store Checkpoints for the model')
+  parser.add_argument(
+    '--data_dir',
+    type=str,
+    default='/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/test_TFperSlide',
+    help='Summaries log directory')
+  parser.add_argument(
+    '--eval_dir',
+    type=str,
+    default='/home/shaivi/Desktop/Shaivi/RA/output_directory',
+    help='File containing abspath to the Testing Data')
+  parser.add_argument('--run_once', action='store_true', default=True)
+  FLAGS, unparsed = parser.parse_known_args()
+  tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

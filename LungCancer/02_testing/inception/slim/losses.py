@@ -155,6 +155,8 @@ def cross_entropy_loss(logits, one_hot_labels, label_smoothing=0,
   Returns:
     A tensor with the softmax_cross_entropy loss.
   """
+  print ("logists sgape", logits.get_shape)
+  print ("onehot shape", one_hot_labels.get_shape)
   logits.get_shape().assert_is_compatible_with(one_hot_labels.get_shape())
   with tf.name_scope(scope, 'CrossEntropyLoss', [logits, one_hot_labels]):
     num_classes = one_hot_labels.get_shape()[-1].value

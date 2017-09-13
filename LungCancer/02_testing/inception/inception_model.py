@@ -29,7 +29,6 @@ import re
 import tensorflow as tf
 
 from inception.slim import slim
-
 FLAGS = tf.app.flags.FLAGS
 
 # If a model is trained using multiple GPUs, prefix all Op names with tower_name
@@ -114,8 +113,11 @@ def loss(logits, labels, batch_size=None):
 
   # Reshape the labels into a dense Tensor of
   # shape [FLAGS.batch_size, num_classes].
+  print ("labels: ", labels)
   sparse_labels = tf.reshape(labels, [batch_size, 1])
+  print ("sparse: ", sparse_labels)
   indices = tf.reshape(tf.range(batch_size), [batch_size, 1])
+  print ("ind: ", indices)
   concated = tf.concat(axis=1, values=[indices, sparse_labels])
   num_classes = logits[0].get_shape()[-1].value
   dense_labels = tf.sparse_to_dense(concated,

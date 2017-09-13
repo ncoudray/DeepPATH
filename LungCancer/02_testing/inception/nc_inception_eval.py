@@ -27,8 +27,8 @@ import pickle
 import numpy as np
 import tensorflow as tf
 
-from inception import image_processing
-from inception import inception_model as inception
+from . import image_processing
+from . import inception_model as inception
 
 
 FLAGS = tf.app.flags.FLAGS

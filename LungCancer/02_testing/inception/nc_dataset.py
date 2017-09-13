@@ -38,7 +38,11 @@ FLAGS = tf.app.flags.FLAGS
 #                           """Path to the processed data, i.e. """
 #                           """TFRecord of Example protos.""")
 
-tf.app.flags.DEFINE_string('data_dir', '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/4_2Types',
+# tf.app.flags.DEFINE_string('data_dir', '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/4_2Types',
+#                            """Path to the processed data, i.e. """
+#                            """TFRecord of Example protos.""")
+
+tf.app.flags.DEFINE_string('data_dir', '/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/test_viz/test_TCGA-05-5425-01A-01-BS1.259004dc-6769-4f66-afa3-57a4d8e0edb5_1.TFRecord',
                            """Path to the processed data, i.e. """
                            """TFRecord of Example protos.""")
 

@@ -435,7 +435,9 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
 
     nbr_slides = 0
     for fn in data_files:
+      print ("fn", fn)
       for record in tf.python_io.tf_record_iterator(fn):
+        print ("rec", record)
         nbr_slides += 1
 
     # Create filename_queue
