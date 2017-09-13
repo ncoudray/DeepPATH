@@ -53,14 +53,19 @@ def outer_grad_inception(labels, batch_size=1, learningrate=0.1, weight_decay=0.
         for i in range(10):
             x_grad = sess.run(var_grad, feed_dict={x: image, y: np.array([1])})
             print x_grad
-            # image -= (x_grad[0] * learningrate + weight_decay * learningrate * image)
-            # print image
-            # image = (image - image.min()) / image.max()
-            # print image
-            # print image.shape
-            # im = sess.run(image)
-            # print im.shape
-            # write_img(im[0])
+            pdb.set_trace()
+            new_grad = (x_grad[0] * learningrate + weight_decay * learningrate * image)
+            print new_grad
+            if not image.dtype == "float64":
+                image = image.astype(np.float64)
+            image = np.subtract(image, new_grad)
+            print image
+            image = (image - image.min()) / image.max()
+            print image
+            print image.shape
+            im = sess.run(image)
+            print im.shape
+            write_img(im[0])
 
 def write_img(image, pause=0.016):
     im = plt.imshow(image)
