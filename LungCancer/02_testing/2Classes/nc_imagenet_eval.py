@@ -44,9 +44,9 @@ def main(unused_argv=None):
     print("New Slide ------------ %d" % (count_slides))
     labelindex = int(next_slide.split('_')[-1].split('.')[0])
     if labelindex == 1:
-      labelname = 'luad'
+      labelname = 'ref label 1'
     elif labelindex == 2:
-      labelname = 'lusc'
+      labelname = 'ref label 2'
     else:
       labelname = 'error_label_name'
     print("label %d: %s" % (labelindex, labelname))

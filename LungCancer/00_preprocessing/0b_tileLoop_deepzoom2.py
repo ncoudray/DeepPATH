@@ -73,27 +73,28 @@ class TileWorker(Process):
                 last_associated = associated
             #try:
             if True:
-                tile = dz.get_tile(level, address)
-                # A single tile is being read
-                #nc added: check the percentage of the image with "information". Should be above 50%
-                gray = tile.convert('L')
-                bw = gray.point(lambda x: 0 if x<220 else 1, 'F')
-                arr = np.array(np.asarray(bw))
-                avgBkg = np.average(bw)
-                bw = gray.point(lambda x: 0 if x<220 else 1, '1')
-                #outfile = os.path.join(outfile, '%s.%s' % (str(round(avgBkg, 3)),format) )
-                #outfile_bw = os.path.join(outfile_bw, '%s.%s' % (str(round(avgBkg, 3)),format) )
-                # bw.save(outfile_bw, quality=self._quality)
-                if avgBkg < (self._Bkg / 100):
-                    tile.save(outfile, quality=self._quality)
-                    #print("%s good: %f" %(outfile, avgBkg))
-                #else:
-                        #print("%s empty: %f" %(outfile, avgBkg))
-                self._queue.task_done()
-            #except:
-            #    print(level, address)
-            #    print("image %s failed at dz.get_tile for level %f" % (self._slidepath, level))
-            #    self._queue.task_done()
+                try:
+                    tile = dz.get_tile(level, address)
+                    # A single tile is being read
+                    #nc added: check the percentage of the image with "information". Should be above 50%
+                    gray = tile.convert('L')
+                    bw = gray.point(lambda x: 0 if x<220 else 1, 'F')
+                    arr = np.array(np.asarray(bw))
+                    avgBkg = np.average(bw)
+                    bw = gray.point(lambda x: 0 if x<220 else 1, '1')
+                    #outfile = os.path.join(outfile, '%s.%s' % (str(round(avgBkg, 3)),format) )
+                    #outfile_bw = os.path.join(outfile_bw, '%s.%s' % (str(round(avgBkg, 3)),format) )
+                    # bw.save(outfile_bw, quality=self._quality)
+                    if avgBkg < (self._Bkg / 100):
+                        tile.save(outfile, quality=self._quality)
+                        #print("%s good: %f" %(outfile, avgBkg))
+                    #else:
+                            #print("%s empty: %f" %(outfile, avgBkg))
+                    self._queue.task_done()
+                except:
+                    print(level, address)
+                    print("image %s failed at dz.get_tile for level %f" % (self._slidepath, level))
+                    self._queue.task_done()
 
     def _get_dz(self, associated=None):
         if associated is not None:
