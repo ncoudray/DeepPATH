@@ -49,7 +49,7 @@ tf.app.flags.DEFINE_integer('validation_shards', 128,
 tf.app.flags.DEFINE_integer('num_threads', 8,
                             'Number of threads to preprocess the images.')
 
-tf.app.flags.DEFINE_boolean('one_FT_per_Tile', True,
+tf.app.flags.DEFINE_boolean('one_FT_per_Tile', False,
                             '1 TFrecord per tile if True, otherwise, 1 per slide.')
 
 tf.app.flags.DEFINE_string('ImageSet_basename', 'test',
