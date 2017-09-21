@@ -199,7 +199,7 @@ Note: expected processing time for this step: depends on the number of images. F
 
 Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise). Same code as for testing (see section 2.), that is:
 ```shell
-python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid'
+python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/valid*"  --batch_size 30 --ImageSet_basename='valid'
 ```
 
 You need to either:

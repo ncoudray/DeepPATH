@@ -42,11 +42,14 @@ def main(unused_argv=None):
 
   for next_slide in data_files:
     print("New Slide ------------ %d" % (count_slides))
-    labelindex = int(next_slide.split('_')[-1].split('.')[0])
+    try:
+      labelindex = int(next_slide.split('_')[-1].split('.')[0])
+    except:
+      labelindex = 0
     if labelindex == 1:
-      labelname = 'ref label 1'
+      labelname = 'label 1'
     elif labelindex == 2:
-      labelname = 'ref label 2'
+      labelname = 'label 2'
     else:
       labelname = 'error_label_name'
     print("label %d: %s" % (labelindex, labelname))
@@ -91,8 +94,8 @@ def main(unused_argv=None):
 
 
   AllLabels = {}
-  AllLabels['luad'] = {}
-  AllLabels['lusc'] = {}
+  AllLabels['label 1'] = {}
+  AllLabels['label 2'] = {}
 
 
   # Summarize the results

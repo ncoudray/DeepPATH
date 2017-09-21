@@ -47,11 +47,11 @@ def main(unused_argv=None):
     except:
       labelindex = 0
     if labelindex == 1:
-      labelname = 'normal'
+      labelname = 'label 1'
     elif labelindex == 2:
-      labelname = 'luad'
+      labelname = 'label 2'
     elif labelindex == 3:
-      labelname = 'lusc'
+      labelname = 'label 3'
     else:
       labelname = 'error_label_name'
     print("label %d: %s" % (labelindex, labelname))
