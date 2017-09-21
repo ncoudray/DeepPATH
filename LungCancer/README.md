@@ -197,14 +197,23 @@ Note: expected processing time for this step: depends on the number of images. F
 
 ## 1.2 Validation
 
-Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise). Same code as for testing (see section 2.), that is:
+Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise).
+
+Same code as for testing (see section 2.), that is, first build the model (as for training, should be in the good directory where the WORKSPACE file is):
+
 ```shell
-python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid'
+bazel build inception/nc_imagenet_eval
+```
+
+Then run the job:
+
+```shell
+bazel-bin/inception/nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid'
 ```
 
 You need to either:
 * run it manually once in a while and keep track of the evolution of validation score.
-* or run the script without the ```--run_once``` option (the program will run in an infinite loop and will need to be killed manually). To set how often the validation script needs to be run, you need to modify the code: in file ```02_testing/2Classes/inception/nc_inception_eval.py```, line 46, the default value of ```eval_interval_secs``` set to 5 minutes by default (for very long jobs, every 1 or 5 hours may be enough).
+* or run the script without the ```--run_once``` option (the program will run in an infinite loop and will need to be killed manually). To set how often the validation script needs to be run, you need to modify the code: in file ```02_testing/2Classes/inception/nc_inception_eval.py```, line 46, the default value of ```eval_interval_secs``` set to 5 minutes by default (for very long jobs, every 1 or 5 hours may be enough. This has to be changed before compilation with bazel).
 
 Note: The current validation code only saves the validation accuracy, not the loss. The code still needs to be changed for that. 
 
@@ -243,8 +252,15 @@ Code in one of the subfolders of 02_testing  (depending on the type of run: 2 cl
 
 
 Usage:
+As before, first build the model (as for training, should be in the good directory where the WORKSPACE file is):
+
 ```shell
-python nc_imagenet_eval.py --checkpoint_dir='0_scratch/' --eval_dir='output_directory' --run_once --data_dir='test_TFperSlide' --batch_size 30 --ImageSet_basename='test_'
+bazel build inception/nc_imagenet_eval
+```
+
+Then:
+```shell
+bazel-bin/inception/nc_imagenet_eval --checkpoint_dir='0_scratch/' --eval_dir='output_directory' --run_once --data_dir='test_TFperSlide' --batch_size 30 --ImageSet_basename='test_'
 
 ```
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset

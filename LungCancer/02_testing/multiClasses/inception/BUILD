@@ -13,19 +13,19 @@ package_group(
 )
 
 py_library(
-    name = "dataset",
+    name = "nc_dataset",
     srcs = [
-        "dataset.py",
+        "nc_dataset.py",
     ],
 )
 
 py_library(
-    name = "imagenet_data",
+    name = "nc_imagenet_data",
     srcs = [
-        "imagenet_data.py",
+        "nc_imagenet_data.py",
     ],
     deps = [
-        ":dataset",
+        ":nc_dataset",
     ],
 )
 
@@ -35,7 +35,7 @@ py_library(
         "flowers_data.py",
     ],
     deps = [
-        ":dataset",
+        ":nc_dataset",
     ],
 )
 
@@ -53,19 +53,19 @@ py_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":dataset",
+        ":nc_dataset",
         "//inception/slim",
     ],
 )
 
 py_binary(
-    name = "imagenet_eval",
+    name = "nc_imagenet_eval",
     srcs = [
-        "imagenet_eval.py",
+        "nc_imagenet_eval.py",
     ],
     deps = [
-        ":imagenet_data",
-        ":inception_eval",
+        ":nc_imagenet_data",
+        ":nc_inception_eval",
     ],
 )
 
@@ -76,14 +76,14 @@ py_binary(
     ],
     deps = [
         ":flowers_data",
-        ":inception_eval",
+        ":nc_inception_eval",
     ],
 )
 
 py_library(
-    name = "inception_eval",
+    name = "nc_inception_eval",
     srcs = [
-        "inception_eval.py",
+        "nc_inception_eval.py",
     ],
     deps = [
         ":image_processing",
@@ -97,7 +97,7 @@ py_binary(
         "imagenet_train.py",
     ],
     deps = [
-        ":imagenet_data",
+        ":nc_imagenet_data",
         ":inception_train",
     ],
 )
@@ -108,7 +108,7 @@ py_binary(
         "imagenet_distributed_train.py",
     ],
     deps = [
-        ":imagenet_data",
+        ":nc_imagenet_data",
         ":inception_distributed_train",
     ],
 )
@@ -169,13 +169,13 @@ sh_binary(
         "data/imagenet_metadata.txt",
         "data/preprocess_imagenet_validation_data.py",
         "data/process_bounding_boxes.py",
-        ":build_imagenet_data",
+        ":build_nc_imagenet_data",
     ],
 )
 
 py_binary(
-    name = "build_imagenet_data",
-    srcs = ["data/build_imagenet_data.py"],
+    name = "build_nc_imagenet_data",
+    srcs = ["data/build_nc_imagenet_data.py"],
 )
 
 filegroup(
