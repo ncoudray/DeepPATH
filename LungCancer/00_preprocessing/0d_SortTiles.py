@@ -102,6 +102,15 @@ def sort_mutational_burden(metadata, load_dic, **kwargs):
         return None
 
 
+def sort_mutation_metastatic(metadata, load_dic, **kwargs):
+    sample_type = extract_sample_type(metadata)
+    if "Metastatic" in sample_type:
+        submitter_id = metadata["cases"][0]["submitter_id"]
+        return load_dic[submitter_id]
+    return None
+
+
+
 sort_options = [
         sort_cancer_stage_separately,
         sort_cancer_stage,
@@ -110,7 +119,8 @@ sort_options = [
         sort_cancer_healthy_pairs,
         sort_cancer_healthy,
         sort_random,
-        sort_mutational_burden
+        sort_mutational_burden,
+        sort_mutation_metastatic
 ]
 
 if __name__ == '__main__':
@@ -134,6 +144,8 @@ if __name__ == '__main__':
         6. sort according to cancer / Normal Tissue (2 variables)
         7. Random labels (3 variables for false positive control)
         8. sort according to mutational load (High/Low). Must specify --TMB option.
+        9. sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
+
     """
     ## Define Arguments
     parser = ArgumentParser(description=descr)
@@ -145,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument("--SortingOption", help="see option at the epilog", type=int, dest='SortingOption')
     parser.add_argument("--PercentValid", help="percentage of images for validation (between 0 and 100)", type=float, dest='PercentValid')
     parser.add_argument("--PercentTest", help="percentage of images for testing (between 0 and 100)", type=float, dest='PercentTest')
-    parser.add_argument("--TMB", help="path to json file with mutational loads", dest='TMB')
+    parser.add_argument("--TMB", help="path to json file with mutational loads; or to BRAF mutations", dest='TMB')
 
     ## Parse Arguments
     args = parser.parse_args()
@@ -178,11 +190,18 @@ if __name__ == '__main__':
     # Tumor mutational burden dictionary
     TMBFile = args.TMB
     mut_load = {}
-    if TMBFile:
-        with open(TMBFile) as fid:
-            mut_load = json.loads(fid.read())
-    elif SortingOption == 7:
-        raise ValueError("For SortingOption = 8 you must specify the --TMB option")
+    if SortingOption == 7:
+        if TMBFile:
+            with open(TMBFile) as fid:
+                mut_load = json.loads(fid.read())
+        else:
+            raise ValueError("For SortingOption = 8 you must specify the --TMB option")
+    elif SortingOption == 8:
+        if TMBFile:
+            with open(TMBFile) as fid:
+                mut_load = json.loads(fid.read())
+        else:
+            raise ValueError("For SortingOption = 9 you must specify the --TMB option")
 
     ## Main Loop
     print("******************")
