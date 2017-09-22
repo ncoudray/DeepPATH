@@ -101,8 +101,11 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         threads.extend(qr.create_threads(sess, coord=coord, daemon=True,
                                          start=True))
       print("-num_examples: %d" % (FLAGS.num_examples))
-      # num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size))
-      num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)*1.8)
+      if "test" in FLAGS.ImageSet_basename:
+        num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)*2.0)
+      else:
+        num_iter = int(math.ceil(10000 / FLAGS.batch_size))
+
       if num_iter == 0:
         num_iter = 1
       # Counts the number of correct predictions.
@@ -115,7 +118,6 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
       start_time = time.time()
       current_score = []
       while step < num_iter and not coord.should_stop():
-        #top_1, top_5 = sess.run([top_1_op, top_5_op])
         top_1, top_5, max_percent, out_filenames, _, net2048, endpoint, logits, labels = sess.run([top_1_op, top_5_op, max_percent_op, all_filenames, filename_queue, net2048_op, endpoints_op, logits_op, labels_op])
 
 
@@ -148,7 +150,9 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
            class_1 = class_1 / sum_class
            class_2 = class_2 / sum_class
            class_3 = class_3 / sum_class
+           total_sample_count += 1
            if top_1[kk] == True:
+             count_top_1 += 1
              tmp = max(class_1, class_2, class_3)
              print("True found; score is %f" % (max(class_1, class_2, class_3)))
            else:
@@ -169,37 +173,14 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
            myfile.write("\nlogits: \t")
            for nlogit in logits[kk]:
              myfile.write(str(nlogit) + "\t")
-          with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
-           myfile.write(imageName + "\t")
-           myfile.write(str(top_1[kk]) + "\t")
-           myfile.write(str(max_percent[kk]) + "\t")
-           myfile.write(str(tmp) + "\t")
-           myfile.write("labels: \t")
-           myfile.write(str(labels[kk]) + "\n")
-
-
-        '''
-        with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
-          for kk in range(len(out_filenames)):
-              myfile.write(out_filenames[kk].decode('UTF-8') + "\t")
-              myfile.write(str(top_1[kk]) + "\t")
-              myfile.write(str(max_percent[kk]) + "\n")
-
-              print(max_percent[kk][0])
-              print(max_percent[kk][1])
-              print(max_percent[kk][2])
-              class_1 = float(max_percent[kk][1])
-              class_2 = float(max_percent[kk][2])
-              sum_class = class_1 + class_2
-              class_1 = class_1 / sum_class
-              class_2 = class_2 / sum_class
-              if top_1[kk] == True:
-                current_score.append(max(class_1, class_2))
-                print("True found; score is %f" % (max(class_1, class_2)))
-              else:
-                current_score.append(min(class_1, class_2))
-                print("False found; score is %f" % (min(class_1, class_2)))
-        '''
+          if "test" in FLAGS.ImageSet_basename:
+            with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
+             myfile.write(imageName + "\t")
+             myfile.write(str(top_1[kk]) + "\t")
+             myfile.write(str(max_percent[kk]) + "\t")
+             myfile.write(str(tmp) + "\t")
+             myfile.write("labels: \t")
+             myfile.write(str(labels[kk]) + "\n")
 
 
         # save end of each layer of the network
@@ -224,43 +205,26 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
               output_tmp.close()
 
         # save last-but one layer
-        print("net2048")
-        print(net2048)
-        net2048_path = os.path.join(FLAGS.eval_dir, 'net2048')
-        if os.path.isdir(net2048_path):	
-          pass
-        else:
-          os.makedirs(net2048_path)
+        if "test" in FLAGS.ImageSet_basename:
+          print("net2048")
+          print(net2048)
+          net2048_path = os.path.join(FLAGS.eval_dir, 'net2048')
+          if os.path.isdir(net2048_path):	
+            pass
+          else:
+            os.makedirs(net2048_path)
 
-
-        for kk in range(len(out_filenames)):
-          imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
-          imageName = imageName + '.net2048'
-          print("net2048 length + values:")
-          print(len(net2048[kk]))
-          print(net2048[kk])
-          with open(os.path.join(net2048_path, imageName), "w") as myfile:
-           """
-           myfile.write(str(top_1[kk]) + "\t")
-           myfile.write(str(max_percent[kk]) + "\t")
-           class_1 = float(max_percent[kk][1])  
-           class_2 = float(max_percent[kk][2])
-           class_3 = float(max_percent[kk][3])
-           sum_class = class_1 + class_2 + class_3
-           class_1 = class_1 / sum_class
-           class_2 = class_2 / sum_class
-           class_3 = class_3 / sum_class
-           if top_1[kk] == True:
-             tmp = max(class_1, class_2, class_3)
-             print("True found; score is %f" % (max(class_1, class_2, class_3)))
-           else:
-             tmp = min(class_1, class_2)
-             print("False found; score is %f" % (min(class_1, class_2)))
-           myfile.write(str(tmp) + "\t\n")
-           """
-           for nn in range(len(net2048[kk])):
-             myfile.write(str(net2048[kk][nn]))
-             myfile.write("\n")
+        if "test" in FLAGS.ImageSet_basename:
+          for kk in range(len(out_filenames)):
+            imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
+            imageName = imageName + '.net2048'
+            print("net2048 length + values:")
+            print(len(net2048[kk]))
+            print(net2048[kk])
+            with open(os.path.join(net2048_path, imageName), "w") as myfile:
+             for nn in range(len(net2048[kk])):
+               myfile.write(str(net2048[kk][nn]))
+               myfile.write("\n")
 
 
         
@@ -287,8 +251,6 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         myfile.write(str(datetime.now()) + ":\tPrecision:" + str(precision_at_1) + "\n")
 
       recall_at_5 = count_top_5 / total_sample_count
-      #print('%s: precision @ 1 = %.4f recall @ 5 = %.4f [%d examples]' %
-      #      (datetime.now(), precision_at_1, recall_at_5, total_sample_count))
 
       summary = tf.Summary()
       summary.ParseFromString(sess.run(summary_op))

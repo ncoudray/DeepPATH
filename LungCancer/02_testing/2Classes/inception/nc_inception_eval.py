@@ -101,8 +101,11 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         threads.extend(qr.create_threads(sess, coord=coord, daemon=True,
                                          start=True))
       print("-num_examples: %d" % (FLAGS.num_examples))
-      # num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size))
-      num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)) * 2
+      if "test" in FLAGS.ImageSet_basename:
+        num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)*2.0)
+      else:
+        num_iter = int(math.ceil(35000 / FLAGS.batch_size))
+
       # Counts the number of correct predictions.
       count_top_1 = 0.0
       count_top_5 = 0.0
@@ -113,7 +116,6 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
       start_time = time.time()
       current_score = []
       while step < num_iter and not coord.should_stop():
-        #top_1, top_5 = sess.run([top_1_op, top_5_op])
         top_1, top_5, max_percent, out_filenames, _, net2048 = sess.run([top_1_op, top_5_op, max_percent_op, all_filenames, filename_queue, net2048_op])
 
 
@@ -125,8 +127,6 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         print(len(out_filenames))
         print("max_percent")
         print(max_percent)
-        print("net2048")
-        print(net2048)
         net2048_path = os.path.join(FLAGS.eval_dir, 'net2048')
         if os.path.isdir(net2048_path):	
           pass
@@ -146,18 +146,20 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
            sum_class = class_1 + class_2
            class_1 = class_1 / sum_class
            class_2 = class_2 / sum_class
+           total_sample_count += 1
            if top_1[kk] == True:
+             count_top_1 += 1
              tmp = max(class_1, class_2)
              print("True found; score is %f" % (max(class_1, class_2)))
            else:
              tmp = min(class_1, class_2)
              print("False found; score is %f" % (min(class_1, class_2)))
            myfile.write(str(tmp) + "\t\n")
-
-           for nn in range(len(net2048[kk])):
-           #for nn in range(2048):
-             myfile.write(str(net2048[kk][nn]))
-             myfile.write("\n")
+           if "test" in FLAGS.ImageSet_basename:
+             for nn in range(len(net2048[kk])):
+             #for nn in range(2048):
+               myfile.write(str(net2048[kk][nn]))
+               myfile.write("\n")
 
 
         with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
@@ -181,6 +183,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                 current_score.append(min(class_1, class_2))
                 print("False found; score is %f" % (min(class_1, class_2)))
 
+        '''
         #print(top_1, max_percent)
         count_top_1 += np.sum(top_1)
         count_top_5 += np.sum(top_5)
@@ -193,9 +196,16 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                 'sec/batch)' % (datetime.now(), step, num_iter,
                                 examples_per_sec, sec_per_batch))
           start_time = time.time()
+        '''
 
       # Compute precision @ 1.
       precision_at_1 = count_top_1 / total_sample_count
+      #precision_at_1 = -1
+      with open(os.path.join(FLAGS.eval_dir, 'precision_at_1.txt'), "a") as myfile:
+        myfile.write(str(datetime.now()))
+        myfile.write(":\tPrecision:" + str(precision_at_1) + "\n")
+
+
       recall_at_5 = count_top_5 / total_sample_count
       print('%s: precision @ 1 = %.4f recall @ 5 = %.4f [%d examples]' %
             (datetime.now(), precision_at_1, recall_at_5, total_sample_count))

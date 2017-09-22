@@ -178,15 +178,8 @@ def _eval_once(saver, summary_writer, summary_op, max_percent_op, all_filenames,
       start_time = time.time()
       current_score = []
       while step < num_iter and not coord.should_stop():
-        #top_1, top_5 = sess.run([top_1_op, top_5_op])
-        #max_percent, out_filenames, _, net2048, endpoint, logits, labels, loss = sess.run([max_percent_op, all_filenames, filename_queue, net2048_op, endpoints_op, logits_op, labels_op, loss_op])
         max_percent, out_filenames, _, net2048, endpoint, logits, labels = sess.run([max_percent_op, all_filenames, filename_queue, net2048_op, endpoints_op, logits_op, labels_op])
 
-
-        #print("LOSSSSS:")
-        #print(loss)
-        #print(labels)
-        #print(endpoint)
         top_1 = 0
         for inLog, inLab in zip(max_percent, labels):
           for inLog2, inLab2 in zip(inLog, inLab):
