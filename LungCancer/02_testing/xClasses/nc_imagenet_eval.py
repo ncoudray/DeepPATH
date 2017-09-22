@@ -39,55 +39,45 @@ def main(unused_argv=None):
   mydict={}
   count_slides = 0
 
+  
+  if "test" in FLAGS.ImageSet_basename:
+    for next_slide in data_files:
+      print("New Slide ------------ %d" % (count_slides))
+      try:
+        labelindex = int(next_slide.split('_')[-1].split('.')[0])
+        labelname = 'label_' + str(labelindex)
+      except:
+        labelindex = 0
+        labelname = 'label_0'
+      print("label %d: %s" % (labelindex, labelname))
 
-  for next_slide in data_files:
-    print("New Slide ------------ %d" % (count_slides))
-    try:
-      labelindex = int(next_slide.split('_')[-1].split('.')[0])
-      labelname = 'label_' + str(labelindex)
-    except:
-      labelindex = 0
-    print("label %d: %s" % (labelindex, labelname))
-
-    FLAGS.data_dir = next_slide
+      FLAGS.data_dir = next_slide
+      dataset = ImagenetData(subset=FLAGS.subset)
+      assert dataset.data_files()
+      precision_at_1, current_score = nc_inception_eval.evaluate(dataset)
+      mydict[next_slide] = {}
+      mydict[next_slide]['NbrTiles']  = FLAGS.num_examples
+      mydict[next_slide][labelname+'_Selected'] = precision_at_1
+      mydict[next_slide][labelname+'_Score'] = current_score
+      mydict[next_slide]['Read_Class'] = labelname
+      print(FLAGS.num_examples)
+      count_slides += 1.0
+    output = open(os.path.join(FLAGS.eval_dir, 'out_All_Stats.txt'), 'ab+')
+    pickle.dump(mydict, output)
+    output.close()
+  elif "valid" in FLAGS.ImageSet_basename:
+    #FLAGS.data_dir = FLAGS.data_dir + "/valid*"
     dataset = ImagenetData(subset=FLAGS.subset)
     assert dataset.data_files()
-    #if tf.gfile.Exists(FLAGS.eval_dir):
-    #  tf.gfile.DeleteRecursively(FLAGS.eval_dir)
-    #tf.gfile.MakeDirs(FLAGS.eval_dir)
-    precision_at_1, current_score = nc_inception_eval.evaluate(dataset)
-    mydict[next_slide] = {}
-    mydict[next_slide]['NbrTiles']  = FLAGS.num_examples
-    mydict[next_slide][labelname+'_Selected'] = precision_at_1
-    mydict[next_slide][labelname+'_Score'] = current_score
-    mydict[next_slide]['Read_Class'] = labelname
-    print(FLAGS.num_examples)
-    count_slides += 1.0
-    #if count_slides == 4:
-    #  break
-
-  #with open(os.path.join(FLAGS.eval_dir, 'out_All_Stats.csv'), "wb") as f:
-  #  writer = csv.writer(f)
-  #  for key, value in sorted(mydict.items()):
-  #    res = [key]
-  #    print(res)
-  #    for key2, value2 in sorted(mydict[key].items()):
-  #      res.append(key2)
-  #      res.append(value2)
-  #    print(res)
-  #    writer.writerow(res)
-
-  output = open(os.path.join(FLAGS.eval_dir, 'out_All_Stats.txt'), 'ab+')
-  pickle.dump(mydict, output)
-  output.close()
+    nc_inception_eval.evaluate(dataset)
 
   # # read data
   # output = open('out_All_Stats.txt', 'rb')
   # mydict = pickle.load(output) 
 
+  """
 
-
-
+  
   AllLabels = {}
   AllLabels['normal'] = {}
   AllLabels['luad'] = {}
@@ -117,7 +107,7 @@ def main(unused_argv=None):
     AllLabels[current_label]['TP score classified above 0.5'] = sum(1 if (x > 0.5) else 0 for x in (AllLabels[current_label]['AllScoreSlidesTP']) )
     AllLabels[current_label]['TP score classified above 0.5'] = AllLabels[current_label]['TP score classified above 0.5'] / AllLabels[current_label]['NbrSlides']
 
-
+  """
 
 
 

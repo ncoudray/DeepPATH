@@ -94,14 +94,16 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
       if "test" in FLAGS.ImageSet_basename:
         num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)*2.0)
       else:
-        num_iter = int(math.ceil(10000 / FLAGS.batch_size))
+        num_iter_1 = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)*2.0)
+        num_iter_2 = int(math.ceil(10000 / FLAGS.batch_size))
+        num_iter = min(num_iter_1, num_iter_2)
 
       if num_iter == 0:
         num_iter = 1
       # Counts the number of correct predictions.
       count_top_1 = 0.0
       count_top_5 = 0.0
-      total_sample_count = num_iter * FLAGS.batch_size
+      total_sample_count = 0
       step = 0
 
       print('%s: starting evaluation on (%s).' % (datetime.now(), FLAGS.subset))
