@@ -102,7 +102,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         num_iter = 1
       # Counts the number of correct predictions.
       count_top_1 = 0.0
-      count_top_5 = 0.0
+      # count_top_5 = 0.0
       total_sample_count = 0
       step = 0
 
@@ -234,8 +234,8 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
 
 
         #print(top_1, max_percent)
-        count_top_1 += np.sum(top_1)
-        count_top_5 += np.sum(top_5)
+        # count_top_1 += np.sum(top_1)
+        # count_top_5count_top_5 += np.sum(top_5)
         step += 1
         if step % 20 == 0:
           duration = time.time() - start_time
@@ -252,14 +252,14 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
       with open(os.path.join(FLAGS.eval_dir, 'precision_at_1.txt'), "a") as myfile:
         myfile.write(str(datetime.now()) + ":\tPrecision:" + str(precision_at_1) + "\n")
 
-      recall_at_5 = count_top_5 / total_sample_count
-
+      # recall_at_5 = count_top_5 / total_sample_count
+      '''
       summary = tf.Summary()
       summary.ParseFromString(sess.run(summary_op))
       summary.value.add(tag='Precision @ 1', simple_value=precision_at_1)
       summary.value.add(tag='Recall @ 5', simple_value=recall_at_5)
       summary_writer.add_summary(summary, global_step)
-
+      '''
     except Exception as e:  # pylint: disable=broad-except
       coord.request_stop(e)
       precision_at_1 = -1
