@@ -106,7 +106,11 @@ def sort_mutation_metastatic(metadata, load_dic, **kwargs):
     sample_type = extract_sample_type(metadata)
     if "Metastatic" in sample_type:
         submitter_id = metadata["cases"][0]["submitter_id"]
-        return load_dic[submitter_id]
+        try:
+            return load_dic[submitter_id]
+        except KeyError:
+            return None
+
     return None
 
 
@@ -127,7 +131,7 @@ if __name__ == '__main__':
 # python 0d_SortTiles_stage.py '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/512pxTiled' '/ifs/home/coudrn01/NN/Lung/RawImages/metadata.cart.2017-03-02T00_36_30.276824.json' 20 5 3 15 15
 
     descr = """
-    Example: python /ifs/home/coudrn01/NN/Lung/0d_SortTiles.py --SourceFolder='/ifs/data/abl/deepomics/pancreas/images_TCGA/512pxTiled_b' --JsonFile='/ifs/data/abl/deepomics/pancreas/images_TCGA/Raw/metadata.cart.2017-09-08T14_46_02.589953.json' --Magnification=20 --MagDiffAllowed=5 --SortingOption=3 --PercentTest=100 --PercentValid=0
+    Example: python /ifs/home/coudrn01/NN/Lung/0d_SortTiles.py --SourceFolder='/ifs/data/abl/deepomics/pancreas/images_TCGA/512pxTiled_b' --JsonFile='/ifs/data/abl/deepomics/pancreas/images_TCGA/Raw/metadata.cart.2017-09-08T14_46_02.589953.json' --Magnification=20 --MagDiffAllowed=5 --SortingOption=3 --PercentTest=100 --PercentValid=0 --PatientID=12
 
     In this example, the images are expected to be in folders in this directory: '/ifs/data/abl/deepomics/pancreas/images_TCGA/512pxTiled_b'
     Each images should have its own sub-folder with the svs image name followed by '_files'
@@ -157,12 +161,17 @@ if __name__ == '__main__':
     parser.add_argument("--SortingOption", help="see option at the epilog", type=int, dest='SortingOption')
     parser.add_argument("--PercentValid", help="percentage of images for validation (between 0 and 100)", type=float, dest='PercentValid')
     parser.add_argument("--PercentTest", help="percentage of images for testing (between 0 and 100)", type=float, dest='PercentTest')
+    parser.add_argument("--PatientID", help="Patient ID is supposed to be the first PatientID characters (integer expected) of the folder in which the pyramidal jpgs are. Slides from same patient will be in same train/test/valid set. This option is ignored if set to 0 or -1 ", type=int, dest='PatientID')
     parser.add_argument("--TMB", help="path to json file with mutational loads; or to BRAF mutations", dest='TMB')
 
     ## Parse Arguments
     args = parser.parse_args()
-    
- 
+
+    if args.PatientID is None:
+        print("PatientID ignored")
+        args.PatientID = 0
+
+
     SourceFolder = os.path.abspath(args.SourceFolder)
     imgFolders = glob(os.path.join(SourceFolder, "*_files"))
     random.shuffle(imgFolders)  # randomize order of images
@@ -206,6 +215,10 @@ if __name__ == '__main__':
     ## Main Loop
     print("******************")
     Classes = {}
+    NbrTilesCateg = {}
+    PercentTilesCateg = {}
+    NbrImagesCateg = {}
+    Patient_set = {}
     for cFolderName in imgFolders:
         print("**************** starting %s" % cFolderName)
         imgRootName = os.path.basename(cFolderName)
@@ -249,11 +262,69 @@ if __name__ == '__main__':
         print("Symlinking tiles...")
         SourceImageDir = os.path.join(cFolderName, AvailMagsDir, "*")
         AllTiles = glob(SourceImageDir)
+
+        if SubDir in NbrTilesCateg.keys():
+            print SubDir + " already in dictionary"
+        else:
+            print SubDir + " not yet in dictionary"
+            NbrTilesCateg[SubDir] = 0
+            NbrTilesCateg[SubDir + "_train"] = 0
+            NbrTilesCateg[SubDir + "_test"] = 0
+            NbrTilesCateg[SubDir + "_valid"] = 0
+            PercentTilesCateg[SubDir + "_train"] = 0
+            PercentTilesCateg[SubDir + "_test"] = 0
+            PercentTilesCateg[SubDir + "_valid"] = 0
+            NbrImagesCateg[SubDir + "_train"] = 0
+            NbrImagesCateg[SubDir + "_test"] = 0
+            NbrImagesCateg[SubDir + "_valid"] = 0
+         
         for TilePath in AllTiles:
+            NbTiles += 1
             TileName = os.path.basename(TilePath)
-            NewImageDir = os.path.join(SubDir, "_".join(("train", imgRootName, TileName)))  # all train initially
+ 
+            # rename the images with the root name, and put them in train/test/valid
+            if PercentTilesCateg.get(SubDir + "_test") < PercentTest:
+                ttv = "test"
+            elif PercentTilesCateg.get(SubDir + "_valid") < PercentTest:
+                ttv = "valid"
+            else:
+                ttv = "train"
+            # If that patient had an another slide/scan already sorted, assign the same set to this set of images
+            if args.PatientID > 0:
+                Patient = imgRootName[:args.PatientID]
+                if Patient in Patient_set:
+                    ttv = Patient_set[Patient]
+                else:
+                    Patient_set[Patient] = ttv
+
+            NewImageDir = os.path.join(SubDir, "_".join((ttv, imgRootName, TileName)))  # all train initially
             os.symlink(TilePath, NewImageDir)
 
+
+        # update stats 
+        NbrTilesCateg[SubDir] = NbrTilesCateg.get(SubDir) + NbTiles
+        if ttv == "train":
+            NbrTilesCateg[SubDir + "_train"] = NbrTilesCateg.get(SubDir + "_train") + NbTiles
+            NbrImagesCateg[SubDir + "_train"] = NbrImagesCateg[SubDir + "_train"] + 1
+        elif ttv == "test":
+            NbrTilesCateg[SubDir + "_test"] = NbrTilesCateg.get(SubDir + "_test") + NbTiles
+            NbrImagesCateg[SubDir + "_test"] = NbrImagesCateg[SubDir + "_test"] + 1
+        elif ttv == "valid":
+            NbrTilesCateg[SubDir + "_valid"] =  NbrTilesCateg.get(SubDir + "_valid") + NbTiles
+            NbrImagesCateg[SubDir + "_valid"] = NbrImagesCateg[SubDir + "_valid"] + 1
+
+        PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(NbrTilesCateg.get(SubDir)) * 100.0
+        PercentTilesCateg[SubDir + "_test"] = float(NbrTilesCateg.get(SubDir + "_test")) / float(NbrTilesCateg.get(SubDir)) * 100.0
+        PercentTilesCateg[SubDir + "_valid"] = float(NbrTilesCateg.get(SubDir + "_valid")) / float(NbrTilesCateg.get(SubDir)) * 100.0
+
+
+        print("Done. %d tiles linked to %s " % ( NbTiles, SubDir ) )
+        print("Train / Test / Validation sets for %s = %f %%  / %f %% / %f %%" % (SubDir, PercentTilesCateg.get(SubDir + "_train"), PercentTilesCateg.get(SubDir + "_test"), PercentTilesCateg.get(SubDir + "_valid") ) )
+
+
+
+
+    '''
     # Partition the dataset into train / test / valid
     print("********* Partitioning files to train / test / valid")
     for SubDir, Images in Classes.items():
@@ -290,4 +361,4 @@ if __name__ == '__main__':
         pTest  = 100.0 * NbTilesTest  / NbTiles
         print("Done. %d tiles linked to %s " % (NbTiles, SubDir))
         print("Train / Test / Validation sets for %s = %f %%  / %f %% / %f %%" % (SubDir, pTrain, pTest, pValid))
-
+    '''
