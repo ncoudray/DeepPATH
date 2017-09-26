@@ -280,7 +280,7 @@ if __name__ == '__main__':
             NbrImagesCateg[SubDir + "_train"] = 0
             NbrImagesCateg[SubDir + "_test"] = 0
             NbrImagesCateg[SubDir + "_valid"] = 0
-         
+        NbTiles = 0
         for TilePath in AllTiles:
             NbTiles += 1
             TileName = os.path.basename(TilePath)
