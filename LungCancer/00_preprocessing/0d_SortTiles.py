@@ -116,6 +116,10 @@ def sort_mutation_metastatic(metadata, load_dic, **kwargs):
 def sort_setonly(metadata, load_dic, **kwargs):
     return '.'
 
+def sort_location(metadata, load_dic, **kwargs):
+    sample_type = extract_sample_type(metadata)
+    return sample_type.replace(" ", "_")
+
 sort_options = [
         sort_cancer_stage_separately,
         sort_cancer_stage,
@@ -126,7 +130,8 @@ sort_options = [
         sort_random,
         sort_mutational_burden,
         sort_mutation_metastatic,
-        sort_setonly
+        sort_setonly,
+        sort_location
 ]
 
 if __name__ == '__main__':
@@ -152,6 +157,7 @@ if __name__ == '__main__':
         8. sort according to mutational load (High/Low). Must specify --TMB option.
         9. sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
        10. Do not sort. Just create symbolic links and assign images to train/test/valid sets.
+       11. Sample location (Normal, metastatic, etc...)
 
     """
     ## Define Arguments
@@ -222,7 +228,15 @@ if __name__ == '__main__':
     PercentTilesCateg = {}
     NbrImagesCateg = {}
     Patient_set = {}
+    NbSlides = 0
     for cFolderName in imgFolders:
+        NbSlides += 1
+        #if NbSlides > 10:
+        #    raise ValueError("small test debug")
+        #    exit()
+        #    raise SystemExit
+        #    break
+
         print("**************** starting %s" % cFolderName)
         imgRootName = os.path.basename(cFolderName)
         imgRootName = imgRootName.rstrip('_files')
@@ -285,26 +299,36 @@ if __name__ == '__main__':
             NbTiles += 1
             TileName = os.path.basename(TilePath)
  
+            print("current percent in test, valid and ID")
+            print(PercentTilesCateg.get(SubDir + "_test"))
+            print(PercentTilesCateg.get(SubDir + "_valid"))
+            print(PercentTest, PercentValid)
+            print(PercentTilesCateg.get(SubDir + "_test")<PercentTest)
+            print(PercentTilesCateg.get(SubDir + "_valid")<PercentValid)
+
             # rename the images with the root name, and put them in train/test/valid
             if PercentTilesCateg.get(SubDir + "_test") < PercentTest:
                 ttv = "test"
-            elif PercentTilesCateg.get(SubDir + "_valid") < PercentTest:
+            elif PercentTilesCateg.get(SubDir + "_valid") < PercentValid:
                 ttv = "valid"
             else:
                 ttv = "train"
             # If that patient had an another slide/scan already sorted, assign the same set to this set of images
+            print(ttv)
+            print(imgRootName[:args.PatientID])
+
             if args.PatientID > 0:
                 Patient = imgRootName[:args.PatientID]
                 if Patient in Patient_set:
                     ttv = Patient_set[Patient]
                 else:
                     Patient_set[Patient] = ttv
+            print(ttv)
 
             NewImageDir = os.path.join(SubDir, "_".join((ttv, imgRootName, TileName)))  # all train initially
             os.symlink(TilePath, NewImageDir)
-
-
         # update stats 
+
         NbrTilesCateg[SubDir] = NbrTilesCateg.get(SubDir) + NbTiles
         if ttv == "train":
             NbrTilesCateg[SubDir + "_train"] = NbrTilesCateg.get(SubDir + "_train") + NbTiles
@@ -316,9 +340,9 @@ if __name__ == '__main__':
             NbrTilesCateg[SubDir + "_valid"] =  NbrTilesCateg.get(SubDir + "_valid") + NbTiles
             NbrImagesCateg[SubDir + "_valid"] = NbrImagesCateg[SubDir + "_valid"] + 1
 
-        PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(NbrTilesCateg.get(SubDir)) * 100.0
-        PercentTilesCateg[SubDir + "_test"] = float(NbrTilesCateg.get(SubDir + "_test")) / float(NbrTilesCateg.get(SubDir)) * 100.0
-        PercentTilesCateg[SubDir + "_valid"] = float(NbrTilesCateg.get(SubDir + "_valid")) / float(NbrTilesCateg.get(SubDir)) * 100.0
+        PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(NbrTilesCateg.get(SubDir))
+        PercentTilesCateg[SubDir + "_test"] = float(NbrTilesCateg.get(SubDir + "_test")) / float(NbrTilesCateg.get(SubDir))
+        PercentTilesCateg[SubDir + "_valid"] = float(NbrTilesCateg.get(SubDir + "_valid")) / float(NbrTilesCateg.get(SubDir))
 
 
         print("Done. %d tiles linked to %s " % ( NbTiles, SubDir ) )
