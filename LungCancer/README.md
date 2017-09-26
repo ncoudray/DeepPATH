@@ -145,12 +145,11 @@ expected processing time for this step: a few seconds to a few minutes. Check th
 
 
 # 1 - Re-training from scratch
-## 1.1 Training
+## 1.1.a Training (old version)
 
-Code in one of the subfolders of 01_training (depending on the type of run: 2 classes, 3 classes, or 10 multiclass outputs with softmax layer replaced by sigmoid).
+Code in one of the subfolders of 01_training.
 
-
-Build the model (the following two commands must be run from the proper directory, for example ```cd 01_training/2Classes```):
+Build the model (the following two commands must be run from the proper directory, for example ```cd 01_training/2Classes```, ```cd 01_training/3Classes``` or ```cd 01_training/multiClasses```):
 
 ```shell
 bazel build inception/imagenet_train
@@ -158,8 +157,9 @@ bazel build inception/imagenet_train
 
 Run it for all the training images:
 ```shell
-bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory'
+bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --ClassNumber=3
 ```
+Note: ClassNumber is only required for 2 or 3 class classification, not for the sigmoid multi-output class approach.
 
 Example of qsub script header to submit those two jobs on the Phoenix cluster:
 
@@ -193,6 +193,21 @@ Once TensorBoard is running, navigate your web browser (firefox) to localhost:60
 
 Note: expected processing time for this step: depends on the number of images. From a few hours to several days or weeks. As the process goes on, regularly check the evolution of the loss of the training and the accuracy of the validation (see step 1.2): they should both converge. If the training  loss converges but not the validation accuracy/loss, there may be an overfitting and the default training parameters need to be adjusted
 
+## 1.1.b Training (new version)
+
+Code in the subfolders of 01_training/xClasses - can be used for any type of training.
+
+Build the model from the proper directory, that means from ```cd 01_training/xClasses```:
+
+```shell
+bazel build inception/imagenet_train
+```
+
+Run it for all the training images:
+```shell
+bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --ClassNumber=3 --mode='0_softmax'
+```
+ The ```mode``` option must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
 
 
 ## 1.2 Validation
