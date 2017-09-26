@@ -113,7 +113,8 @@ def sort_mutation_metastatic(metadata, load_dic, **kwargs):
 
     return None
 
-
+def sort_setonly(metadata, load_dic, **kwargs):
+    return '.'
 
 sort_options = [
         sort_cancer_stage_separately,
@@ -124,7 +125,8 @@ sort_options = [
         sort_cancer_healthy,
         sort_random,
         sort_mutational_burden,
-        sort_mutation_metastatic
+        sort_mutation_metastatic,
+        sort_setonly
 ]
 
 if __name__ == '__main__':
@@ -149,6 +151,7 @@ if __name__ == '__main__':
         7. Random labels (3 variables for false positive control)
         8. sort according to mutational load (High/Low). Must specify --TMB option.
         9. sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
+       10. Do not sort. Just create symbolic links and assign images to train/test/valid sets.
 
     """
     ## Define Arguments
