@@ -166,11 +166,11 @@ def cross_entropy_loss(logits, one_hot_labels, label_smoothing=0,
       smooth_positives = 1.0 - label_smoothing
       smooth_negatives = label_smoothing / num_classes
       one_hot_labels = one_hot_labels * smooth_positives + smooth_negatives
-    if FLAGS.mode = '0_softmax':
+    if FLAGS.mode == '0_softmax':
       cross_entropy = tf.contrib.nn.deprecated_flipped_softmax_cross_entropy_with_logits(
           logits, one_hot_labels, name='xentropy')
       print("softmax loss")
-    elif FLAGS.mode = '1_sigmoid':
+    elif FLAGS.mode == '1_sigmoid':
       cross_entropy = tf.contrib.nn.deprecated_flipped_sigmoid_cross_entropy_with_logits(
           logits, one_hot_labels, name='xentropy')
       print("sigmoid loss")

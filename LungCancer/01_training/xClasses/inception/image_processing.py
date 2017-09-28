@@ -54,6 +54,9 @@ tf.app.flags.DEFINE_integer('num_preprocess_threads', 4,
 tf.app.flags.DEFINE_integer('num_readers', 4,
                             """Number of parallel readers during train.""")
 
+tf.app.flags.DEFINE_string('mode', '0_softmax',
+                            """0_softmax or 1_sigmoid.""")
+
 # Images are preprocessed asynchronously using multiple threads specified by
 # --num_preprocss_threads and the resulting processed images are stored in a
 # random shuffling queue. The shuffling queue dequeues --batch_size images
@@ -372,7 +375,7 @@ def parse_example_proto(example_serialized):
     text: Tensor tf.string containing the human-readable label.
   """
   # Dense features in Example proto.
-  if FLAGS.mode = '0_softmax':
+  if FLAGS.mode == '0_softmax':
     feature_map = {
         'image/encoded': tf.FixedLenFeature([], dtype=tf.string,
                                             default_value=''),
@@ -381,7 +384,7 @@ def parse_example_proto(example_serialized):
         'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
                                                default_value=''),
     }
-  elif FLAGS.mode = '1_sigmoid':
+  elif FLAGS.mode == '1_sigmoid':
     Vdefault = [0]
     for kk in range(FLAGS.nbr_of_classes):
       Vdefault.append(0)
@@ -525,9 +528,9 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
 
     # Display the training images in the visualizer.
     tf.summary.image('images', images)
-    if FLAGS.mode = '0_softmax':
+    if FLAGS.mode == '0_softmax':
       return images, tf.reshape(label_index_batch, [batch_size])
-    elif FLAGS.mode = '1_sigmoid':
+    elif FLAGS.mode == '1_sigmoid':
       return images, tf.reshape(label_index_batch, [batch_size, FLAGS.nbr_of_classes+1])
     else:
       return images, tf.reshape(label_index_batch, [batch_size])

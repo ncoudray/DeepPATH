@@ -144,8 +144,9 @@ python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_
 expected processing time for this step: a few seconds to a few minutes. Check the output log files and the resulting directory (check that the sizes of the created TFRecord files make sense)
 
 
-# 1 - Re-training from scratch
-## 1.1.a Training (old version)
+# 1 - Training
+## 1.1 - Training from scratch
+### 1.1.a Training (old version)
 
 Code in one of the subfolders of 01_training.
 
@@ -193,7 +194,7 @@ Once TensorBoard is running, navigate your web browser (firefox) to localhost:60
 
 Note: expected processing time for this step: depends on the number of images. From a few hours to several days or weeks. As the process goes on, regularly check the evolution of the loss of the training and the accuracy of the validation (see step 1.2): they should both converge. If the training  loss converges but not the validation accuracy/loss, there may be an overfitting and the default training parameters need to be adjusted
 
-## 1.1.b Training (new version)
+### 1.1.b Training (new version)
 
 Code in the subfolders of 01_training/xClasses - can be used for any type of training.
 
@@ -210,11 +211,69 @@ bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='out
  The ```mode``` option must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
 
 
-## 1.2 Validation
+## 1.2 - Transfer learning
+
+See https://github.com/tensorflow/models/tree/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception#adjusting-memory-demands for more details.
+
+
+Bassically:
+
+Build the model (the following two commands must be run from the proper directory, for example ```cd 01_training/xClasses```):
+
+```shell
+bazel build inception/imagenet_train
+```
+
+download the checkpoints of the network trained by google on the 
+```shell
+curl -O http://download.tensorflow.org/models/image/imagenet/inception-v3-2016-03-01.tar.gz
+```
+
+This will create a directory called inception-v3 which contains the following files:
+```shell
+> ls inception-v3
+README.txt
+checkpoint
+model.ckpt-157585
+```
+```
+
+Run it for all the training images:
+```shell
+bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --pretrained_model_checkpoint_path="path_to/model.ckpt-157585" --fine_tune=True --initial_learning_rate=0.001  --ClassNumber=3 --mode='0_softmax'
+```
+
+Adjust the input parameters as required. For mode, this can also be '1_sigmoid'.
+
+
+Example of qsub script header to submit those two jobs on the Phoenix cluster:
+
+```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqs8b_bazel
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+#$ -l excl=true
+
+module load cuda/8.0
+module load python/3.5.3
+module load bazel/0.4.4
+```
 
 
 
-### 1.2.a. Old way
+
+
+
+
+## 1.3 Validation
+
+
+
+### 1.3.a. Old way
 Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise).
 
 Same code as for testing (see section 2.), that is, first build the model (as for training, should be in the good directory where the WORKSPACE file is):
@@ -235,7 +294,7 @@ You need to either:
 
 Note: The current validation code only saves the validation accuracy, not the loss. The code still needs to be changed for that. 
 
-### 1.2.b New Version (may have some bugs)
+### 1.3.b New Version (may have some bugs)
 Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise).
 
 
@@ -258,7 +317,7 @@ Note: The current validation code only saves the validation accuracy, not the lo
 
 
 
-## 1.3 Comments on the code
+## 1.4 Comments on the code
 
 This is inception v3 developped by google.  Full documentation on (re)-training can be found here: https://github.com/tensorflow/models/tree/master/inception
 

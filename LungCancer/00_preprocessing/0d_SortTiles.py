@@ -120,6 +120,19 @@ def sort_location(metadata, load_dic, **kwargs):
     sample_type = extract_sample_type(metadata)
     return sample_type.replace(" ", "_")
 
+def sort_melanoma_POD(metadata, load_dic, **kwargs):
+    Response = metadata['Response to Treatment (Best Response)']
+    if 'POD' in Response:
+        return 'POD'
+    else:
+        return 'Response'
+
+def sort_melanoma_Toxicity(metadata, load_dic, **kwargs):
+    return metadata['Toxicity Observed']
+
+
+
+
 sort_options = [
         sort_cancer_stage_separately,
         sort_cancer_stage,
@@ -131,7 +144,9 @@ sort_options = [
         sort_mutational_burden,
         sort_mutation_metastatic,
         sort_setonly,
-        sort_location
+        sort_location,
+        sort_melanoma_POD,
+        sort_melanoma_Toxicity
 ]
 
 if __name__ == '__main__':
@@ -158,6 +173,9 @@ if __name__ == '__main__':
         9. sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
        10. Do not sort. Just create symbolic links and assign images to train/test/valid sets.
        11. Sample location (Normal, metastatic, etc...)
+       12. Osman's melanoma: Response to Treatment (Best Response) (POD vs other)
+       13. Osman's melanoma: Toxicity observed 
+ 
 
     """
     ## Define Arguments
@@ -348,6 +366,13 @@ if __name__ == '__main__':
         print("Done. %d tiles linked to %s " % ( NbTiles, SubDir ) )
         print("Train / Test / Validation sets for %s = %f %%  / %f %% / %f %%" % (SubDir, PercentTilesCateg.get(SubDir + "_train"), PercentTilesCateg.get(SubDir + "_test"), PercentTilesCateg.get(SubDir + "_valid") ) )
 
+
+    for k, v in sorted(NbrTilesCateg.iteritems()):
+        print(k, v)
+    for k, v in sorted(PercentTilesCateg.iteritems()):
+        print(k, v)
+    for k, v in sorted(NbrImagesCateg.iteritems()):
+        print(k, v)
 
 
 

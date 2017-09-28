@@ -327,10 +327,10 @@ def inception_v3(inputs,
                           restore=restore_logits)
           # 1000
           end_points['logits'] = logits
-          if FLAGS.mode = '0_softmax':
+          if FLAGS.mode == '0_softmax':
             end_points['predictions'] = tf.nn.softmax(logits, name='predictions')
             print("softmax training")
-          elif FLAGS.mode = '1_sigmoid':
+          elif FLAGS.mode == '1_sigmoid':
             end_points['predictions'] = tf.nn.sigmoid(logits, name='predictions')
             print("signoid training")
           else:

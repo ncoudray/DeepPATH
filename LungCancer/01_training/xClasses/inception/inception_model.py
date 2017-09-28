@@ -113,7 +113,7 @@ def loss(logits, labels, batch_size=None):
 
   # Reshape the labels into a dense Tensor of
   # shape [FLAGS.batch_size, num_classes].
-  if FLAGS.mode = '0_softmax':
+  if FLAGS.mode == '0_softmax':
     sparse_labels = tf.reshape(labels, [batch_size, 1])
     indices = tf.reshape(tf.range(batch_size), [batch_size, 1])
     concated = tf.concat(axis=1, values=[indices, sparse_labels])
@@ -121,7 +121,7 @@ def loss(logits, labels, batch_size=None):
     dense_labels = tf.sparse_to_dense(concated,
                                       [batch_size, num_classes],
                                       1.0, 0.0)
-  elif FLAGS.mode = '1_sigmoid':
+  elif FLAGS.mode == '1_sigmoid':
     dense_labels = tf.reshape(labels, [batch_size, FLAGS.nbr_of_classes+1])
 
   # Cross entropy loss for the main softmax prediction.
