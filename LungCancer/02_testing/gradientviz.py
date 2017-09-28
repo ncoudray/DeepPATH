@@ -12,16 +12,15 @@ import pdb
 
 FLAGS = None
 
-def outer_grad_inception(labels, batch_size=1, learningrate=0.1, weight_decay=0.1, num_classes =1):
+def outer_grad_inception(labels,
+                         batch_size=1,
+                         learningrate=0.000001,
+                         weight_decay=0.01,
+                         epochs=100,
+                         num_classes =1):
+    decay = learningrate/epochs
     checkpoint = tf.train.latest_checkpoint('/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/0_scratch')
-    image = cv2.imread('/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/test_images/20.0/3_21.jpeg')
-    # tf_record = '/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/test_TFperSlide/test_TCGA-05-5425-01A-01-BS1.259004dc-6769-4f66-afa3-57a4d8e0edb5_1.TFRecord'
-    # feature = {'image/encoded': tf.FixedLenFeature([], tf.string),
-    #            'image/class/label': tf.FixedLenFeature([], tf.int64)}
-    # e = tf.python_io.tf_record_iterator(tf_record).next()
-    # print e
-    # single_example = tf.parse_single_example(e, features=feature)
-    # print single_example['image/encoded']
+    image = cv2.imread('/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/test_images/20.0/12_11.jpeg')
     image = cv2.resize(image, (299, 299),interpolation=cv2.INTER_CUBIC)
     print image.shape
     image = np.reshape(image, (1, image.shape[0], image.shape[1], 3))
@@ -50,10 +49,9 @@ def outer_grad_inception(labels, batch_size=1, learningrate=0.1, weight_decay=0.
         var_grad = tf.gradients(loss_grad, [x])
         print "var_gard", var_grad
         print "sess var: ", sess.run(var_grad, feed_dict={x: image, y: np.array([1])})
-        for i in range(10):
-            x_grad = sess.run(var_grad, feed_dict={x: image, y: np.array([1])})
+        for i in range(epochs):
+            x_grad = sess.run(var_grad[0], feed_dict={x: image, y: np.array([1])})
             print x_grad
-            pdb.set_trace()
             new_grad = (x_grad[0] * learningrate + weight_decay * learningrate * image)
             print new_grad
             if not image.dtype == "float64":
@@ -61,18 +59,26 @@ def outer_grad_inception(labels, batch_size=1, learningrate=0.1, weight_decay=0.
             image = np.subtract(image, new_grad)
             print image
             image = (image - image.min()) / image.max()
-            print image
             print image.shape
-            im = sess.run(image)
-            print im.shape
-            write_img(im[0])
+            print learningrate
+            if i % 10 == 0:
+                write_img(image[0], "image"+str(i))
 
-def write_img(image, pause=0.016):
+
+def write_img(image, name, pause=0.016):
+    plt.title(name)
     im = plt.imshow(image)
     cb = plt.colorbar(im)
     plt.draw()
     plt.pause(pause)
     cb.remove()
+    if not os.path.exists("/home/shaivi/Desktop/Shaivi/RA/LungCancer/LungCancer/02_testing/img"):
+        os.makedirs("/home/shaivi/Desktop/Shaivi/RA/LungCancer/LungCancer/02_testing/img")
+    pdb.set_trace()
+    img = tf.image.encode_png(np.clip(np.multiply(image, 255.0), 0, 255))
+    img_name = "/home/shaivi/Desktop/Shaivi/RA/LungCancer/LungCancer/02_testing/img/{0}.png".format(name)
+    with open(img_name, "wb+") as f:
+        f.write(img.eval())
 
 def main(unused_argv=None):
     input_path = os.path.join(FLAGS.data_dir, 'test_*')
@@ -119,4 +125,3 @@ if __name__ == '__main__':
     )
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
-
