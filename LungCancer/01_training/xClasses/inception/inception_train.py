@@ -319,13 +319,20 @@ def train(dataset):
     sess.run(init)
 
     if FLAGS.pretrained_model_checkpoint_path:
-      assert tf.gfile.Exists(FLAGS.pretrained_model_checkpoint_path)
-      variables_to_restore = tf.get_collection(
-          slim.variables.VARIABLES_TO_RESTORE)
-      restorer = tf.train.Saver(variables_to_restore)
-      restorer.restore(sess, FLAGS.pretrained_model_checkpoint_path)
-      print('%s: Pre-trained model restored from %s' %
-            (datetime.now(), FLAGS.pretrained_model_checkpoint_path))
+      try:
+        assert tf.gfile.Exists(FLAGS.pretrained_model_checkpoint_path)
+        variables_to_restore = tf.get_collection(
+            slim.variables.VARIABLES_TO_RESTORE)
+        restorer = tf.train.Saver(variables_to_restore)
+        restorer.restore(sess, FLAGS.pretrained_model_checkpoint_path)
+        print('%s: Pre-trained model restored from %s' %
+              (datetime.now(), FLAGS.pretrained_model_checkpoint_path))
+      except:
+        #restorer = tf.train.import_meta_graph(FLAGS.pretrained_model_checkpoint_path + '.meta')
+        variables_to_restore = tf.get_collection(
+            slim.variables.VARIABLES_TO_RESTORE)
+        restorer = tf.train.Saver(variables_to_restore)
+        restorer.restore(sess, FLAGS.pretrained_model_checkpoint_path)
 
     # Start the queue runners.
     tf.train.start_queue_runners(sess=sess)

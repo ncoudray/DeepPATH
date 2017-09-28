@@ -25,7 +25,7 @@ import os
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('ImageSet_basename', 'test_',
-                           """Either 'test_', 'valid_' or 'train_'.""")
+                           """Either 'test_', 'valid' or 'train'.""")
 
 def main(unused_argv=None):
 
@@ -68,6 +68,8 @@ def main(unused_argv=None):
   elif "valid" in FLAGS.ImageSet_basename:
     #FLAGS.data_dir = FLAGS.data_dir + "/valid*"
     dataset = ImagenetData(subset=FLAGS.subset)
+    print("Validation mode:")
+    print(dataset.data_files())
     assert dataset.data_files()
     nc_inception_eval.evaluate(dataset)
 

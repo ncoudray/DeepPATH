@@ -48,7 +48,7 @@ class ImagenetData(Dataset):
     # Bounding box data consists of 615299 bounding boxes for 544546 images.
     if self.subset == 'train':
       return 688634
-    if self.subset == 'validation':
+    if self.subset == 'valid':
       return 149835
 
   def download_message(self):
