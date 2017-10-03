@@ -123,6 +123,8 @@ module load python/3.5.3
 
 expected processing time for this step: a few seconds to a few minutes. Check the resulting directory that the images have been properly linked
 
+
+
 ## 0.3b Convert the JPEG tiles into TFRecord format for a multi-ouput prediction (example mutations)
 
 
@@ -130,14 +132,16 @@ Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at multi-out
 
 For the training and validation sets:
 ```shell
-python build_image_data_multiClass.py --directory='jpeg_main_directory' --output_directory='outputfolder' --train_shards=1024 --validation_shards=128 --num_threads=4  --labels_names=label_names.txt --labels=labels_files.txt
+python build_image_data_multiClass.py --directory='jpeg_main_directory' --output_directory='outputfolder' --train_shards=1024 --validation_shards=128 --num_threads=4  --labels_names=label_names.txt --labels=labels_files.txt  --PatientID=12
 ```
 * ``` label_names.txt``` is a text file with the 10 possible labels, 1 per line
 * ```labels_files.txt``` is a text file listing the mutations present ifor each patient. 1 patient per line, first column is patient ID (TCGA-38-4632 for example), second is mutation (TP53 for example)
+* ```--PatientID``` The file names are expected to start with the patient ID. This value represent the number of digits used for the PatientID
+
 
 For the test set:
 ```shell
-python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test' --labels_names=label_names.txt --labels=labels_files.txt
+python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test' --labels_names=label_names.txt --labels=labels_files.txt  --PatientID=12
 ```
 
 
@@ -146,54 +150,6 @@ expected processing time for this step: a few seconds to a few minutes. Check th
 
 # 1 - Training
 ## 1.1 - Training from scratch
-### 1.1.a Training (old version)
-
-Code in one of the subfolders of 01_training.
-
-Build the model (the following two commands must be run from the proper directory, for example ```cd 01_training/2Classes```, ```cd 01_training/3Classes``` or ```cd 01_training/multiClasses```):
-
-```shell
-bazel build inception/imagenet_train
-```
-
-Run it for all the training images:
-```shell
-bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --ClassNumber=3
-```
-Note: ClassNumber is only required for 2 or 3 class classification, not for the sigmoid multi-output class approach.
-
-Example of qsub script header to submit those two jobs on the Phoenix cluster:
-
-```shell
-#!/bin/tcsh
-#$ -pe openmpi 1
-#$ -A TensorFlow
-#$ -N rqs8b_bazel
-#$ -cwd
-#$ -S /bin/tcsh
-#$ -q gpu0.q
-#$ -l excl=true
-
-module load cuda/8.0
-module load python/3.5.3
-module load bazel/0.4.4
-```
-
-Note: it is best to reserve a whole node (it will crash if not enough space of if another job uses the GPU)
-
-botteneck, graph, variables... are saved in the output_directory 
-
-
-The precision @ 1  measures how often the highest scoring prediction from the model matched the  label
-The script also exports summaries that may be visualized in TensorBoard:
-
-```shell
-tensorboard --logdir='checkpoint_dir'
-```
-Once TensorBoard is running, navigate your web browser (firefox) to localhost:6006 to view the TensorBoard.
-
-Note: expected processing time for this step: depends on the number of images. From a few hours to several days or weeks. As the process goes on, regularly check the evolution of the loss of the training and the accuracy of the validation (see step 1.2): they should both converge. If the training  loss converges but not the validation accuracy/loss, there may be an overfitting and the default training parameters need to be adjusted
-
 ### 1.1.b Training (new version)
 
 Code in the subfolders of 01_training/xClasses - can be used for any type of training.
@@ -270,31 +226,7 @@ module load bazel/0.4.4
 
 
 ## 1.3 Validation
-
-
-
-### 1.3.a. Old way
-Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise).
-
-Same code as for testing (see section 2.), that is, first build the model (as for training, should be in the good directory where the WORKSPACE file is):
-
-```shell
-bazel build inception/nc_imagenet_eval
-```
-
-Then run the job:
-
-```shell
-bazel-bin/inception/nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid'
-```
-
-You need to either:
-* run it manually once in a while and keep track of the evolution of validation score.
-* or run the script without the ```--run_once``` option (the program will run in an infinite loop and will need to be killed manually). To set how often the validation script needs to be run, you need to modify the code: in file ```02_testing/2Classes/inception/nc_inception_eval.py```, line 46, the default value of ```eval_interval_secs``` set to 5 minutes by default (for very long jobs, every 1 or 5 hours may be enough. This has to be changed before compilation with bazel).
-
-Note: The current validation code only saves the validation accuracy, not the loss. The code still needs to be changed for that. 
-
-### 1.3.b New Version (may have some bugs)
+### 1.3.b New Version
 Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise).
 
 
@@ -404,10 +336,11 @@ python 0f_HeatMap.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0
 
 
 ## Code in 03_postprocessing/3Classes for 3 classes:
-ROC curves:
+ROC curves (to be run with native python: "module unload python/3.5.3"):
 ```shell
-python 0h_ROC_sklearn.py  --file_stats out_filename_Stats3.txt  --output_dir 'output folder'
+python 0h_ROC_sklearn.py  --file_stats out_filename_Stats.txt  --output_dir 'output folder'
 ```
+
 Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
 ```shell
 python 0f_HeatMap_3classes.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0 --output_dir 'result_folder' --tiles_stats 'out_filename_Stats.txt' --resample_factor 4 --tiles_filter 'TCGA-05-5425'
@@ -419,7 +352,7 @@ python 0f_ProbHistogram.py --output_dir='result folder' --tiles_stats='out_filen
 
 ## Code in 03_postprocessing/multiClasses for 10-multi-output classification:
 ```shell
-python  0h_ROC_MultiOutput.py  --file_stats 'MultiOuput/out_filename_Stats3.txt'  --output_dir 'output folder' --labels_names label_names.txt --ref_stats 'LUAD/out_filename_Stats3.txt'
+python  0h_ROC_MultiOutput.py  --file_stats 'MultiOuput/out_filename_Stats.txt'  --output_dir 'output folder' --labels_names label_names.txt --ref_stats 'LUAD/out_filename_Stats.txt'
 ```
 * ```--file_stats``` is the output generated by the multi-output classification
 * ```--ref_stats``` (optional) is the output generated by the 2 or 3 classes classification and is used to filter and selected only LUAD tiles.

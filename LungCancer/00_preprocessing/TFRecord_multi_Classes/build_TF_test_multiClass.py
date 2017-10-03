@@ -26,6 +26,7 @@ import os
 import random
 import sys
 import threading
+import json
 
 import numpy as np
 import tensorflow as tf
@@ -54,6 +55,10 @@ tf.app.flags.DEFINE_boolean('one_FT_per_Tile', False,
 
 tf.app.flags.DEFINE_string('ImageSet_basename', 'test',
                             'test, train or valid')
+
+tf.app.flags.DEFINE_integer('PatientID', 12,
+                            'Number of digits used for the Patient ID (file names must start with patient ID. after sorting, will be located after test_ or valid_ or train_)')
+
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
@@ -172,7 +177,7 @@ def _process_image(filename, coder):
   #  print('Converting PNG to JPEG for %s' % filename)
   #  image_data = coder.png_to_jpeg(image_data)
 
-  print(filename)
+  # print(filename)
 
   # Decode the RGB JPEG.
   image = coder.decode_jpeg(image_data)
@@ -345,7 +350,8 @@ def _find_image_files(name, data_dir):
 
   print("unique_labels:")
   print(unique_labels)
-  All_labels = []
+  All_labels = {}
+  '''
   with open(FLAGS.labels, "r") as f:
     for line in f:
       line = line.replace('\r','\n')
@@ -353,6 +359,23 @@ def _find_image_files(name, data_dir):
       for eachline in line:
         if len(eachline)>0:
           All_labels.append(eachline)
+  '''
+  if '.txt' in FLAGS.labels:
+    with open(FLAGS.labels, "r") as f:
+      for line in f:
+        line = line.replace('\r','\n')
+        line = line.split('\n')
+        for eachline in line:
+          if len(eachline)>0:
+            #All_labels.append(eachline)
+            if eachline.split()[0] in All_labels:
+              All_labels[eachline.split()[0]].append(eachline.split()[1])
+            else:
+              All_labels[eachline.split()[0]] = [eachline.split()[1]]
+  elif  '.json' in FLAGS.labels:
+    with open(FLAGS.labels) as fid:
+      All_labels = json.loads(fid.read())
+
 
   labels = []
   filenames = []
@@ -373,13 +396,14 @@ def _find_image_files(name, data_dir):
   SumLabels = np.zeros(len(unique_labels)+1)
   for img in matching_files:
     if name == 'test':
-      patient_ID = os.path.basename(img)[5:17]
+      patient_ID = os.path.basename(img)[5:5+FLAGS.PatientID]
     else:
-      patient_ID = os.path.basename(img)[6:18]
+      patient_ID = os.path.basename(img)[6:6+FLAGS.PatientID]
 
-    AllMutants = [s for s in All_labels if patient_ID in s]
-    #print(patient_ID)
-    #print(AllMutants)
+    #AllMutants = [s for s in All_labels if patient_ID in s]
+    AllMutants = [All_labels[s] for s in All_labels if patient_ID in s]
+    print(patient_ID)
+    print(AllMutants)
     if len(AllMutants)>0:
       NbSlides += 1
       label_vec = [0]  # nbr of labels +1 for background class in inception
@@ -450,7 +474,7 @@ def main(unused_argv):
   #_process_dataset('valid', FLAGS.directory, FLAGS.validation_shards)
   #_process_dataset('train', FLAGS.directory, FLAGS.train_shards)
   #_process_dataset('test', FLAGS.directory, FLAGS.train_shards)
-  print(FLAGS.ImageSet_basename)
+  # print(FLAGS.ImageSet_basename)
   _process_dataset(FLAGS.ImageSet_basename, FLAGS.directory,
                    FLAGS.train_shards)
 

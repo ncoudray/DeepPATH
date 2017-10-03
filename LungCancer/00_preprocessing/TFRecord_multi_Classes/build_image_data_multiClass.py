@@ -74,6 +74,7 @@ import os
 import random
 import sys
 import threading
+import json
 
 import numpy as np
 import tensorflow as tf
@@ -98,6 +99,10 @@ tf.app.flags.DEFINE_integer('validation_shards', 128,
 
 tf.app.flags.DEFINE_integer('num_threads', 8,
                             'Number of threads to preprocess the images.')
+
+tf.app.flags.DEFINE_integer('PatientID', 12,
+                            'Number of digits used for the Patient ID (file names must start with patient ID. after sorting, will be located after test_ or valid_ or train_)')
+
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
@@ -398,14 +403,30 @@ def _find_image_files(name, data_dir):
 
   print("unique_labels:")
   print(unique_labels)
-  All_labels = []
-  with open(FLAGS.labels, "r") as f:
-    for line in f:
-      line = line.replace('\r','\n')
-      line = line.split('\n')
-      for eachline in line:
-        if len(eachline)>0:
-          All_labels.append(eachline)
+  All_labels = {}
+  if '.txt' in FLAGS.labels:
+    with open(FLAGS.labels, "r") as f:
+      for line in f:
+        line = line.replace('\r','\n')
+        line = line.split('\n')
+        for eachline in line:
+          print(eachline)
+          if len(eachline)>0:
+            #All_labels.append(eachline)
+            print(All_labels)
+            print(eachline.split())
+            print(eachline.split()[0] in All_labels)
+            if eachline.split()[0] in All_labels:
+              All_labels[eachline.split()[0]].append(eachline.split()[1])
+            else:
+              All_labels[eachline.split()[0]] = [eachline.split()[1]]
+  elif  '.json' in FLAGS.labels:
+    with open(FLAGS.labels) as fid:
+      All_labels = json.loads(fid.read())
+
+  else:
+    print("file format for labels not recognized. should be json or txt")
+    return [],[],[]
 
   labels = []
   filenames = []
@@ -424,10 +445,11 @@ def _find_image_files(name, data_dir):
   SumLabels = np.zeros(len(unique_labels)+1)
   for img in matching_files:
     #if name == 'train' or valid
-    patient_ID = os.path.basename(img)[6:18]
-    AllMutants = [s for s in All_labels if patient_ID in s]
-    #print(patient_ID)
-    #print(AllMutants)
+    patient_ID = os.path.basename(img)[6:6+FLAGS.PatientID]
+    #AllMutants = [s for s in All_labels if patient_ID in s]
+    AllMutants = [All_labels[s] for s in All_labels if patient_ID in s]
+    print(patient_ID)
+    print(AllMutants)
     if len(AllMutants)>0:
       NbSlides += 1
       label_vec = [0]  # nbr of labels +1 for background class in inception
