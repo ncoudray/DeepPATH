@@ -114,7 +114,7 @@ def sort_mutation_metastatic(metadata, load_dic, **kwargs):
     return None
 
 def sort_setonly(metadata, load_dic, **kwargs):
-    return '.'
+    return 'All'
 
 def sort_location(metadata, load_dic, **kwargs):
     sample_type = extract_sample_type(metadata)
@@ -206,8 +206,13 @@ if __name__ == '__main__':
     JsonFile = args.JsonFile
     with open(JsonFile) as fid:
         jdata = json.loads(fid.read())
-    jdata = dict((jd['file_name'].rstrip('.svs'), jd) for jd in jdata)
+    try:
+      jdata = dict((jd['file_name'].rstrip('.svs'), jd) for jd in jdata)
+    except:
+      jdata = dict((jd['Patient ID'], jd) for jd in jdata)
 
+    print("jdata:")
+    print(jdata)
     Magnification = args.Magnification
     MagDiffAllowed = args.MagDiffAllowed
 
@@ -215,7 +220,7 @@ if __name__ == '__main__':
     try:
         sort_function = sort_options[SortingOption]
     except IndexError:
-        raise ValueError("Uknown sort option")
+        raise ValueError("Unknown sort option")
 
     PercentValid = args.PercentValid / 100.
     if not 0 <= PercentValid <= 1:
@@ -247,6 +252,8 @@ if __name__ == '__main__':
     NbrImagesCateg = {}
     Patient_set = {}
     NbSlides = 0
+    print("imgFolders")
+    print(imgFolders)
     for cFolderName in imgFolders:
         NbSlides += 1
         #if NbSlides > 10:
@@ -262,8 +269,11 @@ if __name__ == '__main__':
         try:
             image_meta = jdata[imgRootName]
         except KeyError:
-            print("file_name not found in metadata")
-            continue
+            try:
+                image_meta = jdata[imgRootName[:args.PatientID]]
+            except KeyError:
+                print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
+                continue
 
         SubDir = sort_function(image_meta, load_dic=mut_load)
         if SubDir is None:

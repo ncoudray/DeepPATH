@@ -67,6 +67,7 @@ def main(unused_argv=None):
     output.close()
   elif "valid" in FLAGS.ImageSet_basename:
     #FLAGS.data_dir = FLAGS.data_dir + "/valid*"
+    FLAGS.data_dir = os.path.join(FLAGS.data_dir, FLAGS.ImageSet_basename + '*')
     dataset = ImagenetData(subset=FLAGS.subset)
     print("Validation mode:")
     print(dataset.data_files())

@@ -88,8 +88,8 @@ class Dataset(object):
     """
     #tf_record_pattern = os.path.join(FLAGS.data_dir, '%s-*' % self.subset)
     #tf_record_pattern = os.path.join(FLAGS.data_dir, 'test_*')
-    #tf_record_pattern = FLAGS.data_dir
-    tf_record_pattern = os.path.join(FLAGS.data_dir, FLAGS.ImageSet_basename + '*')
+    tf_record_pattern = FLAGS.data_dir
+    #tf_record_pattern = os.path.join(FLAGS.data_dir, FLAGS.ImageSet_basename + '*')
     print("tf_record_pattern:")
     print(tf_record_pattern)
     data_files = tf.gfile.Glob(tf_record_pattern)
