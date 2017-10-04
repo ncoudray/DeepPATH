@@ -99,42 +99,17 @@ The output will be generated in the current directory where the program is launc
 ## 0.3a Convert the JPEG tiles into TFRecord format for 2 or 3 classes jobs
 
 Notes:
-* This code was adapted from https://github.com/awslabs/deeplearning-benchmark/blob/master/tensorflow/inception/inception/data/build_image_data.py
+* This code was adapted from [awslabs' deeplearning-benchmark code](https://github.com/awslabs/deeplearning-benchmark/blob/master/tensorflow/inception/inception/data/build_image_data.py)
 
 
-Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at classifying 2 or 3 different classes:
+Check code in subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at classifying 2 or 3 different classes.
 
-For the whole training and validation sets, the following code was used to convert JPEG to TFRecord:
-```shell
-python build_image_data.py --directory='jpeg_main_directory' --output_directory='outputfolder' --train_shards=1024  --validation_shards=128 --num_threads=4
-```
-
-The jpeg must not be directly inside 'jpeg_tile_directory' must in subfolders with names corresponding to the labels
-jpeg_tile_directory/TCGA-LUAD
-jpeg_tile_directory/TCGA-LUSC
-
-The name of the tiles are :
-<type>_name_x_y.jpef
-with type being "test", "train" or "valid", name the TCGA name of the slide, x and y the tile coordinates.
-
-
-The same was done for the test set with this slightly modified script:
-```shell
-python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False
-
-```
-The difference is that for the train and validation sets, the tiles are randomly assigned to the TFRecord files. For the test set, if "one_FT_per_Tile" is True, there will be 1 TFRecord file per Tile created. Otherwise, it will created 1 TFRecord file per Slide (solution prefered).
-
-An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
-
-
-Example of qsub script to submit this script on Phoenix cluster:
-
+For the whole training and validation sets, the following code can be to convert JPEG to TFRecord:
 ```shell
 #!/bin/tcsh
 #$ -pe openmpi 4
 #$ -A TensorFlow
-#$ -N rqsub_TFRec_Normal
+#$ -N rqsub_TFR_trval
 #$ -cwd
 #$ -S /bin/tcsh
 #$ -q gpu0.q 
@@ -142,10 +117,34 @@ Example of qsub script to submit this script on Phoenix cluster:
 module load cuda/8.0
 module load python/3.5.3
 
+python build_image_data.py --directory='jpeg_label_directory' --output_directory='outputfolder' --train_shards=1024  --validation_shards=128 --num_threads=4
 ```
 
-expected processing time for this step: a few seconds to a few minutes. Check the resulting directory that the images have been properly linked
+The jpeg must not be directly inside 'jpeg_label_directory' but in subfolders with names corresponding to the labels (for example as `jpeg_label_directory/TCGA-LUAD/...jpeg` and `jpeg_label_directory/TCGA-LUSC/...jpeg`). The name of those tiles are : `<type>_name_x_y.jpeg` with type being "test", "train" or "valid", name the TCGA name of the slide, x and y the tile coordinates.
 
+
+The same was done for the test set with this slightly modified script:
+```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqsub_TFR_test
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q 
+
+module load cuda/8.0
+module load python/3.5.3
+
+python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test'
+
+```
+
+The difference is that for the train and validation sets, the tiles are randomly assigned to the TFRecord files. For the test set, it will created 1 TFRecord file per Slide (solution prefered) - though if `one_FT_per_Tile` is `True`, there will be 1 TFRecord file per Tile created.
+
+An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
+
+expected processing time for this step: a few seconds to a few minutes. Once done, check inside the resulting directory that the images have been properly linked.
 
 
 ## 0.3b Convert the JPEG tiles into TFRecord format for a multi-ouput prediction (example mutations)
