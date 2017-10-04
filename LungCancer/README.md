@@ -4,6 +4,8 @@ Preliminary comment: On the NYU HPC cluster, 3 modules are needed. The commands 
 * module load python/3.5.3
 * module load bazel/0.4.4
 
+Most of the codes below show example of command line included in phoenix qsub scripts.
+
 For the path, it is advised to always put the full path name and not the relative paths.
 
 For all the steps below, always submit the jobs via a qsub script (if on Pheonix) and always check the output and error log files are fine. 
@@ -154,6 +156,14 @@ Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at multi-out
 
 For the training and validation sets:
 ```shell
+#!/bin/tcsh
+#$ -pe openmpi 4
+#$ -A TensorFlow
+#$ -N rqsub_TFR_trval
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q 
+
 python build_image_data_multiClass.py --directory='jpeg_main_directory' --output_directory='outputfolder' --train_shards=1024 --validation_shards=128 --num_threads=4  --labels_names=label_names.txt --labels=labels_files.txt  --PatientID=12
 ```
 * ``` label_names.txt``` is a text file with the 10 possible labels, 1 per line
@@ -163,6 +173,14 @@ python build_image_data_multiClass.py --directory='jpeg_main_directory' --output
 
 For the test set:
 ```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqsub_sort
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q all.q
+
 python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test' --labels_names=label_names.txt --labels=labels_files.txt  --PatientID=12
 ```
 
@@ -179,11 +197,39 @@ Code in the subfolders of 01_training/xClasses - can be used for any type of tra
 Build the model from the proper directory, that means from ```cd 01_training/xClasses```:
 
 ```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqs_build
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+#$ -l excl=true
+
+module load cuda/8.0
+module load python/3.5.3
+module load bazel/0.4.4
+
+
 bazel build inception/imagenet_train
 ```
 
 Run it for all the training images:
 ```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqs_train
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+#$ -l excl=true
+
+module load cuda/8.0
+module load python/3.5.3
+module load bazel/0.4.4
+
+
 bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --ClassNumber=3 --mode='0_softmax'
 ```
  The ```mode``` option must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
@@ -191,7 +237,7 @@ bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='out
 
 ## 1.2 - Transfer learning
 
-See https://github.com/tensorflow/models/tree/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception#adjusting-memory-demands for more details.
+See [inception v3 github page](https://github.com/tensorflow/models/tree/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception#adjusting-memory-demands) for more details.
 
 
 Bassically:
@@ -199,6 +245,19 @@ Bassically:
 Build the model (the following two commands must be run from the proper directory, for example ```cd 01_training/xClasses```):
 
 ```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqs_build
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+#$ -l excl=true
+
+module load cuda/8.0
+module load python/3.5.3
+module load bazel/0.4.4
+
 bazel build inception/imagenet_train
 ```
 
@@ -218,19 +277,10 @@ model.ckpt-157585
 
 Run it for all the training images:
 ```shell
-bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --pretrained_model_checkpoint_path="path_to/model.ckpt-157585" --fine_tune=True --initial_learning_rate=0.001  --ClassNumber=3 --mode='0_softmax'
-```
-
-Adjust the input parameters as required. For mode, this can also be '1_sigmoid'.
-
-
-Example of qsub script header to submit those two jobs on the Phoenix cluster:
-
-```shell
 #!/bin/tcsh
 #$ -pe openmpi 1
 #$ -A TensorFlow
-#$ -N rqs8b_bazel
+#$ -N rqs_train
 #$ -cwd
 #$ -S /bin/tcsh
 #$ -q gpu0.q
@@ -239,10 +289,11 @@ Example of qsub script header to submit those two jobs on the Phoenix cluster:
 module load cuda/8.0
 module load python/3.5.3
 module load bazel/0.4.4
+
+bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --pretrained_model_checkpoint_path="path_to/model.ckpt-157585" --fine_tune=True --initial_learning_rate=0.001  --ClassNumber=3 --mode='0_softmax'
 ```
 
-
-
+Adjust the input parameters as required. For mode, this can also be '1_sigmoid'.
 
 
 
@@ -258,7 +309,19 @@ Code is in 02_testing/xClasses/.
 run the job:
 
 ```shell
-python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/valid*"  --batch_size 30 --ImageSet_basename='valid' --ClassNumber 2
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqs_Valid
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+#$ -l excl=true
+
+module load cuda/8.0
+module load python/3.5.3
+
+python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid' --ClassNumber 2
 ```
 
 Replace ClassNumber with the number of classes used. 
@@ -267,7 +330,7 @@ You need to either:
 * run it manually once in a while and keep track of the evolution of validation score.
 * or run the script without the ```--run_once``` option (the program will run in an infinite loop and will need to be killed manually). To set how often the validation script needs to be run, you need to modify the code: in file ```02_testing/2Classes/inception/nc_inception_eval.py```, line 46, the default value of ```eval_interval_secs``` set to 5 minutes by default (for very long jobs, every 1 or 5 hours may be enough. This has to be changed before compilation with bazel).
 
-Note: The current validation code only saves the validation accuracy, not the loss. The code still needs to be changed for that. 
+Note: The current validation code only saves the validation accuracy, not the loss (saved in an output file named `precision_at_1.txt`). The code still needs to be changed for that. 
 
 
 
@@ -301,27 +364,33 @@ Main modifications when adjusting the code:
 
 # 2 - Run the classification on the test images
 
-Code in one of the subfolders of 02_testing  (depending on the type of run: 2 classes, 3 classes, or 10 multiclass outputs with softmax layer replaced by sigmoid)
+Code in 02_testing/xClass:
 
+Code is the same as the one used for the validation, but with different options: 
 
-Usage:
-As before, first build the model (as for training, should be in the good directory where the WORKSPACE file is):
 
 ```shell
-bazel build inception/nc_imagenet_eval
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rq_Test
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+#$ -l excl=true
+
+module load cuda/8.0
+module load python/3.5.3
+
+python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_perSlide_test/"  --batch_size 30 --ImageSet_basename='test_' --run_once --ClassNumber 2 
 ```
 
-Then:
-```shell
-bazel-bin/inception/nc_imagenet_eval --checkpoint_dir='0_scratch/' --eval_dir='output_directory' --run_once --data_dir='test_TFperSlide' --batch_size 30 --ImageSet_basename='test_'
-
-```
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
 data_dir contains the images in TFRecord format, with 1 TFRecord file per slide.
-In the eval_dir, it will generate files:
-*  out_FPTPrate_PcTiles.txt and out_FPTPrate_ScoreTiles.txt: info for the ROC curve after aggregation of the results using the percentage of properly classified tiles or the average score aggregation technique
-*  out_filename_Stats.txt: a text file with output information: <tilename> <True/False classification> [<output probilities>]
+
+In the eval_dir, it will generate the following files:
+*  out_filename_Stats.txt: a text file with output information: <tilename> <True/False classification> [<output probilities>] <corrected output probability for the true label> labels: <true label number>
 *  node2048/: a subfolder where each file correspond to a tile such as the filenames are ```test_<svs name>_<tile ID x>_<tile ID y>.net2048``` and the first line of the file contains: ``` <True / False> \tab [<Background prob> <Prob class 1> <Prob class 2>]  <TP prob>```, and the next 2048 lines correspond to the output of the last-but-one layer
 
 
@@ -383,4 +452,7 @@ Generate probability distribution with means for each class for each slide:
 ```shell
 python 0f_ProbHistogram.py --output_dir='result folder' --tiles_stats='out_filename_Stats.txt of mutations' --ctype='Mutations' --filter_file='out_filename_Stats.txt of 3-class classification'
 ```
+
+* `ctype` can be `Lung3Classes` or `Mutations`
+
 
