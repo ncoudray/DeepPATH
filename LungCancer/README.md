@@ -8,7 +8,7 @@ For the path, it is advised to always put the full path name and not the relativ
 
 For all the steps below, always submit the jobs via a qsub script (if on Pheonix) and always check the output and error log files are fine. 
 
-This procesude is based on the inception v3 architecture from google. See https://github.com/tensorflow/models/blob/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception/README.md for information about it. 
+This procesude is based on the inception v3 architecture from google. See [Inception v3](https://github.com/tensorflow/models/blob/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception/README.md) for information about it. 
 
 # 0 - Prepare the images.
 
@@ -75,19 +75,19 @@ python /full_path_to/0d_SortTiles.py --SourceFolder=<tiled images path> --JsonFi
 *  `--Magnification`: magnification at which the tiles should be considerted (example: 20)
 *  `--MagDiffAllowed`: If the requested magnification does not exist for a given slide, take the nearest existing magnification but only if it is at +/- the amount allowed here(example: 5)
 *  `--SortingOption` In the current directory, create one sub-folder per class, and fill each sub-folder with train_, test_ and valid_ test files. Images will be sorted into classes depending on the sorting option:
-**  1. sort according to cancer stage (i, ii, iii or iv) for each cancer separately (classification can be done separately for each cancer)
-**  2.sort according to cancer stage (i, ii, iii or iv) for each cancer  (classification can be done on everything at once)
-**  3. Sort according to type of cancer (LUSC, LUAD, or Nomal Tissue)
-**  4. Sort according to type of cancer (LUSC, LUAD)
-**  5. Sort according to type of cancer / Normal Tissue (2 variables per type)
-**  6. Sort according to cancer / Normal Tissue (2 variables)
-**  7. Random labels (3 labels. Can be used as a false positive control)
-**  8. Sort according to mutational load (High/Low). Must specify --TMB option.
-**  9. Sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
-**  10. Do not sort. Just create symbolic links to all images in a single label folder and assign images to train/test/valid sets.
-**  11. Sample location (Normal, metastatic, etc...)
-**  12. Osman's melanoma: Response to Treatment (Best Response) (POD vs other)
-**  13. Osman's melanoma: Toxicity observed 
+   - 1. sort according to cancer stage (i, ii, iii or iv) for each cancer separately (classification can be done separately for each cancer)
+   - 2.sort according to cancer stage (i, ii, iii or iv) for each cancer  (classification can be done on everything at once)
+   - 3. Sort according to type of cancer (LUSC, LUAD, or Nomal Tissue)
+   - 4. Sort according to type of cancer (LUSC, LUAD)
+   - 5. Sort according to type of cancer / Normal Tissue (2 variables per type)
+   - 6. Sort according to cancer / Normal Tissue (2 variables)
+   - 7. Random labels (3 labels. Can be used as a false positive control)
+   - 8. Sort according to mutational load (High/Low). Must specify --TMB option.
+   - 9. Sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
+   - 10. Do not sort. Just create symbolic links to all images in a single label folder and assign images to train/test/valid sets.
+   - 11. Sample location (Normal, metastatic, etc...)
+   - 12. Osman's melanoma: Response to Treatment (Best Response) (POD vs other)
+   - 13. Osman's melanoma: Toxicity observed 
 * `--TMB`: addional option for optoin 8: path to json file with mutational loads
 *  `--PercentTest`: percentage of images for validation (example: 15); 
 *  `--PercentValid` Percentage of images for testing (example: 15). All the other tiles will be used for training by default.
