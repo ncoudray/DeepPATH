@@ -1,35 +1,32 @@
 
-Preliminary comment: On the NYUm HPC cluster, 3 modules are needed. The commands mentioned below must be run through qsub scripts and not on the head node! Module needed are:
-module load cuda/8.0
-module load python/3.5.3
-module load bazel/0.4.4
+Preliminary comment: On the NYU HPC cluster, 3 modules are needed. The commands mentioned below must be run through qsub scripts and not on the head node! Module mostly needed are:
+* module load cuda/8.0
+* module load python/3.5.3
+* module load bazel/0.4.4
 
 For the path, it is advised to always put the full path name and not the relative paths.
 
 For all the steps below, always submit the jobs via a qsub script (if on Pheonix) and always check the output and error log files are fine. 
 
+This procesude is based on the inception v3 architecture from google. See https://github.com/tensorflow/models/blob/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception/README.md for information about it. 
+
 # 0 - Prepare the images.
 
-Code in 00_preprocessing.
-See from https://github.com/tensorflow/models/blob/master/inception/README.md for specific format needed by inception
+Code in 00_preprocessing. 
+
+All original images must start with the patient ID.
+
+SVS images can be extremely large (+100,000 pixel wide). Optimal input size for inception is 299x299 pixels but the network has been designed to deal with variable image sizes. 
+
+SVS images are first tiled, then sorted according to chosen labels. There will be one folder per label and all the jpg images in the corresponding folder. Also, tiles will be sorted into a train, test and validation set. All tiles generated from the same patient should be assigned to the same set. 
+
+Finally, the jpg images are converted into TFRecords. For the train and validation set, there will be randomly assigned to 1024 and 128 shards respectively. For the test set, there will be 1 TFRecord per slide.
+
 
 
 ## 0.1 Tile the svs slide images
 
 This step also required ```module load openjpeg/2.1.1```.
-```shell
-python /path_to/0b_tileLoop_deepzoom2.py  -s 512 -e 0 -j 32 -B 25 -o "full_path_to_output_folder" "full_path_to_input_slides/*/*svs"  
-```
-Example of parameters:
-*  <svs images path> example: "/ifs/home/kerbosID/NN/Lung/RawImages/*/*svs"
-*  s is tile_size: 512 (512x512 pixel tiles)
-*  -e is overlap, 0 (no overlap between adjacent tiles)
-*  -j is number of threads: 32 (for a full GPU node on gpu0.q)
-*  B is Max Percentage of Background: 25% (tiles removed if background percentage above this value)
-
-The output will be generated in the current directory where the program is launched (so start it from a new empty folder).
-Each slide will have its own folder and inside, one sub-folder per magnification. Inside each magnification folder, tiles are named according to their index within the slide: ```<x>_<y>.jpeg```.
-
 
 Example of qsub script to submit this script on Phoenix cluster (python 2.7 used):
 
@@ -43,8 +40,19 @@ Example of qsub script to submit this script on Phoenix cluster (python 2.7 used
 #$ -S /bin/tcsh
 #$ -q gpu0.q
 #$ -l excl=true
-```
 
+python /path_to/0b_tileLoop_deepzoom2.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
+```
+Example of options:
+*  `-s` is tile_size: 299 (299x299 pixel tiles)
+*  `-e` is overlap, 0 (no overlap between adjacent tiles)
+*  `-j` is number of threads: 32 (for a full GPU node on gpu0.q)
+*  `-B` is Max Percentage of Background: 25% (tiles removed if background percentage above this value)
+*  `-o` is the path were the output images must be saved
+*  The final mandatory parameter is the path to all svs images.
+
+Output:
+* Each slide will have its own folder and inside, one sub-folder per magnification. Inside each magnification folder, tiles are named according to their position within the slide: ```<x>_<y>.jpeg```.
 
 
 ## 0.2 Sort the tiles into train/valid/test sets according to the classes defined
@@ -52,23 +60,38 @@ Example of qsub script to submit this script on Phoenix cluster (python 2.7 used
 
 Then sort according to cancer type:
 ```shell
-python /ifs/home/coudrn01/NN/Lung/0d_SortTiles.py --SourceFolder=<tiled images path> --JsonFile=<JsonFilePath> --Magnification=<Magnification To copy>  --MagDiffAllowed=<Difference Allowed on Magnification> --SortingOption=<Sorting option> --PercentTest=15 --PercentValid=15
-```
-*  <tiled images path> output of ``` 00_preprocessing/0b_tileLoop_deepzoom.py```, that is the main folder where the svs images were tiled
-*  <JsonFilePath> file uploaded with the svs images and containing all the information regarding each slide (i.e, metadata.cart.2017-03-02T00_36_30.276824.json)
-*  <Magnification To copy> magnification at which the tiles should be considerted (example: 20)
-*  <Difference Allowed on Magnification> If the requested magnification does not exist for a given slide, take the nearest existing magnification but only if it is at +/- the amount allowed here(example: 5)
-*  <Sorting option> In the current directory, create one sub-folder per class, and fill each sub-folder with train_, test_ and valid_ test files. Images will be sorted into classes depending on the sorting option:
-* --TMB: addional option for optioin 8: path to json file with mutational loads
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqsub_sort
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q all.q
 
+python /full_path_to/0d_SortTiles.py --SourceFolder=<tiled images path> --JsonFile=<JsonFilePath> --Magnification=<Magnification To copy>  --MagDiffAllowed=<Difference Allowed on Magnification> --SortingOption=<Sorting option> --PercentTest=15 --PercentValid=15 --PatientID=12
+```
+*  `--SourceFolder`: output of ``` 00_preprocessing/0b_tileLoop_deepzoom.py```, that is the main folder where the svs images were tiled
+*  `--JsonFile`: file uploaded with the svs images and containing all the information regarding each slide (i.e, metadata.cart.2017-03-02T00_36_30.276824.json)
+*  `--Magnification`: magnification at which the tiles should be considerted (example: 20)
+*  `--MagDiffAllowed`: If the requested magnification does not exist for a given slide, take the nearest existing magnification but only if it is at +/- the amount allowed here(example: 5)
+*  `--SortingOption` In the current directory, create one sub-folder per class, and fill each sub-folder with train_, test_ and valid_ test files. Images will be sorted into classes depending on the sorting option:
 **  1. sort according to cancer stage (i, ii, iii or iv) for each cancer separately (classification can be done separately for each cancer)
 **  2.sort according to cancer stage (i, ii, iii or iv) for each cancer  (classification can be done on everything at once)
-**  3. sort according to type of cancer (LUSC, LUAD, or Nomal Tissue)
-**  4. sort according to type of cancer (LUSC, LUAD)
-**  5. sort according to type of cancer / Normal Tissue (2 variables per type)
-**  6. sort according to cancer / Normal Tissue (2 variables)
-*  <percentage of images for validation> (example: 15); 
-*  <Percentage of images for testing> (example: 15). All the other tiles will be used for training by default.
+**  3. Sort according to type of cancer (LUSC, LUAD, or Nomal Tissue)
+**  4. Sort according to type of cancer (LUSC, LUAD)
+**  5. Sort according to type of cancer / Normal Tissue (2 variables per type)
+**  6. Sort according to cancer / Normal Tissue (2 variables)
+**  7. Random labels (3 labels. Can be used as a false positive control)
+**  8. Sort according to mutational load (High/Low). Must specify --TMB option.
+**  9. Sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
+**  10. Do not sort. Just create symbolic links to all images in a single label folder and assign images to train/test/valid sets.
+**  11. Sample location (Normal, metastatic, etc...)
+**  12. Osman's melanoma: Response to Treatment (Best Response) (POD vs other)
+**  13. Osman's melanoma: Toxicity observed 
+* `--TMB`: addional option for optoin 8: path to json file with mutational loads
+*  `--PercentTest`: percentage of images for validation (example: 15); 
+*  `--PercentValid` Percentage of images for testing (example: 15). All the other tiles will be used for training by default.
+* `PatientID`: Number of digits used to code the patient ID (must be the first digits of the original image names)
 
 The output will be generated in the current directory where the program is launched (so start it from a new empty folder). Images will not be copied but a symbolic link will be created toward the <tiled images path>. The links will be renamed ```<type>_<slide_root_name>_<x>_<y>.jpeg``` with <type> being 'train_', 'test_' or 'valid_' followed by the svs name and the tile ID. 
 
