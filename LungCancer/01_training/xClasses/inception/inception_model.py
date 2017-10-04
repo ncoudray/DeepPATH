@@ -122,7 +122,7 @@ def loss(logits, labels, batch_size=None):
                                       [batch_size, num_classes],
                                       1.0, 0.0)
   elif FLAGS.mode == '1_sigmoid':
-    dense_labels = tf.reshape(labels, [batch_size, FLAGS.nbr_of_classes+1])
+    dense_labels = tf.reshape(labels, [batch_size, FLAGS.ClassNumber+1])
 
   # Cross entropy loss for the main softmax prediction.
   slim.losses.cross_entropy_loss(logits[0],

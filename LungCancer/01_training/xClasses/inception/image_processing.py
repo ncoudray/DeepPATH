@@ -386,12 +386,12 @@ def parse_example_proto(example_serialized):
     }
   elif FLAGS.mode == '1_sigmoid':
     Vdefault = [0]
-    for kk in range(FLAGS.nbr_of_classes):
+    for kk in range(FLAGS.ClassNumber):
       Vdefault.append(0)
     feature_map = {
         'image/encoded': tf.FixedLenFeature([], dtype=tf.string,
                                             default_value=''),
-        'image/class/label': tf.FixedLenFeature([FLAGS.nbr_of_classes+1], dtype=tf.int64,
+        'image/class/label': tf.FixedLenFeature([FLAGS.ClassNumber+1], dtype=tf.int64,
                                                 default_value=Vdefault),
         'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
                                                default_value=''),
@@ -531,7 +531,7 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
     if FLAGS.mode == '0_softmax':
       return images, tf.reshape(label_index_batch, [batch_size])
     elif FLAGS.mode == '1_sigmoid':
-      return images, tf.reshape(label_index_batch, [batch_size, FLAGS.nbr_of_classes+1])
+      return images, tf.reshape(label_index_batch, [batch_size, FLAGS.ClassNumber+1])
     else:
       return images, tf.reshape(label_index_batch, [batch_size])
 
