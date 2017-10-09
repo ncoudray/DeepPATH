@@ -111,15 +111,16 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
       start_time = time.time()
       current_score = []
       while step < num_iter and not coord.should_stop():
-        top_1, top_5, max_percent, out_filenames, _, net2048, endpoint, logits, labels = sess.run([top_1_op, top_5_op, max_percent_op, all_filenames, filename_queue, net2048_op, endpoints_op, logits_op, labels_op])
+        if FLAGS.mode == '0_softmax':
+          top_1, top_5, max_percent, out_filenames, _, net2048, endpoint, logits, labels = sess.run([top_1_op, top_5_op, max_percent_op, all_filenames, filename_queue, net2048_op, endpoints_op, logits_op, labels_op])
+        elif FLAGS.mode == '1_sigmoid':
+          max_percent, out_filenames, _, net2048, endpoint, logits, labels = sess.run([max_percent_op, all_filenames, filename_queue, net2048_op, endpoints_op, logits_op, labels_op])
 
 
         # for each file, save results in a ext file summarizing things
         print("iteration #%d" % step)
         print("out_filenames")
         print(out_filenames)
-        print(top_1)
-        print(len(top_1))
         print(len(out_filenames))
         print("max_percent")
         print(max_percent)
@@ -131,69 +132,93 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         else:
           os.makedirs(data_path)
 
-        for kk in range(len(out_filenames)):
-          imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
-          imageName = imageName + '.dat'
-          with open(os.path.join(data_path, imageName), "w") as myfile:
-            myfile.write(str(top_1[kk]) + "\t")
-            myfile.write(str(max_percent[kk]) + "\t")
-            class_x = {}
-            sum_class = 0
-            max_Prob = 0
-            # > background class '0' ignored
-            for nC in range(1, len(max_percent[kk])):
-              class_x[nC] = max_percent[kk][nC]
-              sum_class = sum_class + max_percent[kk][nC]
-              max_Prob = max(max_Prob, class_x[nC])
-            for nC in range(1, len(class_x)):
-              class_x[nC] = class_x[nC] / sum_class
-            max_Prob = max_Prob / sum_class
-            total_sample_count += 1
-            '''
-            class_1 = float(max_percent[kk][1])  
-            class_2 = float(max_percent[kk][2])
-            class_3 = float(max_percent[kk][3])
-            sum_class = class_1 + class_2 + class_3
-            class_1 = class_1 / sum_class
-            class_2 = class_2 / sum_class
-            class_3 = class_3 / sum_class
-            '''
-            if top_1[kk] == True:
-              count_top_1 += 1
-              tmp = max_Prob
-              print("True found; score is %f" % (max_Prob))
-            else:
-              print(logits[kk])
-              print(labels[kk])
-              try:
-                tmp = class_x[labels[kk]]
-              except:
-                tmp = -1
+        if FLAGS.mode == '0_softmax':
+          for kk in range(len(out_filenames)):
+            imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
+            imageName = imageName + '.dat'
+            with open(os.path.join(data_path, imageName), "w") as myfile:
+              myfile.write(str(top_1[kk]) + "\t")
+              myfile.write(str(max_percent[kk]) + "\t")
+              class_x = {}
+              sum_class = 0
+              max_Prob = 0
+              # > background class '0' ignored
+              for nC in range(1, len(max_percent[kk])):
+                class_x[nC] = max_percent[kk][nC]
+                sum_class = sum_class + max_percent[kk][nC]
+                max_Prob = max(max_Prob, class_x[nC])
+              for nC in range(1, len(class_x)):
+                class_x[nC] = class_x[nC] / sum_class
+              max_Prob = max_Prob / sum_class
+              total_sample_count += 1
               '''
-              if int(labels[kk]) == 1:
-                tmp = class_1
-              elif int(labels[kk]) == 2:
-                tmp = class_2
-              elif int(labels[kk]) == 3:
-                tmp = class_3
+              class_1 = float(max_percent[kk][1])  
+              class_2 = float(max_percent[kk][2])
+              class_3 = float(max_percent[kk][3])
+              sum_class = class_1 + class_2 + class_3
+              class_1 = class_1 / sum_class
+              class_2 = class_2 / sum_class
+              class_3 = class_3 / sum_class
+              '''
+              if top_1[kk] == True:
+                count_top_1 += 1
+                tmp = max_Prob
+                print("True found; score is %f" % (max_Prob))
               else:
-                tmp = -1
-              '''
-              print("False found; score is %f" % (tmp))
-            myfile.write(str(tmp) + "\t\n")
-            myfile.write("labels: \t")
-            myfile.write(str(labels[kk]) + "\t")
-            myfile.write("\nlogits: \t")
-            for nlogit in logits[kk]:
-              myfile.write(str(nlogit) + "\t")
-          if "test" in FLAGS.ImageSet_basename:
-            with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
-             myfile.write(imageName + "\t")
-             myfile.write(str(top_1[kk]) + "\t")
-             myfile.write(str(max_percent[kk]) + "\t")
-             myfile.write(str(tmp) + "\t")
-             myfile.write("labels: \t")
-             myfile.write(str(labels[kk]) + "\n")
+                print(logits[kk])
+                print(labels[kk])
+                try:
+                  tmp = class_x[labels[kk]]
+                except:
+                  tmp = -1
+                '''
+                if int(labels[kk]) == 1:
+                  tmp = class_1
+                elif int(labels[kk]) == 2:
+                  tmp = class_2
+                elif int(labels[kk]) == 3:
+                  tmp = class_3
+                else:
+                  tmp = -1
+                '''
+                print("False found; score is %f" % (tmp))
+              myfile.write(str(tmp) + "\t\n")
+              myfile.write("labels: \t")
+              myfile.write(str(labels[kk]) + "\t")
+              myfile.write("\nlogits: \t")
+              for nlogit in logits[kk]:
+                myfile.write(str(nlogit) + "\t")
+            if "test" in FLAGS.ImageSet_basename:
+              with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
+                myfile.write(imageName + "\t")
+                myfile.write(str(top_1[kk]) + "\t")
+                myfile.write(str(max_percent[kk]) + "\t")
+                myfile.write(str(tmp) + "\t")
+                myfile.write("labels: \t")
+                myfile.write(str(labels[kk]) + "\n")
+        elif FLAGS.mode == '1_sigmoid':
+          top_1 = 0
+          for inLog, inLab in zip(max_percent, labels):
+            for inLog2, inLab2 in zip(inLog, inLab):
+              total_sample_count += 1
+              #print(inLog2)
+              if round(inLog2)==round(inLab2):
+                top_1 += 1
+          count_top_1 += np.sum(top_1)
+          print("tmp", count_top_1 / total_sample_count)
+          for kk in range(len(out_filenames)):
+            imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
+            imageName = imageName + '.dat'
+            with open(os.path.join(data_path, imageName), "w") as myfile:
+              myfile.write(str(labels[kk]) + "\t")
+              #myfile.write(str(logits[kk]) + "\t")
+              myfile.write(" ".join(str(max_percent[kk]).splitlines()) + "\t")
+          with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
+            for kk in range(len(out_filenames)):
+                myfile.write(out_filenames[kk].decode('UTF-8') + "\t")
+                myfile.write(str(labels[kk]) + "\t")
+                myfile.write(" ".join(str(max_percent[kk]).splitlines()) + "\t")        
+
 
 
         if "test" in FLAGS.ImageSet_basename:
@@ -247,6 +272,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                 'sec/batch)' % (datetime.now(), step, num_iter,
                                 examples_per_sec, sec_per_batch))
           start_time = time.time()
+
 
 
       # Compute precision @ 1.
@@ -355,9 +381,12 @@ def evaluate(dataset):
     #for kk in range(len(labels)):
     #   #max_percent.append(end_points['predictions'][kk][labels[kk]])
     #   max_percent.append(labels[kk])
-    top_1_op = tf.nn.in_top_k(logits, labels, 1)
-    top_5_op = tf.nn.in_top_k(logits, labels, 5)
-
+    if FLAGS.mode == '0_softmax':
+      top_1_op = tf.nn.in_top_k(logits, labels, 1)
+      top_5_op = tf.nn.in_top_k(logits, labels, 5)
+    elif FLAGS.mode == '1_sigmoid':
+      top_1_op = None
+      top_5_op = None
     # Restore the moving average version of the learned variables for eval.
     variable_averages = tf.train.ExponentialMovingAverage(
         inception.MOVING_AVERAGE_DECAY)

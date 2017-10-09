@@ -48,6 +48,7 @@ import tensorflow as tf
 from inception.slim import ops
 from inception.slim import scopes
 
+FLAGS = tf.app.flags.FLAGS
 
 def inception_v3(inputs,
                  dropout_keep_prob=0.8,
@@ -330,7 +331,11 @@ def inception_v3(inputs,
                           restore=restore_logits)
           # 1000
           end_points['logits'] = logits
-          end_points['predictions'] = tf.nn.softmax(logits, name='predictions')
+          if FLAGS.mode == '0_softmax':
+            end_points['predictions'] = tf.nn.softmax(logits, name='predictions')
+          elif FLAGS.mode == '1_sigmoid':
+            end_points['predictions'] = tf.nn.sigmoid(logits, name='predictions')
+
       return logits, end_points, net, sel_end_points
 
 

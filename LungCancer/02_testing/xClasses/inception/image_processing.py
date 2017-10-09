@@ -372,16 +372,35 @@ def parse_example_proto(example_serialized):
     text: Tensor tf.string containing the human-readable label.
   """
   # Dense features in Example proto.
-  feature_map = {
-      'image/encoded': tf.FixedLenFeature([], dtype=tf.string,
-                                          default_value=''),
-      'image/class/label': tf.FixedLenFeature([1], dtype=tf.int64,
-                                              default_value=-1),
-      'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
-                                             default_value=''),
-      'image/filename': tf.FixedLenFeature([], dtype=tf.string,
-                                             default_value=''),
-  }
+  if FLAGS.mode == '0_softmax':
+    feature_map = {
+        'image/encoded': tf.FixedLenFeature([], dtype=tf.string,
+                                            default_value=''),
+        'image/class/label': tf.FixedLenFeature([1], dtype=tf.int64,
+                                                default_value=-1),
+        'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
+                                               default_value=''),
+        'image/filename': tf.FixedLenFeature([], dtype=tf.string,
+                                               default_value=''),
+    }
+  elif FLAGS.mode == '1_sigmoid':
+    Vdefault = [0]
+    for kk in range(FLAGS.ClassNumber):
+      Vdefault.append(0)
+    feature_map = {
+        'image/encoded': tf.FixedLenFeature([], dtype=tf.string,
+                                            default_value=''),
+        'image/class/label': tf.FixedLenFeature([FLAGS.ClassNumber+1], dtype=tf.int64,
+                                                default_value=Vdefault),
+        'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
+                                               default_value=''),
+        'image/filename': tf.FixedLenFeature([], dtype=tf.string,
+                                               default_value=''),
+    }
+  else:
+    raise ValueError("You must set the mode option (to 0_softmax or 1_sigmoid for example)")
+
+
   sparse_float32 = tf.VarLenFeature(dtype=tf.float32)
   # Sparse features in Example proto.
   feature_map.update(
@@ -537,4 +556,8 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
     # Display the training images in the visualizer.
     tf.summary.image('images', images)
 
-    return images, tf.reshape(label_index_batch, [batch_size]), all_filenames2, example_serialized
+    if FLAGS.mode == '0_softmax':
+      return images, tf.reshape(label_index_batch, [batch_size]), all_filenames2, example_serialized
+    elif FLAGS.mode == '1_sigmoid':
+       return images, tf.reshape(label_index_batch, [batch_size, FLAGS.ClassNumber+1]), all_filenames2, example_serialized
+

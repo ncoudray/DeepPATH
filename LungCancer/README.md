@@ -321,10 +321,10 @@ run the job:
 module load cuda/8.0
 module load python/3.5.3
 
-python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid' --ClassNumber 2
+python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid' --ClassNumber 2 --mode='0_softmax'
 ```
 
-Replace ClassNumber with the number of classes used. 
+Replace ClassNumber with the number of classes used and mode by "1_sigmoid" if multi-output classification done (ex for mutations). 
 
 You need to either:
 * run it manually once in a while and keep track of the evolution of validation score.
@@ -382,7 +382,7 @@ Code is the same as the one used for the validation, but with different options:
 module load cuda/8.0
 module load python/3.5.3
 
-python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_perSlide_test/"  --batch_size 30 --ImageSet_basename='test_' --run_once --ClassNumber 2 
+python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_perSlide_test/"  --batch_size 30 --ImageSet_basename='test_' --run_once --ClassNumber 2 --mode='0_softmax'
 ```
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
@@ -393,22 +393,6 @@ In the eval_dir, it will generate the following files:
 *  out_filename_Stats.txt: a text file with output information: <tilename> <True/False classification> [<output probilities>] <corrected output probability for the true label> labels: <true label number>
 *  node2048/: a subfolder where each file correspond to a tile such as the filenames are ```test_<svs name>_<tile ID x>_<tile ID y>.net2048``` and the first line of the file contains: ``` <True / False> \tab [<Background prob> <Prob class 1> <Prob class 2>]  <TP prob>```, and the next 2048 lines correspond to the output of the last-but-one layer
 
-
-Example of qsub submission script header on the Phoenix cluster:
-
-```shell
-#!/bin/tcsh
-#$ -pe openmpi 1
-#$ -A TensorFlow
-#$ -N rq_9aTst
-#$ -cwd
-#$ -S /bin/tcsh
-#$ -q gpu0.q
-
-module load cuda/8.0
-module load python/3.5.3
-
-```
 
 expected processing time for this step: on a gpu, about 1000 tiles per minute.
 

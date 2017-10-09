@@ -27,6 +27,10 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('ImageSet_basename', 'test_',
                            """Either 'test_', 'valid' or 'train'.""")
 
+tf.app.flags.DEFINE_string('mode', '0_softmax',
+                            """0_softmax or 1_sigmoid.""")
+
+
 def main(unused_argv=None):
 
   #input_path = os.path.join(FLAGS.data_dir, 'test_*')

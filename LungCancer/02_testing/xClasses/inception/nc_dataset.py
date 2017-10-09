@@ -43,6 +43,7 @@ tf.app.flags.DEFINE_string('data_dir', '/ifs/home/coudrn01/NN/Lung/Test_All512px
                            """TFRecord of Example protos.""")
 
 
+
 class Dataset(object):
   """A simple class for handling data sets."""
   __metaclass__ = ABCMeta
