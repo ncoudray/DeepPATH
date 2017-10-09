@@ -199,9 +199,15 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         elif FLAGS.mode == '1_sigmoid':
           top_1 = 0
           for inLog, inLab in zip(max_percent, labels):
+            lab0 = True
             for inLog2, inLab2 in zip(inLog, inLab):
+              #ignore label 0
+              if lab0:
+                lab0 = False
+                continue
               total_sample_count += 1
-              #print(inLog2)
+              print(inLog2, inLab)
+              print(round(inLog2), round(inLab2))
               if round(inLog2)==round(inLab2):
                 top_1 += 1
           count_top_1 += np.sum(top_1)
