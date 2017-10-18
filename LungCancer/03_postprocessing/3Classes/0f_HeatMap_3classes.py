@@ -145,8 +145,18 @@ def make_colormap(seq):
     return mcolors.LinearSegmentedColormap('CustomMap', cdict)
 
 
+def dict_tiles_stats():
+	stats_dict = {}
+	with open(FLAGS.tiles_stats) as f:
+		for line in f:
+			line2 = line.replace('[','').replace(']','').split()
+			#print(line)
+			stats_dict['.'.join(line2[0].split('.')[:-1])] = line
+	return stats_dict
 
-def get_inference_from_file(test_filename, cTileRootName):
+
+
+def get_inference_from_file(test_filename, cTileRootName, stats_dict):
 
 
 
@@ -157,121 +167,117 @@ def get_inference_from_file(test_filename, cTileRootName):
 	current_score = -1
 	oClass = -1
 	cmap = plt.get_cmap('binary')
-	with open(FLAGS.tiles_stats) as f:
-		Found = False
-		Mutation = False
-		for line in f:
-			if basename in line:
-				line = line.replace('[','').replace(']','').split()
-				Found = True
-				print(line)
-				if FLAGS.map == 'CancerType':
-					is_TP = line[1]
-					class_1 = float(line[3])
-					class_2 = float(line[4])
-					class_3 = float(line[5])
-					sum_class = class_1 + class_2 + class_3
-					class_1 = class_1 / sum_class
-					class_2 = class_2 / sum_class
-					class_3 = class_3 / sum_class
-					current_score = max(class_1, class_2, class_3)
-					if current_score == class_1:
-						oClass = 1
-					elif current_score == class_2:
-						oClass = 2
-					else:
-						oClass = 3
-					if oClass == 1:
-						cmap = plt.get_cmap('binary')
-					elif oClass == 2:
-						cmap = plt.get_cmap('OrRd')
-					else:
-						cmap = plt.get_cmap('Blues')
-					break
-				elif FLAGS.map == 'EGFR':
-					Mutation = True
-					cmap = plt.get_cmap('Reds')
-					oClass = 0
-				elif FLAGS.map == 'FAT1':
-					Mutation = True
-					cmap = plt.get_cmap('Oranges')
-					oClass = 1
-				elif FLAGS.map == 'FAT4':
-					Mutation = True
-					c = mcolors.ColorConverter().to_rgb
-					cmap = make_colormap([c('white'), c('yellow')])
-					oClass = 2
-				elif FLAGS.map == 'KEAP1':
-					Mutation = True
-					c = mcolors.ColorConverter().to_rgb
-					cmap = make_colormap([c('white'), c('green')])
-					oClass = 3
-				elif FLAGS.map == 'KRAS':
-					Mutation = True
-					cmap = plt.get_cmap('Greens')
-					oClass = 4
-				elif FLAGS.map == 'LRP1B':
-					Mutation = True
-					c = mcolors.ColorConverter().to_rgb
-					cmap = make_colormap([c('white'), c('blue')])
-					oClass = 5
-				elif FLAGS.map == 'NF1':
-					Mutation = True
-					cmap = plt.get_cmap('Blues')
-					oClass = 6
-				elif FLAGS.map == 'SETBP1':
-					Mutation = True
-					cmap = plt.get_cmap('Purples')
-					oClass = 7
-				elif FLAGS.map == 'STK11':
-					Mutation = True
-					c = mcolors.ColorConverter().to_rgb
-					cmap = make_colormap([c('white'), c('magenta')])
-					oClass = 8
-				elif FLAGS.map == 'TP53':
-					Mutation = True
-					cmap = plt.get_cmap('Greys')
-					oClass = 9
+	Found = False
+	Mutation = False
+	if basename in stats_dict.keys():
+		line = stats_dict[basename]
+		line = line.replace('[','').replace(']','').split()
+		Found = True
+		print(line)
+		if FLAGS.map == 'CancerType':
+			is_TP = line[1]
+			class_1 = float(line[3])
+			class_2 = float(line[4])
+			class_3 = float(line[5])
+			sum_class = class_1 + class_2 + class_3
+			class_1 = class_1 / sum_class
+			class_2 = class_2 / sum_class
+			class_3 = class_3 / sum_class
+			current_score = max(class_1, class_2, class_3)
+			if current_score == class_1:
+				oClass = 1
+			elif current_score == class_2:
+				oClass = 2
+			else:
+				oClass = 3
+			if oClass == 1:
+				cmap = plt.get_cmap('binary')
+			elif oClass == 2:
+				cmap = plt.get_cmap('OrRd')
+			else:
+				cmap = plt.get_cmap('Blues')
+		elif FLAGS.map == 'EGFR':
+			Mutation = True
+			cmap = plt.get_cmap('Reds')
+			oClass = 0
+		elif FLAGS.map == 'FAT1':
+			Mutation = True
+			cmap = plt.get_cmap('Oranges')
+			oClass = 1
+		elif FLAGS.map == 'FAT4':
+			Mutation = True
+			c = mcolors.ColorConverter().to_rgb
+			cmap = make_colormap([c('white'), c('yellow')])
+			oClass = 2
+		elif FLAGS.map == 'KEAP1':
+			Mutation = True
+			c = mcolors.ColorConverter().to_rgb
+			cmap = make_colormap([c('white'), c('green')])
+			oClass = 3
+		elif FLAGS.map == 'KRAS':
+			Mutation = True
+			cmap = plt.get_cmap('Greens')
+			oClass = 4
+		elif FLAGS.map == 'LRP1B':
+			Mutation = True
+			c = mcolors.ColorConverter().to_rgb
+			cmap = make_colormap([c('white'), c('blue')])
+			oClass = 5
+		elif FLAGS.map == 'NF1':
+			Mutation = True
+			cmap = plt.get_cmap('Blues')
+			oClass = 6
+		elif FLAGS.map == 'SETBP1':
+			Mutation = True
+			cmap = plt.get_cmap('Purples')
+			oClass = 7
+		elif FLAGS.map == 'STK11':
+			Mutation = True
+			c = mcolors.ColorConverter().to_rgb
+			cmap = make_colormap([c('white'), c('magenta')])
+			oClass = 8
+		elif FLAGS.map == 'TP53':
+			Mutation = True
+			cmap = plt.get_cmap('Greys')
+			oClass = 9
 
-				
-				if Mutation:
-					analyze = True
-					if os.path.isfile(FLAGS.filter_tile):
-						with open(FLAGS.filter_tile) as fstat2:
-							for line2 in fstat2:
-								print(line2)
-								print(".".join(line[0].split(".")[:-1]))
-								if ".".join(line[0].split(".")[:-1]) in line2:
-									ref = line2.replace('[','').replace(']','').split()
-									nMax = max([float(ref[3]), float(ref[4]), float(ref[5])])
-									LUAD = float(ref[4])
-									print("Found:")
-									print(line2, nMax, LUAD)
-									if LUAD != nMax:
-										analyze = False
-										current_score = -1
-									#print(analyze)
-									break
-					if analyze == False:
-						#print("continue")
-						continue
-
-					EGFR = float(line[13])
-					FAT1 = float(line[14])
-					FAT4 = float(line[15])
-					KEAP1 = float(line[16])
-					KRAS = float(line[17])
-					LRP1B = float(line[18])
-					NF1 = float(line[19])
-					SETBP1 = float(line[20])
-					STK11 = float(line[21])
-					TP53 = float(line[22])
-					Alldata = [EGFR, FAT1, FAT4, KEAP1, KRAS, LRP1B, NF1, SETBP1, STK11, TP53]
-					current_score = Alldata[oClass]
-				break
-
-		if Found ==False:
-			print("image not found in text file... and that's weird...")
+		
+		if Mutation:
+			analyze = True
+			if os.path.isfile(FLAGS.filter_tile):
+				with open(FLAGS.filter_tile) as fstat2:
+					for line2 in fstat2:
+						print(line2)
+						print(".".join(line[0].split(".")[:-1]))
+						if ".".join(line[0].split(".")[:-1]) in line2:
+							ref = line2.replace('[','').replace(']','').split()
+							nMax = max([float(ref[3]), float(ref[4]), float(ref[5])])
+							LUAD = float(ref[4])
+							print("Found:")
+							print(line2, nMax, LUAD)
+							if LUAD != nMax:
+								analyze = False
+								current_score = -1
+							#print(analyze)
+							break
+			if analyze == False:
+				print("continue - Mutation not found")
+			else:
+				EGFR = float(line[13])
+				FAT1 = float(line[14])
+				FAT4 = float(line[15])
+				KEAP1 = float(line[16])
+				KRAS = float(line[17])
+				LRP1B = float(line[18])
+				NF1 = float(line[19])
+				SETBP1 = float(line[20])
+				STK11 = float(line[21])
+				TP53 = float(line[22])
+				Alldata = [EGFR, FAT1, FAT4, KEAP1, KRAS, LRP1B, NF1, SETBP1, STK11, TP53]
+				current_score = Alldata[oClass]
+		
+	if Found ==False:
+		print("image not found in text file... and that's weird...")
 
 	print(oClass, current_score)
 	return oClass, cmap, current_score 
@@ -334,12 +340,18 @@ def main(_):
   ##	Number of Tiles classified in each class
   ## 	Average score for each class (first sum then divide)
 
-
+	# Read out_filename stats:
+	stats_dict = dict_tiles_stats()
 
 	# Read the name of the folder (= class names)
 	if FLAGS.tiles_stats == '':
 		create_graph()
-	sub_dirs = [image_dir]
+	sub_dirs = []
+	for item in os.listdir(image_dir):
+    		if os.path.isdir(os.path.join(image_dir, item)):
+        		sub_dirs.append(os.path.join(image_dir,item))
+
+	#sub_dirs = [image_dir]
 
 	print("sub_dirs:")
 	print(sub_dirs)
@@ -352,7 +364,8 @@ def main(_):
 	for sub_dir in list(sub_dirs):
 	#for sub_dir in list(reversed(sub_dirs)):
 		dir_name = os.path.basename(sub_dir)
-		extensions = ['jpg', 'jpeg', 'JPG', 'JPEG']
+		#extensions = ['jpg', 'jpeg', 'JPG', 'JPEG']
+		extensions = ['jpeg']
 		file_list = []
 
 		print("list the images in folder %s..." % (dir_name) )
@@ -440,7 +453,7 @@ def main(_):
 			# print("FLAGS.tiles_stats")
 			# print(FLAGS.tiles_stats)
 			# text file with stats from fully retrained network
-			oClass, cmap, current_score = get_inference_from_file(test_filename, cTileRootName)
+			oClass, cmap, current_score = get_inference_from_file(test_filename, cTileRootName, stats_dict)
 	
 
 			# prepare heatmap
@@ -544,13 +557,13 @@ if __name__ == '__main__':
   parser.add_argument(
       '--slide_filter',
       type=str,
-      default='',
+      default='test_06-',
       help='process only images with this basename.'
   )
   parser.add_argument(
       '--filter_tile',
       type=str,
-      default='',
+      default='/home/coudrn01/NN/OurSoftware/TCGA-05-5425/tmp_class_30perTF/out_filename_Stats.txt',
       help='if map is a mutation, apply cmap of mutations only if tiles are LUAD.'
   )
   parser.add_argument(

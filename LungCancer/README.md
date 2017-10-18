@@ -539,8 +539,12 @@ python 0h_ROC_sklearn.py  --file_stats out_filename_Stats.txt  --output_dir 'out
 
 Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
 ```shell
-python 0f_HeatMap_3classes.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0 --output_dir 'result_folder' --tiles_stats 'out_filename_Stats.txt' --resample_factor 4 --tiles_filter 'TCGA-05-5425'
+python 0f_HeatMap_3classes.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0 --output_dir 'result_folder' --tiles_stats 'out_filename_Stats.txt' --resample_factor 4 --tiles_filter 'TCGA-05-5425' --filter_tile '' --map 'CancerType'
 ```
+* ```tiles_filter```: process only images with this basename.
+* ```filter_tile```: if map is a mutation, apply cmap of mutations only if tiles are LUAD (```out_filename_Stats.txt``` of Noemal/LUAD/LUSC classification)
+* ```map```: ```CancerType``` for Normal/LUAD/LUSC classification, or mutation name
+
 Generate probability distribution with means for each class for each slide:
 ```shell
 python 0f_ProbHistogram.py --output_dir='result folder' --tiles_stats='out_filename_Statsout_filename_Stats.txt' --ctype='Lung3Classes'
