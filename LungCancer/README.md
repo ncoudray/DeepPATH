@@ -32,7 +32,6 @@ This step also required ```module load openjpeg/2.1.1```.
 
 Example of qsub script to submit this script on Phoenix cluster (python 2.7 used):
 
-
 ```shell
 #!/bin/tcsh
 #$ -pe openmpi 32
@@ -45,6 +44,25 @@ Example of qsub script to submit this script on Phoenix cluster (python 2.7 used
 
 python /path_to/0b_tileLoop_deepzoom2.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
 ```
+
+On Prince, you may want to try this header instead (and adjust option ```-j``` to ```28```):
+
+```shell
+#!/bin/bash
+#SBATCH --job-name=rq_tile
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=28
+#SBATCH --mem=125GB
+#SBATCH --time=47:00:00
+#SBATCH --output=rq_00tile_%A_%a.out
+#SBATCH --error=rq_00tile_%A_%a.err
+
+module load openslide-python/intel/1.1.1
+
+
+```
+
+
 Example of options:
 *  `-s` is tile_size: 299 (299x299 pixel tiles)
 *  `-e` is overlap, 0 (no overlap between adjacent tiles)
@@ -60,7 +78,8 @@ Output:
 ## 0.2 Sort the tiles into train/valid/test sets according to the classes defined
 
 
-Then sort according to cancer type:
+Then sort according to cancer type (script example for Phoenix):
+
 ```shell
 #!/bin/tcsh
 #$ -pe openmpi 1
@@ -72,6 +91,21 @@ Then sort according to cancer type:
 
 python /full_path_to/0d_SortTiles.py --SourceFolder=<tiled images path> --JsonFile=<JsonFilePath> --Magnification=<Magnification To copy>  --MagDiffAllowed=<Difference Allowed on Magnification> --SortingOption=<Sorting option> --PercentTest=15 --PercentValid=15 --PatientID=12
 ```
+
+For Prince, the header of the script may be:
+```shell
+#!/bin/bash
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=sort
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_train_%A_%a.out
+#SBATCH --error=rq_train_%A_%a.err
+#SBATCH --mem=2G
+
+module load numpy/intel/1.13.1
+```
+
 *  `--SourceFolder`: output of ``` 00_preprocessing/0b_tileLoop_deepzoom.py```, that is the main folder where the svs images were tiled
 *  `--JsonFile`: file uploaded with the svs images and containing all the information regarding each slide (i.e, metadata.cart.2017-03-02T00_36_30.276824.json)
 *  `--Magnification`: magnification at which the tiles should be considerted (example: 20)
@@ -121,6 +155,25 @@ module load python/3.5.3
 
 python build_image_data.py --directory='jpeg_label_directory' --output_directory='outputfolder' --train_shards=1024  --validation_shards=128 --num_threads=4
 ```
+
+For Prince, the header of the script may be:
+
+```shell
+#!/bin/bash
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=TFR_Vset
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_TFR_%A_%a.out
+#SBATCH --error=rq_TFR_%A_%a.err
+#SBATCH --mem=20G
+
+module load numpy/intel/1.13.1
+module load cuda/8.0.44    
+module load tensorflow/python2.7/1.0.1
+module load bazel/gnu/0.4.3 
+
+```
+
 
 The jpeg must not be directly inside 'jpeg_label_directory' but in subfolders with names corresponding to the labels (for example as `jpeg_label_directory/TCGA-LUAD/...jpeg` and `jpeg_label_directory/TCGA-LUSC/...jpeg`). The name of those tiles are : `<type>_name_x_y.jpeg` with type being "test", "train" or "valid", name the TCGA name of the slide, x and y the tile coordinates.
 
@@ -213,6 +266,25 @@ module load bazel/0.4.4
 
 bazel build inception/imagenet_train
 ```
+
+Note, on the Prince cluster, the header could be something like:
+```shell
+#!/bin/bash
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=train
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_train_%A_%a.out
+#SBATCH --error=rq_train_%A_%a.err
+#SBATCH --mem=20G
+#SBATCH --time=168:00:00
+
+module load numpy/intel/1.13.1
+module load cuda/8.0.44    
+module load tensorflow/python2.7/1.0.1
+module load bazel/gnu/0.4.3 
+```
+
 
 Run it for all the training images:
 ```shell
@@ -324,6 +396,24 @@ module load python/3.5.3
 python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid' --ClassNumber 2 --mode='0_softmax'
 ```
 
+
+Note, on the Prince cluster, the header could be something like:
+```shell
+#!/bin/bash
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=valid
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --time=150:00:00
+#SBATCH --output=rq_valid_%A_%a.out
+#SBATCH --error=rq_valid_%A_%a.err
+#SBATCH --mem=10G
+
+module load numpy/intel/1.13.1
+module load cuda/8.0.44    
+module load tensorflow/python2.7/1.0.1
+```
+
 Replace ClassNumber with the number of classes used and mode by "1_sigmoid" if multi-output classification done (ex for mutations). 
 
 You need to either:
@@ -398,6 +488,37 @@ expected processing time for this step: on a gpu, about 1000 tiles per minute.
 
 
 # 3 - Analyze the outcome
+
+On the Phoenix  cluster, the header for the following commands could be something like:
+```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rq_Analyze
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q
+
+module load cuda/8.0
+module unload python/3.5.3
+# Note: the scikit-learn seems to work properly only wiyh Native python, so unload 3.5.3 - heatmaps work with python/3.5.3
+```
+
+On the Prince cluster, the header could be something like:
+```shell
+#!/bin/bash
+#SBATCH --job-name=ROC
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_ROC_%A_%a.out
+#SBATCH --error=rq_ROC_%A_%a.err
+#SBATCH --mem=2G
+
+module load numpy/intel/1.13.1
+module load scikit-learn/intel/0.18.1
+
+```
+
 
 ## Code in 03_postprocessing/2Classes for 2 classes:
 Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
