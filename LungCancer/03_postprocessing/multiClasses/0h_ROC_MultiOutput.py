@@ -80,7 +80,7 @@ def main():
 					if kL ==0:
 						IncProb.append(float(ExpectedProb[0]))
 					else:
-						IncProb.append(float(ExpectedProb[kL]) / (1-float(ExpectedProb[0]))
+						IncProb.append(float(ExpectedProb[kL]) / (1-float(ExpectedProb[0])))
 						tmp.append(IncProb[kL])
 
 				ExpectedProb = ExpectedProb * 0
