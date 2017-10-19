@@ -190,7 +190,7 @@ if __name__ == '__main__':
     parser.add_argument("--PercentTest", help="percentage of images for testing (between 0 and 100)", type=float, dest='PercentTest')
     parser.add_argument("--PatientID", help="Patient ID is supposed to be the first PatientID characters (integer expected) of the folder in which the pyramidal jpgs are. Slides from same patient will be in same train/test/valid set. This option is ignored if set to 0 or -1 ", type=int, dest='PatientID')
     parser.add_argument("--TMB", help="path to json file with mutational loads; or to BRAF mutations", dest='TMB')
-    parser.add_argument("--nSplit", help="interger n: Split into train/valid in n different ways", dest='nSplit')
+    parser.add_argument("--nSplit", help="interger n: Split into train/test in n different ways", dest='nSplit')
 
     ## Parse Arguments
     args = parser.parse_args()
@@ -265,7 +265,7 @@ if __name__ == '__main__':
         for nSet in range(int(args.nSplit)):
             ttv_split.append("train")
             nbr_valid.append(0)
-        ttv_split[0] = "valid"
+        ttv_split[0] = "test"
 
     print("imgFolders")
     print(imgFolders)
@@ -394,7 +394,7 @@ if __name__ == '__main__':
                 else:
                     SetIndx = nbr_valid.index(min(nbr_valid))
 
-                ttv_split[SetIndx] = "valid"
+                ttv_split[SetIndx] = "test"
                 nbr_valid[SetIndx] = nbr_valid[SetIndx] + 1
 
                 for nSet in range(int(args.nSplit)):
