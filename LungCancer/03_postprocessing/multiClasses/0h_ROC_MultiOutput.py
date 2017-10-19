@@ -79,6 +79,7 @@ def main():
 				for kL in range(len(ExpectedProb)):
 					if kL ==0:
 						IncProb.append(float(ExpectedProb[0]))
+						tmp.append(0)
 					else:
 						IncProb.append(float(ExpectedProb[kL]) / (1-float(ExpectedProb[0])))
 						tmp.append(IncProb[kL])
