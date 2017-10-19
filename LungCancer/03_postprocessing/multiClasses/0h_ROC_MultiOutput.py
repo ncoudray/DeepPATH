@@ -74,6 +74,22 @@ def main():
 				IncProb = IncProb.split(']')[0]
 				IncProb = IncProb.split()
 			except:
+				tmp = []
+				IncProb = []
+				for kL in range(len(ExpectedProb)):
+					if kL ==0:
+						IncProb.append(float(ExpectedProb[0]))
+					else:
+						IncProb.append(float(ExpectedProb[kL]) / (1-float(ExpectedProb[0]))
+						tmp.append(IncProb[kL])
+
+				ExpectedProb = ExpectedProb * 0
+				if 'True' in line:
+					ExpectedProb[IncProb.index(max(tmp))] = 1
+				else:
+					ExpectedProb[IncProb.index(min(tmp))] = 1
+
+				'''
 				IncProb = [0, 0, 0]
 				IncProb[0] = float(ExpectedProb[0])
 				IncProb[1] = float(ExpectedProb[1]) / (1-float(ExpectedProb[0]))
@@ -84,6 +100,8 @@ def main():
 					ExpectedProb[IncProb.index(max(tmp))] = 1
 				else:
 					ExpectedProb[IncProb.index(min(tmp))] = 1
+				'''
+
 
 			true_label = []
 			for iprob in ExpectedProb:
