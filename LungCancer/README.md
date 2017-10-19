@@ -128,7 +128,7 @@ module load numpy/intel/1.13.1
 *  `--PercentTest`: percentage of images for validation (example: 15); 
 *  `--PercentValid` Percentage of images for testing (example: 15). All the other tiles will be used for training by default.
 * `PatientID`: Number of digits used to code the patient ID (must be the first digits of the original image names)
-* `nSplit`: interger n: Split into train/valid in n different ways.  If split is > 0, then the data will be split in train/valid only in "# split" non-overlapping ways (each way will have 100/(#split) % of valid images). `PercentTest` and `PercentValid` will be ignored. If nSplit=0, then there will be one output split done according to `PercentValid` and `PercentTest`
+* `nSplit`: interger n: Split into train/test in n different ways.  If split is > 0, then the data will be split in train/test only in "# split" non-overlapping ways (each way will have 100/(#split) % of test images). `PercentTest` and `PercentValid` will be ignored. If nSplit=0, then there will be one output split done according to `PercentValid` and `PercentTest`
 
 The output will be generated in the current directory where the program is launched (so start it from a new empty folder). Images will not be copied but a symbolic link will be created toward the <tiled images path>. The links will be renamed ```<type>_<slide_root_name>_<x>_<y>.jpeg``` with <type> being 'train_', 'test_' or 'valid_' followed by the svs name and the tile ID. 
 

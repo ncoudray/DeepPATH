@@ -159,7 +159,7 @@ if __name__ == '__main__':
     Each images should have its own sub-folder with the svs image name followed by '_files'
     Each images should have subfolders with names corresponding to the magnification associated with the jpeg tiles saved inside it
     The sorting will be done using tiles corresponding to a magnification of 20 (+/- 5 if the 20 folder does not exist)
-    15%% will be put for validation, 15%% for testing and the leftover for training. However, if split is > 0, then the data will be split in train/valid only in "# split" non-overlapping ways (each way will have 100/(#split) % of valid images).
+    15%% will be put for validation, 15%% for testing and the leftover for training. However, if split is > 0, then the data will be split in train/test only in "# split" non-overlapping ways (each way will have 100/(#split) % of test images).
     linked images' names will start with 'train_', 'test_' or 'valid_' followed by the svs name and the tile ID
     Sorting options are:
         1. sort according to cancer stage (i, ii, iii or iv) for each cancer separately (classification can be done separately for each cancer)
