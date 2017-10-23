@@ -88,7 +88,8 @@ class TileWorker(Process):
                     if avgBkg < (self._Bkg / 100):
                         tile.save(outfile, quality=self._quality)
                         #print("%s good: %f" %(outfile, avgBkg))
-                    #else:
+                    elif level>5:
+                        tile.save(outfile, quality=self._quality)
                             #print("%s empty: %f" %(outfile, avgBkg))
                     self._queue.task_done()
                 except:

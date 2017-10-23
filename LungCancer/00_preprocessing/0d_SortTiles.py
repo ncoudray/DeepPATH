@@ -131,6 +131,8 @@ def sort_melanoma_Toxicity(metadata, load_dic, **kwargs):
     return metadata['Toxicity Observed']
 
 
+def sort_text(metadata, load_dic, **kwargs):
+    return metadata
 
 
 sort_options = [
@@ -146,7 +148,8 @@ sort_options = [
         sort_setonly,
         sort_location,
         sort_melanoma_POD,
-        sort_melanoma_Toxicity
+        sort_melanoma_Toxicity,
+        sort_text
 ]
 
 if __name__ == '__main__':
@@ -175,7 +178,7 @@ if __name__ == '__main__':
        11. Sample location (Normal, metastatic, etc...)
        12. Osman's melanoma: Response to Treatment (Best Response) (POD vs other)
        13. Osman's melanoma: Toxicity observed 
- 
+       14. Json is actually a text file. First column is ID, second is the labels
 
     """
     ## Define Arguments
@@ -210,12 +213,19 @@ if __name__ == '__main__':
     random.shuffle(imgFolders)  # randomize order of images
 
     JsonFile = args.JsonFile
-    with open(JsonFile) as fid:
-        jdata = json.loads(fid.read())
-    try:
-      jdata = dict((jd['file_name'].rstrip('.svs'), jd) for jd in jdata)
-    except:
-      jdata = dict((jd['Patient ID'], jd) for jd in jdata)
+    if '.json' in JsonFile:
+        with open(JsonFile) as fid:
+            jdata = json.loads(fid.read())
+        try:
+            jdata = dict((jd['file_name'].rstrip('.svs'), jd) for jd in jdata)
+        except:
+            jdata = dict((jd['Patient ID'], jd) for jd in jdata)
+    else:
+        with open(JsonFile, "rU") as f:
+            jdata = {}
+            for line in f:
+                tmp_PID = line.split()[0]
+                jdata[tmp_PID[:args.PatientID]] = line.split()[1]
 
     print("jdata:")
     print(jdata)

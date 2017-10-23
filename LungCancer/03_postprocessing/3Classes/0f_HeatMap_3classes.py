@@ -371,10 +371,11 @@ def main(_):
 		print("list the images in folder %s..." % (dir_name) )
 		for extension in extensions:
       			#file_glob = os.path.join(image_dir, dir_name, 'test_*.' + extension)
-      			file_glob = os.path.join(image_dir, dir_name, FLAGS.slide_filter + '*.' + extension)
+      			file_glob = os.path.join(image_dir, dir_name, '*' + FLAGS.slide_filter + '*.' + extension)
       			file_list.extend(gfile.Glob(file_glob))
 		if not file_list:
       			print('No images found')
+      			print(os.path.join(image_dir, dir_name, '*' + FLAGS.slide_filter + '*.' + extension))
       			continue
 
 
@@ -395,14 +396,14 @@ def main(_):
 			rTile = im2.shape[1]
 			cTile = im2.shape[0]
 						
-			xTile =  (ixTile) * (rTile - FLAGS.tiles_overlap)
-			yTile =  (iyTile) * (cTile - FLAGS.tiles_overlap)
+			xTile =  (ixTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap)
+			yTile =  (iyTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap)
 			req_xLength = xTile + rTile
 			req_yLength = yTile + cTile
 
 			if FLAGS.resample_factor > 0:
-				#print("old / new r&cTile")
-				#print(rTile, cTile)
+				print("old / new r&cTile")
+				print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
 				rTile = int(rTile / FLAGS.resample_factor)
 				cTile = int(cTile / FLAGS.resample_factor)
 				#print(rTile, cTile)
@@ -410,12 +411,13 @@ def main(_):
 				rTile = im2s.shape[1]
 				cTile = im2s.shape[0]
 
-				ixTile = int(ixTile / FLAGS.resample_factor)
-				iyTile = int(iyTile / FLAGS.resample_factor)
+				#ixTile = int(ixTile / FLAGS.resample_factor)
+				#iyTile = int(iyTile / FLAGS.resample_factor)
 				xTile = int(xTile / FLAGS.resample_factor)
 				yTile = int(yTile / FLAGS.resample_factor)
 				req_xLength = xTile + rTile
 				req_yLength = yTile + cTile
+				print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
 			else:
 				im2s = im2
 			#print(ixTile, iyTile, rTile, cTile, req_xLength, req_yLength, xTile, yTile)
@@ -547,6 +549,12 @@ if __name__ == '__main__':
       type=int,
       default=1,
       help='reduce the size of the output by this factor.'
+  )
+  parser.add_argument(
+      '--tiles_size',
+      type=int,
+      default=512,
+      help='tile size in pixels.'
   )
   parser.add_argument(
       '--tiles_stats',
