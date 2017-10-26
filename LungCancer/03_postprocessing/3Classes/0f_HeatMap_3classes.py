@@ -190,12 +190,27 @@ def get_inference_from_file(test_filename, cTileRootName, stats_dict):
 				oClass = 2
 			else:
 				oClass = 3
+			if FLAGS.thresholds is not None:
+				thresholds = FLAGS.thresholds
+				thresholds = [float(x) for x in thresholds.split(',')]
+				if class_1 > thresholds[0]:
+					oClass = 1
+				elif class_2 > thresholds[1]:
+					oClass = 2
+					if class_3 > thresholds[2]:
+						oClass = 4
+				if class_3 > thresholds[2]:
+					oClass = 3
 			if oClass == 1:
 				cmap = plt.get_cmap('binary')
 			elif oClass == 2:
 				cmap = plt.get_cmap('OrRd')
-			else:
+			elif oClass == 3:
 				cmap = plt.get_cmap('Blues')
+			else:
+				cmap = plt.get_cmap('Purples')
+
+
 		elif FLAGS.map == 'EGFR':
 			Mutation = True
 			cmap = plt.get_cmap('Reds')
@@ -579,6 +594,12 @@ if __name__ == '__main__':
       type=str,
       default='CancerType',
       help='can be CancerType, of the name of a mutation (TP53, EGFR...)'
+  )
+  parser.add_argument(
+      '--thresholds',
+      type=str,
+      default=None,
+      help='thresholds to use for each label - string, for example: 0.285,0.288,0.628. If none, take the highest one.'
   )
 
   FLAGS, unparsed = parser.parse_known_args()

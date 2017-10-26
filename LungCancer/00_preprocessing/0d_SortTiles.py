@@ -379,7 +379,7 @@ if __name__ == '__main__':
             print(PercentSlidesCateg.get(SubDir + "_valid")<PercentValid)
 
             # rename the images with the root name, and put them in train/test/valid
-            if PercentSlidesCateg.get(SubDir + "_test") < PercentTest:
+            if PercentSlidesCateg.get(SubDir + "_test") <= PercentTest:
                 ttv = "test"
             elif PercentSlidesCateg.get(SubDir + "_valid") < PercentValid:
                 ttv = "valid"

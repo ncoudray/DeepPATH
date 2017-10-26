@@ -117,7 +117,8 @@ def main():
 				AllData[basename]['NbTiles'] += 1
 				for eachlabel in range(len(OutProb)):
 					AllData[basename]['Probs'][eachlabel] = AllData[basename]['Probs'][eachlabel] + OutProb[eachlabel]
-					if OutProb[eachlabel] >= 0.5:
+					#if OutProb[eachlabel] >= 0.5:
+					if OutProb[eachlabel] == max(OutProb):
 						AllData[basename]['Nb_Selected'][eachlabel] = AllData[basename]['Nb_Selected'][eachlabel] + 1.0
 			else:
 				AllData[basename] = {}
@@ -129,7 +130,11 @@ def main():
 					AllData[basename]['Nb_Selected'][eachlabel] = 0.0
 					#AllData[basename]['LabelIndx_'+unique_labels(eachlabel)] = true_label(eachlabel)
 					AllData[basename]['Probs'][eachlabel] = OutProb[eachlabel]
-					if OutProb[eachlabel] >= 0.5:
+					#if OutProb[eachlabel] >= 0.5:
+					#print(eachlabel)
+					#print(OutProb[eachlabel])
+					#print(max(OutProb[eachlabel]))
+					if OutProb[eachlabel] == max(OutProb):
 						AllData[basename]['Nb_Selected'][eachlabel] = 1.0
 
 				nstart = False
@@ -148,6 +153,9 @@ def main():
 		AllData[basename]['Percent_Selected'] = {}
 		output.write("Percent_Selected: ")
 		for eachlabel in range(len(unique_labels)):
+			print(eachlabel)
+			print(float(AllData[basename]['NbTiles']))
+			print(AllData[basename]['Nb_Selected'][eachlabel])
 			AllData[basename]['Percent_Selected'][eachlabel] = AllData[basename]['Nb_Selected'][eachlabel] / float(AllData[basename]['NbTiles'])
 			tmp_prob.append(AllData[basename]['Percent_Selected'][eachlabel])
 			output.write("%f\t" % (AllData[basename]['Percent_Selected'][eachlabel]) )
@@ -190,10 +198,12 @@ def main():
 		fpr_PcSel[i], tpr_PcSel[i], _ = roc_curve(y_ref[:, i], y_score_PcSelect[:, i])
 		roc_auc_PcSel[i] = auc(fpr_PcSel[i], tpr_PcSel[i])
 		euc_dist = []
-		for jj in range(len(fpr[i])):
-			euc_dist.append( euclidean_distances([1, 0], [fpr[i][jj], tpr[i][jj]]) )
-		opt_thresh[i] = thresholds[i][euc_dist.index(min(euc_dist))]
-
+		try:
+			for jj in range(len(fpr[i])):
+				euc_dist.append( euclidean_distances([0, 1], [fpr[i][jj], tpr[i][jj]]) )
+			opt_thresh[i] = thresholds[i][euc_dist.index(min(euc_dist))]
+		except:
+			opt_thresh[i] = 0
 	# Compute micro-average ROC curve and ROC area
 	fpr["micro"], tpr["micro"], _ = roc_curve(y_ref.ravel(), y_score.ravel())
 	roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
@@ -201,8 +211,11 @@ def main():
 	fpr_PcSel["micro"], tpr_PcSel["micro"], thresholds["micro"] = roc_curve(y_ref.ravel(), y_score_PcSelect.ravel())
 	roc_auc_PcSel["micro"] = auc(fpr_PcSel["micro"], tpr_PcSel["micro"])
 	euc_dist = []
-	for jj in range(len(fpr["micro"])):
-		euc_dist.append( euclidean_distances([1, 0], [fpr["micro"][jj], tpr["micro"][jj]]) )
+	for jj in range(len(fpr_PcSel["micro"])):
+		euc_dist.append( euclidean_distances([0, 1], [fpr_PcSel["micro"][jj], tpr_PcSel["micro"][jj]]) )
+	print(min(euc_dist))
+	print(euc_dist.index(min(euc_dist)))
+	print(thresholds["micro"])
 	opt_thresh["micro"] = thresholds["micro"][euc_dist.index(min(euc_dist))]
 
 
@@ -237,7 +250,7 @@ def main():
 	print(fpr)
 	print(tpr)
 	for i in range(n_classes):
-		output = open(os.path.join(FLAGS.output_dir, corr + 'out2_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_t' + str(opt_thresh[i]) + '.txt'),'w')
+		output = open(os.path.join(FLAGS.output_dir, corr + 'out2_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_t' + str("%.3f" % opt_thresh[i]) + '.txt'),'w')
 		for kk in range(len(tpr[i])):
 			output.write("%f\t%f\n" % (fpr[i][kk], tpr[i][kk]) )
 		output.close()
@@ -247,7 +260,7 @@ def main():
 		output.write("%f\t%f\n" % (fpr["macro"][kk], tpr["macro"][kk]) )
 	output.close()
 
-	output = open(os.path.join(FLAGS.output_dir, corr + 'out2_roc_data_AvPb_micro_auc_' + str("%.4f" % roc_auc["micro"]) + '_t' + str(opt_thresh["micro"]) + '.txt'),'w')
+	output = open(os.path.join(FLAGS.output_dir, corr + 'out2_roc_data_AvPb_micro_auc_' + str("%.4f" % roc_auc["micro"]) + '_t' + str("%.3f" % opt_thresh["micro"]) + '.txt'),'w')
 	for kk in range(len(tpr["micro"])):
 		output.write("%f\t%f\n" % (fpr["micro"][kk], tpr["micro"][kk]) )
 	output.close()
@@ -363,8 +376,8 @@ if __name__ == '__main__':
   parser.add_argument(
       '--labels_names',
       type=str,
-      default='/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/9_10mutations/label_names.txt',
-      help='Names of the possible output labels ordered as desired'
+      default='',
+      help='Names of the possible output labels ordered as desired example, /ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/9_10mutations/label_names.txt'
   )
   parser.add_argument(
       '--ref_stats',
