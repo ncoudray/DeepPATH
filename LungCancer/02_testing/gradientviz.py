@@ -14,11 +14,10 @@ FLAGS = None
 
 def outer_grad_inception(labels,
                          batch_size=1,
-                         learningrate=0.000001,
-                         weight_decay=0.01,
+                         learningrate=[0.00000099, 0.0000008, 0.0000007, 0.0000006, 0.0000005],
+                         weight_decay=0.1,
                          epochs=100,
                          num_classes =1):
-    decay = learningrate/epochs
     checkpoint = tf.train.latest_checkpoint('/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/0_scratch')
     image = cv2.imread('/home/shaivi/Desktop/Shaivi/RA/LungCancer/pathology/test_images/20.0/12_11.jpeg')
     image = cv2.resize(image, (299, 299),interpolation=cv2.INTER_CUBIC)
@@ -31,39 +30,42 @@ def outer_grad_inception(labels,
     label = tf.one_hot(y, 2)
     logits, auxiliary_logits, endpoints, net2048 = inference(x, 2)
     with tf.get_default_graph() and tf.Session(config=tf.ConfigProto(allow_soft_placement=True))as sess:
-        saver = tf.train.import_meta_graph("{}.meta".format(checkpoint))
-        saver.restore(sess, checkpoint)
-        print("Model restored from dir")
-        print tf.global_variables()
-        plt.ion()
-        plt.show()
-        sess.run(tf.global_variables_initializer())
+        with tf.device('/gpu:0'):
+            saver = tf.train.import_meta_graph("{}.meta".format(checkpoint))
+            saver.restore(sess, checkpoint)
+            print("Model restored from dir")
+            print tf.global_variables()
+            plt.ion()
+            plt.show()
+            sess.run(tf.global_variables_initializer())
 
-        print "endpoints", endpoints
-        loss_grad = slim.losses.cross_entropy_loss(logits,
-                                 label,
-                                 label_smoothing=0.1,
-                                 weight=1.0)
+            print "endpoints", endpoints
+            loss_grad = slim.losses.cross_entropy_loss(logits,
+                                     label,
+                                     label_smoothing=0.1,
+                                     weight=1.0)
 
-        print "loss_grad", loss_grad
-        var_grad = tf.gradients(loss_grad, [x])
-        print "var_gard", var_grad
-        print "sess var: ", sess.run(var_grad, feed_dict={x: image, y: np.array([1])})
-        for i in range(epochs):
-            x_grad = sess.run(var_grad[0], feed_dict={x: image, y: np.array([1])})
-            print x_grad
-            new_grad = (x_grad[0] * learningrate + weight_decay * learningrate * image)
-            print new_grad
-            if not image.dtype == "float64":
-                image = image.astype(np.float64)
-            image = np.subtract(image, new_grad)
-            print image
-            image = (image - image.min()) / image.max()
-            print image.shape
-            print learningrate
-            if i % 10 == 0:
-                write_img(image[0], "image"+str(i))
-
+            print "loss_grad", loss_grad
+            var_grad = tf.gradients(loss_grad, [x])
+            print "var_gard", var_grad
+            print "sess var: ", sess.run(var_grad, feed_dict={x: image, y: np.array([1])})
+            for lr in learningrate:
+                img = image.copy()
+                print lr
+                for i in range(0, epochs):
+                    x_grad = sess.run(var_grad[0], feed_dict={x: image, y: np.array([1])})
+                    print x_grad
+                    new_grad = (x_grad[0] * lr + weight_decay * lr * img)
+                    print new_grad
+                    if not img.dtype == "float64":
+                        img = img.astype(np.float64)
+                    img = np.subtract(img, new_grad)
+                    # print img
+                    img = (img - img.min()) / img.max()
+                    # print img.shape
+                    # print lr
+                    if i % 10 == 0:
+                        write_img(img[0], "image"+str(i))
 
 def write_img(image, name, pause=0.016):
     plt.title(name)

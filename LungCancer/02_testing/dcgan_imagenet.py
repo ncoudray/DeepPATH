@@ -1,0 +1,436 @@
+from __future__ import print_function
+# from tensorflow.examples.tutorials.mnist import input_data
+import math
+import numpy as np
+import os
+import scipy.misc
+import tensorflow as tf
+from sklearn.cluster import KMeans
+from inception.nc_imagenet_data import ImagenetData
+from inception.image_processing import inputs
+import random
+from dcgan_ops import *
+
+slim = tf.contrib.slim
+tf.set_random_seed(1)
+np.random.seed(1)
+tf.logging.set_verbosity(tf.logging.INFO)
+
+#########
+# Model #
+#########
+def merge(images, size):
+    h, w = images.shape[1], images.shape[2]
+    img = np.zeros((h * size[0], w * size[1]))
+
+    for idx, image in enumerate(images):
+        i = idx % size[1]
+        j = idx / size[1]
+        img[j * h:j * h + h, i * w:i * w + w] = image
+    return img
+
+def lrelu(x, leak=0.2, name="lrelu"):
+    with tf.variable_scope(name):
+        f1 = 0.5 * (1 + leak)
+        f2 = 0.5 * (1 - leak)
+        return f1 * x + f2 * abs(x)
+
+def generator(z, reuse=True):
+    init_width = 7
+    filters = (128, 64, 32, 1)
+    kernel_size = 5
+    with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
+                        reuse=reuse,
+                        normalizer_fn=slim.batch_norm):
+        with tf.variable_scope("gen"):
+            net = slim.fully_connected(z, init_width ** 2 * filters[0], scope='fc1')
+            print ("gen fc net")
+            net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
+            print ("gen fc reshped net: ", net)
+            for i in range(1, len(filters)):
+                net = slim.conv2d_transpose(
+                    net, filters[i],
+                    kernel_size=kernel_size,
+                    stride=2,
+                    scope='deconv_'+str(i))
+                print("gen net: {0} - {1}".format(i, net))
+            net = tf.nn.tanh(net, name="tanh")
+            print("gen tanh net: ", net)
+            tf.summary.histogram('gen/out', net)
+            tf.summary.image("gen", net, max_outputs=8)
+    return net
+
+def discriminator(x, name, classification=False, dropout=None, int_feats=False):
+    filters = (16, 32, 64, 128)
+    with slim.arg_scope([slim.fully_connected],
+                        activation_fn=lrelu):
+        with tf.variable_scope(name):
+            net = x
+            for i in range(len(filters)):
+                net = conv2d(net, num_output_channels=filters[i], name="conv_"+str(i))
+                print ("net conv: {0} - {1}".format(i, net))
+                net = lrelu(net, name="relu"+str(i))
+                print ("net relu: ", net)
+
+            net = slim.flatten(net,)
+            print ("flatten: ", net)
+            net = slim.fully_connected(net, 1024, activation_fn=None, scope='fc1')
+            print ("fc1: ", net)
+            net = tf.nn.dropout(net, keep_prob=0.5, name="dropout")
+            print ("dropout: ", net)
+            net = slim.fully_connected(net, 1, activation_fn=tf.nn.sigmoid, scope='out')
+            print ("fc2: ", net)
+    return net
+
+def read_and_decode(filename_queue):
+    reader = tf.TFRecordReader()
+    _, serialized_example = reader.read(filename_queue)
+    features = tf.parse_single_example(
+     serialized_example,
+     # Defaults are not specified since both keys are required.
+     features = {
+        'image/encoded': tf.FixedLenFeature([], dtype=tf.string,
+                                 default_value=''),
+        'image/class/label': tf.FixedLenFeature([1], dtype=tf.int64,
+                                     default_value=-1),
+        'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
+                                    default_value=''),
+        })
+    image = tf.image.decode_jpeg(features['image/encoded'], channels=3)
+    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    label = tf.cast(features['image/class/label'], tf.int32)
+
+    return image, label
+
+def tensor_to_image():
+    train_images = []
+    train_labels = []
+    input_path = os.path.join(FLAGS.data_dir, 'train-*')
+    data_files = tf.gfile.Glob(input_path)
+    print(data_files)
+    for next_slide in data_files:
+        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+            with tf.device("/gpu:0"):
+                print (next_slide)
+                filename_queue = tf.train.string_input_producer([next_slide])
+                image, label = read_and_decode(filename_queue)
+                # print ("image shape: ", image.shape)
+                coord = tf.train.Coordinator()
+                threads = tf.train.start_queue_runners(coord=coord)
+                init_op = tf.global_variables_initializer()
+                sess.run(init_op)
+                nbr_slides = 0
+                for record in tf.python_io.tf_record_iterator(next_slide):
+                    nbr_slides += 1
+
+                print(nbr_slides)
+                for i in range(nbr_slides):
+                    img_out, lab_out = sess.run([image, label])
+                    # print(img_out.shape)
+                    train_images.append(img_out)
+                    train_labels.append(lab_out)
+                # print ("train_images: ", len(train_images))
+                coord.request_stop()
+                coord.join(threads)
+    train_images = np.array(train_images)
+    train_labels = np.array(train_labels)
+    print(train_images.shape)
+    print (train_labels.shape)
+    return train_images, train_labels
+
+
+def readTFRecord():
+    input_path = os.path.join(FLAGS.data_dir, 'test_*')
+    data_files = tf.gfile.Glob(input_path)
+    # print(data_files)
+    count_slides = 0
+    train_images = np.empty([FLAGS.batch_size, 229, 229, 3], dtype=np.float32)
+    train_labels = np.empty([FLAGS.batch_size], dtype=np.int32)
+    for i, next_slide in enumerate(data_files):
+        print("New Slide ------------ %d" % (count_slides))
+        print ("Slide: ", next_slide)
+        labelindex = int(next_slide.split('_')[-1].split('.')[0])
+        if labelindex == 1:
+            labelname = 'luad'
+        elif labelindex == 2:
+            labelname = 'lusc'
+        else:
+            labelname = 'error_label_name'
+        print("label %d: %s" % (labelindex, labelname))
+
+        FLAGS.data_dir = next_slide
+        dataset = ImagenetData(subset=FLAGS.subset)
+        print (dataset.num_classes())
+
+        images, labels, all_filenames, filename_queue = inputs(dataset)
+
+        print (images)
+        print (labels)
+        with tf.Session() as sess:
+            coord = tf.train.Coordinator()
+            threads = tf.train.start_queue_runners(coord=coord)
+            example, lab = sess.run([images, labels])
+            if i == 0:
+                train_images = example
+                train_labels = lab
+            else:
+                train_images = np.append(train_images, example, axis=0)
+                train_labels = np.append(train_labels, lab, axis=0)
+            print ("train: ", train_images)
+            coord.request_stop()
+            coord.join(threads)
+    print ("len: ", train_images.shape)
+    print ("len L: ", train_labels.shape)
+    return train_images, train_labels
+
+#############
+# DC-GAN #
+#############
+
+def mnist_gan(train_images, train_labels):
+    # Models
+    print ("Model Training")
+    z_dim = 100
+    x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
+    d_model = discriminator(x, name="disc1")
+
+    z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
+    g_model = generator(z, reuse=False)
+    dg_model = discriminator(g_model, name="disc2")
+
+    tf.add_to_collection("d_model", d_model)
+    tf.add_to_collection("dg_model", dg_model)
+    tf.add_to_collection('g_model', g_model)
+
+    # Optimizers
+    t_vars = tf.trainable_variables()
+    global_step = tf.Variable(0, name='global_step', trainable=False)
+    d_loss = -tf.reduce_mean(tf.log(d_model) + tf.log(1. - dg_model), name='d_loss')
+    tf.summary.scalar('d_loss', d_loss)
+    d_trainer = tf.train.AdamOptimizer(.0002, beta1=.5, name='d_adam').minimize(
+        d_loss,
+        global_step=global_step,
+        var_list=[v for v in t_vars if 'd' in v.name],
+        name='d_min')
+
+    g_loss = -tf.reduce_mean(tf.log(dg_model), name='g_loss')
+    tf.summary.scalar('g_loss', g_loss)
+    g_trainer = tf.train.AdamOptimizer(.0002, beta1=.5, name='g_adam').minimize(
+        g_loss, var_list=[v for v in t_vars if 'gen/' in v.name],
+        name='g_adam')
+    init = tf.global_variables_initializer()
+    print ("init")
+    # Session
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+        with tf.device('/gpu:0'):
+            sess.run(init)
+            # Savers
+            saver = tf.train.Saver(max_to_keep=20)
+            checkpoint = tf.train.latest_checkpoint(FLAGS.logdir)
+            if checkpoint and not FLAGS.debug:
+                print('Restoring from', checkpoint)
+                saver.restore(sess, checkpoint)
+            summary = tf.summary.merge_all()
+            summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
+            # Training loop
+            for step in range(2 if FLAGS.debug else int(1e6)):
+                z_batch = np.random.uniform(-1, 1, [FLAGS.batch_size, z_dim]).astype(np.float32)
+                idx = np.random.randint(len(train_images), size=FLAGS.batch_size)
+                images = train_images[idx, :, :, :]
+                print ("images shape: ", images.shape)
+                # Update discriminator
+                _, d_loss_val = sess.run([d_trainer, d_loss], feed_dict={x: images, z: z_batch})
+                # Update generator twice
+                sess.run(g_trainer, feed_dict={z: z_batch})
+                _, g_loss_val = sess.run([g_trainer, g_loss], feed_dict={z: z_batch})
+
+                # Log details
+                print("Gen Loss: ", g_loss_val, " Disc loss: ", d_loss_val)
+                print (z_batch.shape)
+                summary_str = sess.run(summary, feed_dict={x: images, z: z_batch})
+                summary_writer.add_summary(summary_str, global_step.eval())
+
+                # Early stopping
+                if np.isnan(g_loss_val) or np.isnan(g_loss_val):
+                    print('Early stopping')
+                    break
+
+                if step % 100 == 0:
+                    # Save samples
+                    if FLAGS.sampledir:
+                        samples = 64
+                        z2 = np.random.uniform(-1.0, 1.0, size=[samples, z_dim]).astype(np.float32)
+                        images = sess.run(g_model, feed_dict={z: z2})
+                        images = np.reshape(images, [samples, 299, 299])
+                        images = (images + 1.) / 2.
+                        scipy.misc.imsave(FLAGS.sampledir + '/sample.png', merge(images, [int(math.sqrt(samples))] * 2))
+
+                    # save model
+                    if not FLAGS.debug:
+                        checkpoint_file = os.path.join(FLAGS.logdir, 'checkpoint')
+                        saver.save(sess, checkpoint_file, global_step=global_step)
+            return
+
+##################
+# Gan classifier #
+##################
+
+
+def gan_class(train_images, train_labels):
+    # Models
+    dropout = .5
+    x = tf.placeholder(tf.float32, shape=[None, 229, 229, 3])
+    y = tf.placeholder(tf.float32, shape=[None, 2])
+    keep_prob = tf.placeholder(tf.float32, name="keep_prob")
+    c_model = discriminator(
+        x,
+        name="disc1",
+        classification=True,
+        dropout=keep_prob)
+
+    # Loss
+    t_vars = tf.trainable_variables()
+    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=c_model, labels=y, name="cross_entropy")
+                          , name="reduce_mean")
+    optimizer = tf.train.AdamOptimizer(1e-4, beta1=.5, name="adam_opt")
+    trainer = optimizer.minimize(
+        loss,
+        var_list=[v for v in t_vars if 'classify/' in v.name],
+        name="trainer"
+    )
+
+    # Evaluation metric
+    correct_prediction = tf.equal(tf.argmax(c_model, 1), tf.argmax(y, 1), name="correct_pred")
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name="accuracy")
+    init = tf.global_variables_initializer()
+
+    # Saver
+    restore_vars = {}
+    for t_var in t_vars:
+        if 'conv' in t_var.name:
+            restore_vars[t_var.name.split(':')[0]] = t_var
+    saver = tf.train.Saver(restore_vars, max_to_keep=20)
+
+    # Session
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+        with tf.device('/gpu:0'):
+            sess.run(init)
+            checkpoint = tf.train.latest_checkpoint(FLAGS.logdir)
+            if not checkpoint:
+                return
+            saver.restore(sess, checkpoint)
+
+            # Training loop
+            for i in range(2000):
+                idx = np.random.randint(len(train_images), size=FLAGS.batch_size)
+                images = train_images[idx, :, :, :]
+                print("images shape: ", images.shape)
+                # Train
+                _, loss_val = sess.run([trainer, loss], feed_dict={x: images, y: labels, keep_prob: dropout})
+                if i % 100 == 0:
+                    print('Loss', loss_val)
+                if i % 400 == 0:
+                    idx_test = np.random.randint(len(train_images), size=FLAGS.batch_size)
+                    test_images = train_images[idx_test,:,:,:]
+                    test_labels = [idx_test]
+                    test_accuracy = sess.run(accuracy, feed_dict={
+                        x: test_images,
+                        y: test_labels,
+                        keep_prob: 1.})
+                    print("test accuracy %g" % test_accuracy)
+            return
+
+
+#####################
+# KMeans classifier #
+#####################
+
+def kmeans(train_images, train_labels):
+    # Models
+    x = tf.placeholder(tf.float32, shape=[None, 229, 229, 3])
+    feat_model = discriminator(x, name="disc", int_feats=True)
+    init = tf.global_variables_initializer()
+    saver = tf.train.Saver()
+    # Session
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+        with tf.device('/gpu:0'):
+            sess.run(init)
+            # Restore model params
+            checkpoint = tf.train.latest_checkpoint(FLAGS.logdir)
+            saver.restore(sess, checkpoint)
+
+            # Extract intermediate features
+            idx = np.random.randint(len(train_images), size=FLAGS.batch_size)
+            images, labels = train_images[idx,:,:,:], train_labels[idx]
+            im_features = sess.run(feat_model, feed_dict={x: images})
+
+            # Run kmeans and evaluate
+            kmeans = KMeans(n_clusters=10, random_state=0).fit(im_features)
+            km_labels = kmeans.labels_
+            for i in range(10):
+                images_ = images[np.where(km_labels == i)[0]]
+                samples = 25
+                images_ = np.reshape(images_[:samples], [samples, 28, 28])
+                images_ = (images_ + 1.) / 2.
+                scipy.misc.imsave('/tmp/cluster%s.png' % i, merge(images_, [int(math.sqrt(samples))] * 2))
+            return
+
+
+##########
+# Sample #
+##########
+
+
+def sample():
+    if not FLAGS.sampledir:
+        print(FLAGS.sampledir, 'is not defined')
+        return
+
+    # Model
+    z_dim = 100
+    z = tf.placeholder(tf.float32, shape=[None, z_dim])
+    g_model = generator(z, reuse=False)
+    init = tf.global_variables_initializer()
+    saver = tf.train.Saver()
+    # Session
+    with tf.Session() as sess:
+        with tf.device('/gpu:0'):
+            sess.run(init)
+            # Restore
+            checkpoint = tf.train.latest_checkpoint(FLAGS.logdir)
+            if checkpoint:
+                saver.restore(sess, checkpoint)
+
+            # Save samples
+            output = FLAGS.sampledir + '/sample.png'
+            samples = 64
+            z2 = np.random.uniform(-1.0, 1.0, size=[samples, z_dim]).astype(np.float32)
+            images = sess.run(g_model, feed_dict={z: z2})
+            images = np.reshape(images, [samples, 28, 28])
+            images = (images + 1.) / 2.
+            scipy.misc.imsave(output, merge(images, [int(math.sqrt(samples))] * 2))
+
+
+if __name__ == '__main__':
+    import argparse
+    FLAGS = None
+    parser = argparse.ArgumentParser()
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    print ("BASEDIR: ", BASE_DIR)
+    parser.add_argument('--logdir', type=str,
+                        default=os.path.join(BASE_DIR, 'pathology', 'checkpoints'),
+                        help='Directory to store Checkpoints for the model')
+    parser.add_argument('--batch_size', default=10,
+                        help="The size of batch images [32]")
+    #
+    parser.add_argument('--data_dir', type=str,
+                        default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
+    #
+    parser.add_argument('--debug', default=False, action='store_false',
+                        help="True if debug mode")
+
+    parser.add_argument('--subset', type=str, default='train')
+    FLAGS, unparsed = parser.parse_known_args()
+    images, labels = tensor_to_image()
+    print ("loaded dataset!")
+    mnist_gan(images, labels)
