@@ -30,150 +30,275 @@ def main():
 				if len(eachline)>0:
 					unique_labels.append(eachline)
 	TotNbTiles = 0
-	with open(FLAGS.file_stats) as f:
-		for line in f:
-			print(line)
-			if line.find('.dat') != -1:
-				filename = line.split('.dat')[0]
-			elif line.find('.jpeg') != -1:
-				filename = line.split('.jpeg')[0]
-			elif line.find('.net2048') != -1:
-				filename = line.split('.net2048')[0]
-			else:
-				continue
-			basename = '_'.join(filename.split('_')[:-2])
-			print("basename")
-			print(basename)
-			print("filename")
-			print(filename)
+	if ', ' in FLAGS.file_stats:
+		file1 = FLAGS.file_stats.split(', ')[0]
+		file2 = FLAGS.file_stats.split(', ')[1]
+		corr = ''
+		with open(file1) as f:
+			for line in f:
+				#print(line)
+				basename = line.split()[0]
+				AllData[basename] = {}				
+				tmp_out = line.split('[')[1]
+				tmp_out = tmp_out.split(']')[0]
+				AllData[basename]['Labelvec'] = [float(x) for x in tmp_out.split(',')]
 
-			# Check if tile should be considered for ROC (classified as LUAD) or not (Normal or LUSC)
-			corr = ''
-			analyze = True
-			if os.path.isfile(FLAGS.ref_stats):
-				corr = 'corrected_'
-				with open(FLAGS.ref_stats) as fstat2:
-					for line2 in fstat2:
-						if filename in line2:
-							print("Found:")
-							print(line2)
-							if "False" in line2:
-								analyze = False
-							print(analyze)
-							break
-			if analyze == False:
-				print("continue")
-				continue
-			TotNbTiles += 1
+				tmp_out = line.split('Percent_Selected:')[1]
+				PcSel = tmp_out.split('Average_Probability:')[0].split()
+				AvgPrb = tmp_out.split('Average_Probability:')[1].split()
+				tmp = 0
+				AllData[basename]['Percent_Selected'] = {}
+				for eachlabel in unique_labels:
+					AllData[basename]['Percent_Selected'][eachlabel] = float(PcSel[tmp])
+					tmp += 1
+				tmp = 0
+				AllData[basename]['Avg_Prob'] = {}
+				for eachlabel in unique_labels:
+					AllData[basename]['Avg_Prob'][eachlabel] = float(AvgPrb[tmp])
+					tmp += 1
+				#print(line)
+				#print(basename)
+				#print(AllData[basename])
 
-			ExpectedProb = line.split('[')[1]
-			ExpectedProb = ExpectedProb.split(']')[0]
-			ExpectedProb = ExpectedProb.split()
-			try: # old format file
-				IncProb = line.split('[')[2]
-				IncProb = IncProb.split(']')[0]
-				IncProb = IncProb.split()
-			except:
-				IncProb = []
-				for kL in range(len(ExpectedProb)):
-					if kL ==0:
-						#IncProb.append(float(ExpectedProb[0]))
-						IncProb.append(0)
-					else:
-						IncProb.append(float(ExpectedProb[kL]) / (1-float(ExpectedProb[0])))
+		with open(file2) as f:
+			for line in f:
+				#print(line)
+				basename = line.split()[0]
 
-				for kL in range(len(ExpectedProb)):
-					ExpectedProb[kL] = 0
-				True_Label = int(line.split('labels:')[1])
-				print("True label: %d " % True_Label)
-				ExpectedProb[True_Label] = 1
-				'''
-				IncProb = [0, 0, 0]
-				IncProb[0] = float(ExpectedProb[0])
-				IncProb[1] = float(ExpectedProb[1]) / (1-float(ExpectedProb[0]))
-				IncProb[2] = float(ExpectedProb[2]) / (1-float(ExpectedProb[0]))
-				tmp = [IncProb[1], IncProb[2]]
-				ExpectedProb = [0, 0, 0]
-				if 'True' in line:
-					ExpectedProb[IncProb.index(max(tmp))] = 1
+
+				tmp_out = line.split('Percent_Selected:')[1]
+				PcSel = tmp_out.split('Average_Probability:')[0].split()
+				AvgPrb = tmp_out.split('Average_Probability:')[1].split()
+				if basename in AllData.keys():
+					tmp = 0
+					for eachlabel in unique_labels:
+						AllData[basename]['Percent_Selected'][eachlabel] = float(PcSel[tmp]) +AllData[basename]['Percent_Selected'][eachlabel]
+						AllData[basename]['Percent_Selected'][eachlabel] = AllData[basename]['Percent_Selected'][eachlabel] / 2.0
+						tmp += 1
+					tmp = 0
+					for eachlabel in unique_labels:
+						AllData[basename]['Avg_Prob'][eachlabel] = float(AvgPrb[tmp]) + AllData[basename]['Avg_Prob'][eachlabel]
+						AllData[basename]['Avg_Prob'][eachlabel] = AllData[basename]['Avg_Prob'][eachlabel] / 2.0
+						tmp += 1					
 				else:
-					ExpectedProb[IncProb.index(min(tmp))] = 1
-				'''
+					AllData[basename] = {}
+					tmp_out = line.split('[')[1]
+					tmp_out = tmp_out.split(']')[0]
+					AllData[basename]['Labelvec'] = [float(x) for x in tmp_out.split(',')]
+					tmp = 0
+					AllData[basename]['Percent_Selected'] = {}
+					for eachlabel in unique_labels:
+						AllData[basename]['Percent_Selected'][eachlabel] = float(PcSel[tmp])
+						tmp += 1
+					tmp = 0
+					AllData[basename]['Avg_Prob'] = {}
+					for eachlabel in unique_labels:
+						AllData[basename]['Avg_Prob'][eachlabel] = float(AvgPrb[tmp])
+						tmp += 1
+
+				#print(line)
+				#print(basename)
+				#print(AllData[basename])
 
 
-			true_label = []
-			for iprob in ExpectedProb:
-				true_label.append(float(iprob))
-			true_label.pop(0)
-			OutProb = []
-			for iprob in IncProb:
-				OutProb.append(float(iprob))
-			OutProb.pop(0)
-			print(true_label)
-			print(OutProb)
+		y_score = []
+		y_score_PcSelect = []
+		y_ref = []
+		n_classes = len(unique_labels)
+		output = open(os.path.join(FLAGS.output_dir, 'out2_perSlideStats_avg.txt'),'w')
+		for basename in AllData.keys():
+			#print(basename)
+			#print(AllData[basename])
+			output.write("%s\ttrue_label: %s\t" % (basename, AllData[basename]['Labelvec']) )
+			tmp_prob = []
+			output.write("Percent_Selected: ")
+			for eachlabel in unique_labels:
+				tmp_prob.append(AllData[basename]['Percent_Selected'][eachlabel])
+				output.write("%f\t" % (AllData[basename]['Percent_Selected'][eachlabel]) )
+			y_score_PcSelect.append(tmp_prob)
+			tmp_prob = []
+			output.write("Average_Probability: ")
+			for eachlabel in unique_labels: 
+				tmp_prob.append(AllData[basename]['Avg_Prob'][eachlabel])
+				output.write("%f\t" % (AllData[basename]['Avg_Prob'][eachlabel]) )
+			output.write("\n")
+			y_score.append(tmp_prob)
+			y_ref.append(AllData[basename]['Labelvec'])
+		output.close()
+		print("y_score")
+		print(y_score)
+		print("y_ref")
+		print(y_ref)
+		print("y_score_PcSelect")
+		print(y_score_PcSelect)
+
+	else:
+		with open(FLAGS.file_stats) as f:
+			for line in f:
+				print(line)
+				if line.find('.dat') != -1:
+					filename = line.split('.dat')[0]
+				elif line.find('.jpeg') != -1:
+					filename = line.split('.jpeg')[0]
+				elif line.find('.net2048') != -1:
+					filename = line.split('.net2048')[0]
+				else:
+					continue
+				basename = '_'.join(filename.split('_')[:-2])
+				#print("basename")
+				#print(basename)
+				#print("filename")
+				#print(filename)
+
+				# Check if tile should be considered for ROC (classified as LUAD) or not (Normal or LUSC)
+				corr = ''
+				analyze = True
+				if os.path.isfile(FLAGS.ref_stats):
+					corr = 'corrected_'
+					with open(FLAGS.ref_stats) as fstat2:
+						for line2 in fstat2:
+							if filename in line2:
+								print("Found:")
+								print(line2)
+								if "False" in line2:
+									analyze = False
+								print(analyze)
+								break
+				if analyze == False:
+					print("continue")
+					continue
+				TotNbTiles += 1
+
+				ExpectedProb = line.split('[')[1]
+				ExpectedProb = ExpectedProb.split(']')[0]
+				ExpectedProb = ExpectedProb.split()
+				try: # mutations format
+					IncProb = line.split('[')[2]
+					IncProb = IncProb.split(']')[0]
+					IncProb = IncProb.split()
+				except:
+					IncProb = []
+					minProb_Indx = 1
+					maxProb_Indx = 1
+					minProb_Val = 2
+					maxProb_Val = 0
+					for kL in range(len(ExpectedProb)):
+						if kL ==0:
+							#IncProb.append(float(ExpectedProb[0]))
+							IncProb.append(0)
+						else:
+							IncProb.append(float(ExpectedProb[kL]) / (1-float(ExpectedProb[0])))
+							if IncProb[kL] < minProb_Val:
+								minProb_Val = IncProb[kL]
+								minProb_Indx = kL
+							if IncProb[kL] >= maxProb_Val:
+								maxProb_Val = IncProb[kL]
+								maxProb_Indx = kL
 
 
-			if basename in AllData:
-				AllData[basename]['NbTiles'] += 1
-				for eachlabel in range(len(OutProb)):
-					AllData[basename]['Probs'][eachlabel] = AllData[basename]['Probs'][eachlabel] + OutProb[eachlabel]
-					#if OutProb[eachlabel] >= 0.5:
-					if OutProb[eachlabel] == max(OutProb):
-						AllData[basename]['Nb_Selected'][eachlabel] = AllData[basename]['Nb_Selected'][eachlabel] + 1.0
-			else:
-				AllData[basename] = {}
-				AllData[basename]['NbTiles'] = 1
-				AllData[basename]['Labelvec'] = true_label
-				AllData[basename]['Nb_Selected'] = {}
-				AllData[basename]['Probs'] = {}
-				for eachlabel in range(len(OutProb)):
-					AllData[basename]['Nb_Selected'][eachlabel] = 0.0
-					#AllData[basename]['LabelIndx_'+unique_labels(eachlabel)] = true_label(eachlabel)
-					AllData[basename]['Probs'][eachlabel] = OutProb[eachlabel]
-					#if OutProb[eachlabel] >= 0.5:
-					#print(eachlabel)
-					#print(OutProb[eachlabel])
-					#print(max(OutProb[eachlabel]))
-					if OutProb[eachlabel] == max(OutProb):
-						AllData[basename]['Nb_Selected'][eachlabel] = 1.0
+					for kL in range(len(ExpectedProb)):
+						ExpectedProb[kL] = 0
+					try:
+						True_Label = int(line.split('labels:')[1])
+					except:
+						# old filename format - assuming 2 classes only
+						True_Label = line.split()[1]
+						if True_Label == 'True':
+							True_Label = maxProb_Indx
+						else:
+							True_Label = minProb_Indx
 
-				nstart = False
-
-	print("%d tiles used for the ROC curves" % TotNbTiles)
-	output = open(os.path.join(FLAGS.output_dir, corr + 'out2_perSlideStats.txt'),'w')
-	y_score = []
-	y_score_PcSelect = []
-	y_ref = []
-	n_classes = len(unique_labels)
-	print(unique_labels)
-	print(AllData)
-	for basename in AllData.keys():
-		output.write("%s\ttrue_label: %s\t" % (basename, AllData[basename]['Labelvec']) )
-		tmp_prob = []
-		AllData[basename]['Percent_Selected'] = {}
-		output.write("Percent_Selected: ")
-		for eachlabel in range(len(unique_labels)):
-			print(eachlabel)
-			print(float(AllData[basename]['NbTiles']))
-			print(AllData[basename]['Nb_Selected'][eachlabel])
-			AllData[basename]['Percent_Selected'][eachlabel] = AllData[basename]['Nb_Selected'][eachlabel] / float(AllData[basename]['NbTiles'])
-			tmp_prob.append(AllData[basename]['Percent_Selected'][eachlabel])
-			output.write("%f\t" % (AllData[basename]['Percent_Selected'][eachlabel]) )
-		y_score_PcSelect.append(tmp_prob)
-
-		AllData[basename]['Avg_Prob'] = {}
-		tmp_prob = []
-		output.write("Average_Probability: ")
-		for eachlabel in range(len(AllData[basename]['Probs'])): 
-			AllData[basename]['Avg_Prob'][eachlabel] = AllData[basename]['Probs'][eachlabel] / float(AllData[basename]['NbTiles'])
-			tmp_prob.append(AllData[basename]['Avg_Prob'][eachlabel])
-			output.write("%f\t" % (AllData[basename]['Avg_Prob'][eachlabel]) )
-		output.write("\n")
-		y_score.append(tmp_prob)
-		y_ref.append(AllData[basename]['Labelvec'])
+					print("True label: %d " % True_Label)
+					ExpectedProb[True_Label] = 1
+					'''
+					IncProb = [0, 0, 0]
+					IncProb[0] = float(ExpectedProb[0])
+					IncProb[1] = float(ExpectedProb[1]) / (1-float(ExpectedProb[0]))
+					IncProb[2] = float(ExpectedProb[2]) / (1-float(ExpectedProb[0]))
+					tmp = [IncProb[1], IncProb[2]]
+					ExpectedProb = [0, 0, 0]
+					if 'True' in line:
+						ExpectedProb[IncProb.index(max(tmp))] = 1
+					else:
+						ExpectedProb[IncProb.index(min(tmp))] = 1
+					'''
 
 
-	output.close()
+				true_label = []
+				for iprob in ExpectedProb:
+					true_label.append(float(iprob))
+				true_label.pop(0)
+				OutProb = []
+				for iprob in IncProb:
+					OutProb.append(float(iprob))
+				OutProb.pop(0)
+				print(true_label)
+				print(OutProb)
+
+
+				if basename in AllData:
+					AllData[basename]['NbTiles'] += 1
+					for eachlabel in range(len(OutProb)):
+						AllData[basename]['Probs'][eachlabel] = AllData[basename]['Probs'][eachlabel] + OutProb[eachlabel]
+						#if OutProb[eachlabel] >= 0.5:
+						if OutProb[eachlabel] == max(OutProb):
+							AllData[basename]['Nb_Selected'][eachlabel] = AllData[basename]['Nb_Selected'][eachlabel] + 1.0
+				else:
+					AllData[basename] = {}
+					AllData[basename]['NbTiles'] = 1
+					AllData[basename]['Labelvec'] = true_label
+					AllData[basename]['Nb_Selected'] = {}
+					AllData[basename]['Probs'] = {}
+					for eachlabel in range(len(OutProb)):
+						AllData[basename]['Nb_Selected'][eachlabel] = 0.0
+						#AllData[basename]['LabelIndx_'+unique_labels(eachlabel)] = true_label(eachlabel)
+						AllData[basename]['Probs'][eachlabel] = OutProb[eachlabel]
+						#if OutProb[eachlabel] >= 0.5:
+						#print(eachlabel)
+						#print(OutProb[eachlabel])
+						#print(max(OutProb[eachlabel]))
+						if OutProb[eachlabel] == max(OutProb):
+							AllData[basename]['Nb_Selected'][eachlabel] = 1.0
+
+					nstart = False
+
+
+		print("%d tiles used for the ROC curves" % TotNbTiles)
+		output = open(os.path.join(FLAGS.output_dir, corr + 'out2_perSlideStats.txt'),'w')
+		y_score = []
+		y_score_PcSelect = []
+		y_ref = []
+		n_classes = len(unique_labels)
+		print(unique_labels)
+		print(AllData)
+		for basename in AllData.keys():
+			output.write("%s\ttrue_label: %s\t" % (basename, AllData[basename]['Labelvec']) )
+			tmp_prob = []
+			AllData[basename]['Percent_Selected'] = {}
+			output.write("Percent_Selected: ")
+			for eachlabel in range(len(unique_labels)):
+				print(eachlabel)
+				print(float(AllData[basename]['NbTiles']))
+				print(AllData[basename]['Nb_Selected'][eachlabel])
+				AllData[basename]['Percent_Selected'][eachlabel] = AllData[basename]['Nb_Selected'][eachlabel] / float(AllData[basename]['NbTiles'])
+				tmp_prob.append(AllData[basename]['Percent_Selected'][eachlabel])
+				output.write("%f\t" % (AllData[basename]['Percent_Selected'][eachlabel]) )
+			y_score_PcSelect.append(tmp_prob)
+
+			AllData[basename]['Avg_Prob'] = {}
+			tmp_prob = []
+			output.write("Average_Probability: ")
+			for eachlabel in range(len(AllData[basename]['Probs'])): 
+				AllData[basename]['Avg_Prob'][eachlabel] = AllData[basename]['Probs'][eachlabel] / float(AllData[basename]['NbTiles'])
+				tmp_prob.append(AllData[basename]['Avg_Prob'][eachlabel])
+				output.write("%f\t" % (AllData[basename]['Avg_Prob'][eachlabel]) )
+			output.write("\n")
+			y_score.append(tmp_prob)
+			y_ref.append(AllData[basename]['Labelvec'])
+
+
+		output.close()
+
 	y_score = np.array(y_score)
 	y_score_PcSelect = np.array(y_score_PcSelect)
 	y_ref = np.array(y_ref)
