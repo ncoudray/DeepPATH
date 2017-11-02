@@ -98,6 +98,7 @@ def read_and_decode(filename_queue):
         })
     image = tf.image.decode_jpeg(features['image/encoded'], channels=3)
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image = tf.reshape(image, [299, 299, 3])
     label = tf.cast(features['image/class/label'], tf.int32)
 
     return image, label
@@ -424,7 +425,7 @@ if __name__ == '__main__':
                         help="The size of batch images [32]")
     #
     parser.add_argument('--data_dir', type=str,
-                        default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
+                         default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
     #
     parser.add_argument('--debug', default=False, action='store_false',
                         help="True if debug mode")
