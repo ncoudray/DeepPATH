@@ -98,7 +98,7 @@ def read_and_decode(filename_queue):
         })
     image = tf.image.decode_jpeg(features['image/encoded'], channels=3)
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
-    image = tf.reshape(image, [299, 299, 3])
+    image = tf.image.resize_images(image, [299, 299])
     label = tf.cast(features['image/class/label'], tf.int32)
 
     return image, label
