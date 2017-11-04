@@ -198,6 +198,7 @@ def mnist_gan(train_images, train_labels):
 
     z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
     g_model = generator(z, reuse=False)
+    print ("g_model: ", g_model)
     dg_model = discriminator(g_model, name="disc2")
 
     tf.add_to_collection("d_model", d_model)
@@ -261,9 +262,11 @@ def mnist_gan(train_images, train_labels):
                 if step % 100 == 0:
                     # Save samples
                     if FLAGS.sampledir:
-                        samples = 64
+                        samples = FLAGS.batch_size
                         z2 = np.random.uniform(-1.0, 1.0, size=[samples, z_dim]).astype(np.float32)
+                        print ("z2 image shape: ", z2.shape)
                         images = sess.run(g_model, feed_dict={z: z2})
+                        print ("sample image shape: ", images.shape)
                         images = np.reshape(images, [samples, 299, 299])
                         images = (images + 1.) / 2.
                         scipy.misc.imsave(FLAGS.sampledir + '/sample.png', merge(images, [int(math.sqrt(samples))] * 2))
@@ -372,7 +375,7 @@ def kmeans(train_images, train_labels):
             km_labels = kmeans.labels_
             for i in range(10):
                 images_ = images[np.where(km_labels == i)[0]]
-                samples = 25
+                samples = FLAGS.batch_size
                 images_ = np.reshape(images_[:samples], [samples, 28, 28])
                 images_ = (images_ + 1.) / 2.
                 scipy.misc.imsave('/tmp/cluster%s.png' % i, merge(images_, [int(math.sqrt(samples))] * 2))
@@ -406,7 +409,7 @@ def sample():
 
             # Save samples
             output = FLAGS.sampledir + '/sample.png'
-            samples = 64
+            samples = FLAGS.batch_size
             z2 = np.random.uniform(-1.0, 1.0, size=[samples, z_dim]).astype(np.float32)
             images = sess.run(g_model, feed_dict={z: z2})
             images = np.reshape(images, [samples, 28, 28])
