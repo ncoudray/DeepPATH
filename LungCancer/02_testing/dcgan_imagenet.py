@@ -230,7 +230,7 @@ def mnist_gan(train_images, train_labels):
     d_trainer = tf.train.AdamOptimizer(.0002, beta1=.5, name='d_adam').minimize(
         d_loss,
         global_step=global_step,
-        var_list=[v for v in t_vars if 'disc*/' in v.name],
+        var_list=[v for v in t_vars if 'disc' in v.name],
         name='d_min')
     print ("d_trainer: ", d_trainer)
     g_loss = -tf.reduce_mean(tf.log(dg_model), name='g_loss')
