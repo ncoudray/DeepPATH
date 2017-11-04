@@ -423,7 +423,7 @@ if __name__ == '__main__':
     parser.add_argument('--logdir', type=str,
                         default=os.path.join(BASE_DIR, 'pathology', 'checkpoints'),
                         help='Directory to store Checkpoints for the model')
-    parser.add_argument('--batch_size', default=10,
+    parser.add_argument('--batch_size', default=10, type=int,
                         help="The size of batch images [32]")
     #
     parser.add_argument('--data_dir', type=str,
