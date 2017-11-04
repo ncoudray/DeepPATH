@@ -71,14 +71,15 @@ def generator(z, reuse=True):
             tf.summary.image("gen", net, max_outputs=8)
     return net
 
-def discriminator(x, name, classification=False, dropout=None, int_feats=False):
+def discriminator(x, name, padding=False, classification=False, dropout=None, int_feats=False):
     filters = (16, 32, 64, 128)
     with slim.arg_scope([slim.fully_connected],
                         activation_fn=lrelu):
         with tf.variable_scope(name):
             net = x
             print ("net conv: ", net)
-            net = tf.pad(net, paddings=[[4, 4], [4, 4]], mode="SYMMETRIC", name="padding")
+            if padding:
+                net = tf.pad(net, paddings=[[4, 4], [4, 4]], mode="SYMMETRIC", name="padding")
             print ("net pad: ", net)
             for i in range(len(filters)):
                 net = conv2d(net, num_output_channels=filters[i], name="conv_"+str(i))
@@ -213,7 +214,7 @@ def mnist_gan(train_images, train_labels):
     z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
     g_model = generator(z, reuse=False)
     print ("g_model: ", g_model)
-    dg_model = discriminator(g_model, name="disc2")
+    dg_model = discriminator(g_model, padding=True, name="disc2")
 
     tf.add_to_collection("d_model", d_model)
     tf.add_to_collection("dg_model", dg_model)
