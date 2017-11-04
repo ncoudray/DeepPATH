@@ -60,7 +60,7 @@ def generator(z, reuse=True):
 
             net = deconv2d(
                 input_map=net,
-                output_shape=[FLAGS.batch_size, 299, 299, 3],
+                output_shape=[-1, 299, 299, 3],
                 size_kernel=kernel_size,
                 stride=2,
                 name="dconv_"+str(len(filters))
@@ -238,8 +238,8 @@ def mnist_gan(train_images, train_labels):
     tf.summary.scalar('g_loss', g_loss)
     g_trainer = tf.train.AdamOptimizer(.0002, beta1=.5, name='g_adam').minimize(
         g_loss,
-        var_list=[v for v in t_vars if 'gen/' in v.name],
-        name='g_adam')
+        var_list=[v for v in t_vars if 'gen' in v.name],
+        name='g_min')
     print ("g_trainer: ", g_trainer)
     init = tf.global_variables_initializer()
     print ("init")
