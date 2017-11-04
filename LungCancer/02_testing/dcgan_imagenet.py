@@ -109,8 +109,9 @@ def tensor_to_image():
     input_path = os.path.join(FLAGS.data_dir, 'train-*')
     data_files = tf.gfile.Glob(input_path)
     print(data_files)
-    for next_slide in data_files:
-        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+    for next_slide in data_files[0:32]:
+        print ("next slide: ", next_slide)
+        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
             with tf.device("/gpu:0"):
                 print (next_slide)
                 filename_queue = tf.train.string_input_producer([next_slide])
@@ -222,7 +223,7 @@ def mnist_gan(train_images, train_labels):
     init = tf.global_variables_initializer()
     print ("init")
     # Session
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)) as sess:
+    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         with tf.device('/gpu:0'):
             sess.run(init)
             # Savers
@@ -234,11 +235,12 @@ def mnist_gan(train_images, train_labels):
             summary = tf.summary.merge_all()
             summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
             # Training loop
+            print ("Staring training")
             for step in range(2 if FLAGS.debug else int(1e6)):
+                print ("Step: ", step)
                 z_batch = np.random.uniform(-1, 1, [FLAGS.batch_size, z_dim]).astype(np.float32)
                 idx = np.random.randint(len(train_images), size=FLAGS.batch_size)
                 images = train_images[idx, :, :, :]
-                print ("images shape: ", images.shape)
                 # Update discriminator
                 _, d_loss_val = sess.run([d_trainer, d_loss], feed_dict={x: images, z: z_batch})
                 # Update generator twice
