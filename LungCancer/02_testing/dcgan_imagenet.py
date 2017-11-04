@@ -209,7 +209,7 @@ def mnist_gan(train_images, train_labels):
     print ("Model Training")
     z_dim = 100
     x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
-    d_model = discriminator(x, name="disc1")
+    d_model = discriminator(x, padding=True, name="disc1")
 
     z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
     g_model = generator(z, reuse=False)
