@@ -79,7 +79,7 @@ def discriminator(x, name, padding=False, classification=False, dropout=None, in
             net = x
             print ("net conv: ", net)
             if padding:
-                net = tf.pad(net, paddings=[[0, 0], [4, 4], [4, 4], [0, 0]], mode="SYMMETRIC", name="padding")
+                net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="padding")
             print ("net pad: ", net)
             for i in range(len(filters)):
                 net = conv2d(net, num_output_channels=filters[i], name="conv_"+str(i))
