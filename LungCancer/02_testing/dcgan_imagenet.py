@@ -425,13 +425,13 @@ if __name__ == '__main__':
                         help='Directory to store Checkpoints for the model')
     parser.add_argument('--batch_size', default=10, type=int,
                         help="The size of batch images [32]")
-    #
     parser.add_argument('--data_dir', type=str,
                          default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
-    #
+    parser.add_argument('--sampledir', type=str,
+                        default=os.path.join(BASE_DIR, 'pathology', 'sampledir'),
+                        help='Save the sample image')
     parser.add_argument('--debug', default=False, action='store_false',
                         help="True if debug mode")
-
     parser.add_argument('--subset', type=str, default='train')
     FLAGS, unparsed = parser.parse_known_args()
     images, labels = tensor_to_image()
