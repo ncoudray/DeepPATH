@@ -210,12 +210,12 @@ def mnist_gan(train_images, train_labels):
     z_dim = 100
     x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
     d_model = discriminator(x, padding=True, name="disc1")
-
+    print ("d_model: ", d_model)
     z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
     g_model = generator(z, reuse=False)
     print ("g_model: ", g_model)
     dg_model = discriminator(g_model, padding=True, name="disc2")
-
+    print ("dg_mode: ", dg_model)
     tf.add_to_collection("d_model", d_model)
     tf.add_to_collection("dg_model", dg_model)
     tf.add_to_collection('g_model', g_model)
@@ -223,19 +223,24 @@ def mnist_gan(train_images, train_labels):
     # Optimizers
     t_vars = tf.trainable_variables()
     global_step = tf.Variable(0, name='global_step', trainable=False)
+    print ("global_step: ", global_step)
     d_loss = -tf.reduce_mean(tf.log(d_model) + tf.log(1. - dg_model), name='d_loss')
+    print ("d_loss: ", d_loss)
     tf.summary.scalar('d_loss', d_loss)
     d_trainer = tf.train.AdamOptimizer(.0002, beta1=.5, name='d_adam').minimize(
         d_loss,
         global_step=global_step,
-        var_list=[v for v in t_vars if 'd' in v.name],
+        var_list=[v for v in t_vars if 'disc*/' in v.name],
         name='d_min')
-
+    print ("d_trainer: ", d_trainer)
     g_loss = -tf.reduce_mean(tf.log(dg_model), name='g_loss')
+    print ("g_loss: ", g_loss)
     tf.summary.scalar('g_loss', g_loss)
     g_trainer = tf.train.AdamOptimizer(.0002, beta1=.5, name='g_adam').minimize(
-        g_loss, var_list=[v for v in t_vars if 'gen/' in v.name],
+        g_loss,
+        var_list=[v for v in t_vars if 'gen/' in v.name],
         name='g_adam')
+    print ("g_trainer: ", g_trainer)
     init = tf.global_variables_initializer()
     print ("init")
     # Session
