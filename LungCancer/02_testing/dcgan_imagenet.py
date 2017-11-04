@@ -37,7 +37,7 @@ def lrelu(x, leak=0.2, name="lrelu"):
 
 def generator(z, reuse=True):
     init_width = 7
-    filters = (128, 64, 32, 1)
+    filters = (256, 128, 64, 1)
     kernel_size = 5
     with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
                         reuse=reuse,
