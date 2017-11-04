@@ -60,7 +60,7 @@ def generator(z, reuse=True):
 
             net = deconv2d(
                 input_map=net,
-                output_shape=[FLAGS.batch_size, 229, 229, 3],
+                output_shape=[FLAGS.batch_size, 299, 299, 3],
                 size_kernel=kernel_size,
                 stride=2,
                 name="dconv_"+str(len(filters))
@@ -77,6 +77,7 @@ def discriminator(x, name, classification=False, dropout=None, int_feats=False):
                         activation_fn=lrelu):
         with tf.variable_scope(name):
             net = x
+            print ("net conv: ", net)
             for i in range(len(filters)):
                 net = conv2d(net, num_output_channels=filters[i], name="conv_"+str(i))
                 print ("net conv: {0} - {1}".format(i, net))
