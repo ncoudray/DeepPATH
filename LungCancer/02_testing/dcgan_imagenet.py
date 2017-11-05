@@ -268,7 +268,9 @@ def mnist_gan(train_images, train_labels):
                 print ("Step: ", step)
                 z_batch = np.random.uniform(-1, 1, [FLAGS.batch_size, z_dim]).astype(np.float32)
                 idx = np.random.randint(len(train_images), size=FLAGS.batch_size)
+                print ("len idx: ", len(idx))
                 images = train_images[idx, :, :, :]
+                print ("images shape: ", images.shape)
                 # Update discriminator
                 _, d_loss_val = sess.run([d_trainer, d_loss], feed_dict={x: images, z: z_batch})
                 # Update generator twice
