@@ -310,7 +310,7 @@ def mnist_gan(train_images, train_labels):
                         print ("save sample images")
                     # save model
                     if not FLAGS.debug:
-                        checkpoint_file = os.path.join(FLAGS.logdir + "checkpoint")
+                        checkpoint_file = os.path.join(FLAGS.logdir, "checkpoint")
                         saver.save(sess, checkpoint_file, global_step=global_step)
                         print ("Checkpoint saved for {0} step".format(str(step)))
             return
