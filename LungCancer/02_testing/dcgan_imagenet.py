@@ -259,7 +259,7 @@ def mnist_gan(train_images, train_labels):
             sess.run(init)
             saver = tf.train.Saver(max_to_keep=20)
             checkpoint = tf.train.latest_checkpoint(FLAGS.logdir)
-            checkpoint_file = os.path.join(FLAGS.logdir, 'checkpoint')
+            checkpoint_file = os.path.join(FLAGS.logdir)
 
             if not os.path.exists(checkpoint_file):
                 os.makedirs(checkpoint_file)
