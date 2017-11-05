@@ -29,7 +29,7 @@ def merge(images, size):
         i = int(idx % size[1])
         j = int(idx / size[1])
         print ("i: {0}, j: {1}".format(i, j))
-        img[j * h:j * h + h, i * w:i * w + w] = image
+        img[j * h:j * h + h, i * w:i * w + w, image.shape[3]] = image
     return img
 
 def lrelu(x, leak=0.2, name="lrelu"):
