@@ -38,7 +38,7 @@ def lrelu(x, leak=0.2, name="lrelu"):
 def generator(z, reuse=True):
     init_width = 19
     filters = (128, 64, 32, 16, 3)
-    kernel_size = 3
+    kernel_size = 5
     with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
                         reuse=reuse,
                         normalizer_fn=slim.batch_norm):
@@ -46,7 +46,7 @@ def generator(z, reuse=True):
             net = z
             print ("gen net: ", net)
             net = slim.fully_connected(net, init_width ** 2 * filters[0], scope='fc1')
-            print ("gen fc net", fc)
+            print ("gen fc net", net)
             net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
             print ("gen fc reshped net: ", net)
 
@@ -74,8 +74,8 @@ def generator(z, reuse=True):
     return net
 
 def discriminator(x, name, classification=False, dropout=None, int_feats=False):
-    filters = (16, 32, 64, 128)
-    kernel_size = 3
+    filters = (32, 64, 128)
+    kernel_size = 5
     with slim.arg_scope([slim.fully_connected],
                         activation_fn=lrelu):
         with tf.variable_scope(name):
