@@ -20,12 +20,15 @@ tf.logging.set_verbosity(tf.logging.INFO)
 # Model #
 #########
 def merge(images, size):
+    print ("size: ", size)
     h, w = images.shape[1], images.shape[2]
+    print ("h: {0}, w: {1} ".format(h, w))
     img = np.zeros((h * size[0], w * size[1]))
 
     for idx, image in enumerate(images):
         i = idx % size[1]
         j = idx / size[1]
+        print ("i: {0}, j: {1}".format(i, j))
         img[j * h:j * h + h, i * w:i * w + w] = image
     return img
 
