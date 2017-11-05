@@ -38,7 +38,7 @@ def lrelu(x, leak=0.2, name="lrelu"):
 def generator(z, reuse=True):
     init_width = 19
     filters = (128, 64, 32, 16, 3)
-    kernel_size = 5
+    kernel_size = 3
     with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
                         reuse=reuse,
                         normalizer_fn=slim.batch_norm):
@@ -75,16 +75,20 @@ def generator(z, reuse=True):
 
 def discriminator(x, name, padding=False, classification=False, dropout=None, int_feats=False):
     filters = (16, 32, 64, 128)
+    kernel_size = 3
     with slim.arg_scope([slim.fully_connected],
                         activation_fn=lrelu):
         with tf.variable_scope(name):
             net = x
             print ("net conv: ", net)
             if padding:
-                net = tf.pad(net, paddings=[[0, 0], [1, 1], [1, 1], [0, 0]], mode="SYMMETRIC", name="padding")
+                net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="padding")
                 print ("net pad: ", net)
             for i in range(len(filters)):
-                net = conv2d(net, num_output_channels=filters[i], name="conv_"+str(i))
+                net = conv2d(net,
+                             num_output_channels=filters[i],
+                             size_kernel=kernel_size,
+                             name="conv_"+str(i))
                 print ("net conv: {0} - {1}".format(i, net))
                 net = lrelu(net, name="relu"+str(i))
                 print ("net relu: ", net)
