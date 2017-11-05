@@ -257,14 +257,20 @@ def mnist_gan(train_images, train_labels):
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         with tf.device('/gpu:0'):
             sess.run(init)
-            # Savers
             saver = tf.train.Saver(max_to_keep=20)
             checkpoint = tf.train.latest_checkpoint(FLAGS.logdir)
+            checkpoint_file = os.path.join(FLAGS.logdir, 'checkpoint')
+
+            if not os.path.exists(checkpoint_file):
+                os.makedirs(checkpoint_file)
+
             if checkpoint and not FLAGS.debug:
                 print('Restoring from', checkpoint)
                 saver.restore(sess, checkpoint)
+
             summary = tf.summary.merge_all()
             summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
+
             # Training loop
             print ("Staring training")
             for step in range(2 if FLAGS.debug else int(1e6)):
@@ -309,9 +315,6 @@ def mnist_gan(train_images, train_labels):
                         print ("save sample images")
                     # save model
                     if not FLAGS.debug:
-                        checkpoint_file = os.path.join(FLAGS.logdir, 'checkpoint')
-                        if os.path.exists(checkpoint_file):
-                            os.makedirs(checkpoint_file)
                         saver.save(sess, checkpoint_file, global_step=global_step)
                         print ("Checkpoint saved for {0} step".format(str(step)))
             return
