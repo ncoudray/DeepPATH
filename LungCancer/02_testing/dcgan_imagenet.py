@@ -43,8 +43,10 @@ def generator(z, reuse=True):
                         reuse=reuse,
                         normalizer_fn=slim.batch_norm):
         with tf.variable_scope("gen"):
-            net = slim.fully_connected(z, init_width ** 2 * filters[0], scope='fc1')
-            print ("gen fc net")
+            net = z
+            print ("gen net: ", net)
+            net = slim.fully_connected(net, init_width ** 2 * filters[0], scope='fc1')
+            print ("gen fc net", fc)
             net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
             print ("gen fc reshped net: ", net)
 
@@ -79,8 +81,8 @@ def discriminator(x, name, padding=False, classification=False, dropout=None, in
             net = x
             print ("net conv: ", net)
             if padding:
-                net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="padding")
-            print ("net pad: ", net)
+                net = tf.pad(net, paddings=[[0, 0], [1, 1], [1, 1], [0, 0]], mode="SYMMETRIC", name="padding")
+                print ("net pad: ", net)
             for i in range(len(filters)):
                 net = conv2d(net, num_output_channels=filters[i], name="conv_"+str(i))
                 print ("net conv: {0} - {1}".format(i, net))
@@ -161,7 +163,7 @@ def readTFRecord():
     data_files = tf.gfile.Glob(input_path)
     # print(data_files)
     count_slides = 0
-    train_images = np.empty([FLAGS.batch_size, 229, 229, 3], dtype=np.float32)
+    train_images = np.empty([FLAGS.batch_size, 299, 299, 3], dtype=np.float32)
     train_labels = np.empty([FLAGS.batch_size], dtype=np.int32)
     for i, next_slide in enumerate(data_files):
         print("New Slide ------------ %d" % (count_slides))
@@ -305,7 +307,7 @@ def mnist_gan(train_images, train_labels):
 def gan_class(train_images, train_labels):
     # Models
     dropout = .5
-    x = tf.placeholder(tf.float32, shape=[None, 229, 229, 3])
+    x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3])
     y = tf.placeholder(tf.float32, shape=[None, 2])
     keep_prob = tf.placeholder(tf.float32, name="keep_prob")
     c_model = discriminator(
@@ -373,7 +375,7 @@ def gan_class(train_images, train_labels):
 
 def kmeans(train_images, train_labels):
     # Models
-    x = tf.placeholder(tf.float32, shape=[None, 229, 229, 3])
+    x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3])
     feat_model = discriminator(x, name="disc", int_feats=True)
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
