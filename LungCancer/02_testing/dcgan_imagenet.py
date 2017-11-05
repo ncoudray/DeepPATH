@@ -259,7 +259,7 @@ def mnist_gan(train_images, train_labels):
             sess.run(init)
             saver = tf.train.Saver(max_to_keep=20)
             checkpoint = tf.train.latest_checkpoint(FLAGS.logdir)
-            checkpoint_file = os.path.join(FLAGS.logdir)
+            checkpoint_file = os.path.join(FLAGS.logdir + "checkpoints")
 
             if not os.path.exists(checkpoint_file):
                 os.makedirs(checkpoint_file)
@@ -269,7 +269,7 @@ def mnist_gan(train_images, train_labels):
                 saver.restore(sess, checkpoint)
 
             summary = tf.summary.merge_all()
-            summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
+            summary_writer = tf.summary.FileWriter(checkpoint_file, sess.graph)
 
             # Training loop
             print ("Staring training")
