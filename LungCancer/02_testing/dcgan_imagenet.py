@@ -23,13 +23,13 @@ def merge(images, size):
     print ("size: ", size)
     h, w = images.shape[1], images.shape[2]
     print ("h: {0}, w: {1} ".format(h, w))
-    img = np.zeros((h * size[0], w * size[1], images.shape[2]))
-
+    img = np.zeros([h * size[0], w * size[1], images.shape[2]])
+    print ("img:", img.shape)
     for idx, image in enumerate(images):
         i = int(idx % size[1])
-        j = int(idx / size[1])
+        j = int(idx // size[1])
         print ("i: {0}, j: {1}".format(i, j))
-        img[j * h:j * h + h, i * w:i * w + w, image.shape[2]] = image
+        img[j * h : j * h + h, i * w : i * w + w, :] = image
     return img
 
 def lrelu(x, leak=0.2, name="lrelu"):
