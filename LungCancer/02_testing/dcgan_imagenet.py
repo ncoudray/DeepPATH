@@ -264,7 +264,7 @@ def mnist_gan(train_images, train_labels):
                 saver.restore(sess, checkpoint)
 
             summary = tf.summary.merge_all()
-            summary_writer = tf.summary.FileWriter(checkpoint_file, sess.graph)
+            summary_writer = tf.summary.FileWriter(FLAGS.logdir, sess.graph)
 
             # Training loop
             print ("Staring training")
