@@ -69,7 +69,7 @@ def generator(z, reuse=True):
             # )
             net = tf.nn.tanh(net, name="tanh")
             print("gen tanh net: ", net)
-            net = tf.image.resize_images(net, [-1, 299, 299, 3])
+            net = tf.image.resize_images(net, [299, 299])
             print ("net reshape: ", net)
             tf.summary.histogram('gen/out', net)
             tf.summary.image("gen", net, max_outputs=8)
