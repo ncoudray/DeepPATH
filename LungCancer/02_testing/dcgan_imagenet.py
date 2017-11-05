@@ -296,10 +296,11 @@ def mnist_gan(train_images, train_labels):
                         print ("z2 image shape: ", z2.shape)
                         images = sess.run(g_model, feed_dict={z: z2})
                         print ("sample image shape: ", images.shape)
-                        images = np.reshape(images, [samples, 299, 299])
+                        images = np.reshape(images, [samples, 299, 299, 3])
                         images = (images + 1.) / 2.
+                        print ("random comp: ", images)
                         scipy.misc.imsave(FLAGS.sampledir + '/sample.png', merge(images, [int(math.sqrt(samples))] * 2))
-
+                        print ("save sample images")
                     # save model
                     if not FLAGS.debug:
                         checkpoint_file = os.path.join(FLAGS.logdir, 'checkpoint')
