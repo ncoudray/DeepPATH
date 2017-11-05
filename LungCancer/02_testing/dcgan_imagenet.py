@@ -73,7 +73,7 @@ def generator(z, reuse=True):
             tf.summary.image("gen", net, max_outputs=8)
     return net
 
-def discriminator(x, name, padding=False, classification=False, dropout=None, int_feats=False):
+def discriminator(x, name, classification=False, dropout=None, int_feats=False):
     filters = (16, 32, 64, 128)
     kernel_size = 3
     with slim.arg_scope([slim.fully_connected],
@@ -81,9 +81,8 @@ def discriminator(x, name, padding=False, classification=False, dropout=None, in
         with tf.variable_scope(name):
             net = x
             print ("net conv: ", net)
-            if padding:
-                net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="padding")
-                print ("net pad: ", net)
+            net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="padding")
+            print ("net pad: ", net)
             for i in range(len(filters)):
                 net = conv2d(net,
                              num_output_channels=filters[i],
@@ -215,12 +214,12 @@ def mnist_gan(train_images, train_labels):
     print ("Model Training")
     z_dim = 100
     x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
-    d_model = discriminator(x, padding=True, name="disc1")
+    d_model = discriminator(x, name="disc1")
     print ("d_model: ", d_model)
     z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
     g_model = generator(z, reuse=False)
     print ("g_model: ", g_model)
-    dg_model = discriminator(g_model, padding=True, name="disc2")
+    dg_model = discriminator(g_model, name="disc2")
     print ("dg_mode: ", dg_model)
     tf.add_to_collection("d_model", d_model)
     tf.add_to_collection("dg_model", dg_model)
