@@ -40,7 +40,7 @@ def lrelu(x, leak=0.2, name="lrelu"):
 
 def generator(z, reuse=True):
     init_width = 19
-    filters = (512, 256, 128, 64, 32, 16, 3)
+    filters = (256, 128, 64, 32, 16, 3)
     kernel_size = 5
     with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
                         reuse=reuse,
@@ -52,7 +52,7 @@ def generator(z, reuse=True):
             print ("gen fc net", net)
             net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
             print ("gen fc reshped net: ", net)
-            for i in range(1, len(filters) - 2):
+            for i in range(1, len(filters) - 1):
                 net = slim.conv2d_transpose(
                     net, filters[i],
                     kernel_size=kernel_size,
@@ -61,15 +61,6 @@ def generator(z, reuse=True):
                 print("gen net: {0} - {1}".format(i, net))
                 net = lrelu(net, name="relu" + str(i))
                 print("gen net relu: ", net)
-
-            i = len(filters) - 1
-            net = slim.conv2d_transpose(
-                net, filters[-2],
-                kernel_size=kernel_size,
-                stride=1,
-                scope='deconv_' + str(i))
-            print("gen net: {0} - {1}".format(i, net))
-            net = lrelu(net, name="relu" + str(i))
 
             i = len(filters)
             net = slim.conv2d_transpose(
