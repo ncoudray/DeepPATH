@@ -291,6 +291,8 @@ def mnist_gan(train_images, train_labels):
                 if step % 100 == 0:
                     # Save samples
                     if FLAGS.sampledir:
+                        if not os.path.exists(FLAGS.sampledir):
+                            os.makedirs(FLAGS.sampledir)
                         samples = FLAGS.batch_size
                         z2 = np.random.uniform(-1.0, 1.0, size=[samples, z_dim]).astype(np.float32)
                         print ("z2 image shape: ", z2.shape)
@@ -299,12 +301,16 @@ def mnist_gan(train_images, train_labels):
                         images = np.reshape(images, [samples, 299, 299, 3])
                         images = (images + 1.) / 2.
                         print ("random comp: ", images)
-                        scipy.misc.imsave(FLAGS.sampledir + '/sample.png', merge(images, [int(math.sqrt(samples))] * 2))
+                        scipy.misc.imsave(FLAGS.sampledir + '/sample'+str(step)+'.png',
+                                          merge(images, [int(math.sqrt(samples))] * 2))
                         print ("save sample images")
                     # save model
                     if not FLAGS.debug:
+                        if os.path.exists(FLAGS.logdir):
+                            os.makedirs(FLAGS.logdir)
                         checkpoint_file = os.path.join(FLAGS.logdir, 'checkpoint')
                         saver.save(sess, checkpoint_file, global_step=global_step)
+                        print ("Checkpoint saved for {0} step".format(str(step)))
             return
 
 ##################
