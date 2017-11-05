@@ -50,7 +50,7 @@ def generator(z, reuse=True):
             net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
             print ("gen fc reshped net: ", net)
 
-            for i in range(1, len(filters) - 1):
+            for i in range(1, len(filters)):
                 net = slim.conv2d_transpose(
                     net, filters[i],
                     kernel_size=kernel_size,
@@ -60,21 +60,23 @@ def generator(z, reuse=True):
                 net = lrelu(net, name="relu" + str(i))
                 print("net relu: ", net)
 
-            net = deconv2d(
-                input_map=net,
-                output_shape=[-1, 299, 299, 3],
-                size_kernel=kernel_size,
-                stride=2,
-                name="dconv_"+str(len(filters))
-            )
+            # net = deconv2d(
+            #     input_map=net,
+            #     output_shape=[-1, 299, 299, 3],
+            #     size_kernel=kernel_size,
+            #     stride=2,
+            #     name="dconv_"+str(len(filters))
+            # )
             net = tf.nn.tanh(net, name="tanh")
             print("gen tanh net: ", net)
+            net = tf.reshape(net, [-1, 299, 299, 3])
+            print ("net reshape: ", net)
             tf.summary.histogram('gen/out', net)
             tf.summary.image("gen", net, max_outputs=8)
     return net
 
 def discriminator(x, name, classification=False, dropout=None, int_feats=False):
-    filters = (32, 64, 128)
+    filters = (32, 64, 128, 256)
     kernel_size = 5
     with slim.arg_scope([slim.fully_connected],
                         activation_fn=lrelu):
