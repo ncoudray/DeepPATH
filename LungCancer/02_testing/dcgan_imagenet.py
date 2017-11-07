@@ -264,7 +264,7 @@ def mnist_gan(train_images, train_labels):
         var_list=[v for v in t_vars if 'disc' in v.name],
         name='d_min')
     print ("d_trainer: ", d_trainer)
-    tf.summary.scalar('d_trainer', d_trainer)
+    # tf.summary.scalar('d_trainer', d_trainer)
     g_loss = -tf.reduce_mean(tf.log(dg_model), name='g_loss')
     print ("g_loss: ", g_loss)
     tf.summary.scalar('g_loss', g_loss)
@@ -273,7 +273,7 @@ def mnist_gan(train_images, train_labels):
         var_list=[v for v in t_vars if 'gen' in v.name],
         name='g_min')
     print ("g_trainer: ", g_trainer)
-    tf.summary.scalar(g_trainer, "g_trainer")
+    # tf.summary.scalar(g_trainer, "g_trainer")
     init = tf.global_variables_initializer()
     print ("init")
     # Session
