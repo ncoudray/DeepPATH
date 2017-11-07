@@ -238,7 +238,7 @@ def mnist_gan(train_images, train_labels):
     x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
     z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
     print ("Building models!0")
-    d_model = discriminator(x, name="disc1")
+    d_model = discriminator(x, name="disc1_1")
     print ("d_model: ", d_model)
 
     g_model = generator(z, reuse=False)
@@ -255,9 +255,12 @@ def mnist_gan(train_images, train_labels):
     t_vars = tf.trainable_variables()
     global_step = tf.Variable(0, name='global_step', trainable=False)
     print ("global_step: ", global_step)
+
     d_loss = -tf.reduce_mean(tf.log(d_model) + tf.log(1. - dg_model), name='d_loss')
     print ("d_loss: ", d_loss)
+
     tf.summary.scalar('d_loss', d_loss)
+
     d_trainer = tf.train.GradientDescentOptimizer(FLAGS.d_learn, name='d_adam').minimize(
         d_loss,
         global_step=global_step,
@@ -265,6 +268,7 @@ def mnist_gan(train_images, train_labels):
         name='d_min')
     print ("d_trainer: ", d_trainer)
     # tf.summary.scalar('d_trainer', d_trainer)
+
     g_loss = -tf.reduce_mean(tf.log(dg_model), name='g_loss')
     print ("g_loss: ", g_loss)
     tf.summary.scalar('g_loss', g_loss)
@@ -298,10 +302,11 @@ def mnist_gan(train_images, train_labels):
                 print ("len idx: ", len(idx))
                 images = train_images[idx, :, :, :]
                 print ("images shape: ", images.shape)
-                # Update discriminator
+                # Update discriminator twice
+                sess.run(d_trainer, feed_dict={x: images, z: z_batch})
                 _, d_loss_val = sess.run([d_trainer, d_loss], feed_dict={x: images, z: z_batch})
-                # Update generator twice
-                sess.run(g_trainer, feed_dict={z: z_batch})
+                # Update generator
+                # sess.run(g_trainer, feed_dict={z: z_batch})
                 _, g_loss_val = sess.run([g_trainer, g_loss], feed_dict={z: z_batch})
 
                 # Log details
@@ -489,9 +494,9 @@ if __name__ == '__main__':
                         help='Directory to store Checkpoints for the model')
     parser.add_argument('--batch_size', default=10, type=int,
                         help="The size of batch images [32]")
-    parser.add_argument('--d_learn', default=0.0000002, type=float,
+    parser.add_argument('--d_learn', default=0.001, type=float,
                         help="Discrominator Learning rate")
-    parser.add_argument('--g_learn', default=0.0000002, type=float,
+    parser.add_argument('--g_learn', default=0.000002, type=float,
                         help="Generator Learning Rate")
     parser.add_argument('--data_dir', type=str,
                          default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
