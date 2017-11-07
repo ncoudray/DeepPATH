@@ -40,7 +40,7 @@ def lrelu(x, leak=0.2, name="lrelu"):
 
 def generator(z, reuse=True):
     init_width = 19
-    filters = (256, 128, 64, 32, 16, 3)
+    filters = (128, 64, 32, 16, 3)
     kernel_size = 5
     with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
                         reuse=reuse,
@@ -48,7 +48,7 @@ def generator(z, reuse=True):
         with tf.variable_scope("gen"):
             net = z
             print ("gen net: ", net)
-            net = slim.fully_connected(net, init_width ** 2 * filters[0], scope='fc1')
+            net = slim.fully_connected(net, init_width ** 2 * filters[0], scope='gen_fc1')
             print ("gen fc net", net)
             net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
             print ("gen fc reshped net: ", net)
@@ -57,9 +57,9 @@ def generator(z, reuse=True):
                     net, filters[i],
                     kernel_size=kernel_size,
                     stride=2,
-                    scope='deconv_'+str(i))
+                    scope='gen_deconv_'+str(i))
                 print("gen net: {0} - {1}".format(i, net))
-                net = lrelu(net, name="relu" + str(i))
+                net = lrelu(net, name="gen_relu" + str(i))
                 print("gen net relu: ", net)
 
             i = len(filters)
@@ -67,10 +67,10 @@ def generator(z, reuse=True):
                 net, filters[-1],
                 kernel_size=kernel_size,
                 stride=1,
-                scope='deconv_' + str(i))
+                scope='gen_deconv_' + str(i))
             print("gen net: {0} - {1}".format(i, net))
-            net = lrelu(net, name="relu" + str(i))
-            print ("gen net relu: ", net)
+            net = tf.nn.tanh(net, name="gen_tanh")
+            print ("gen net tanh: ", net)
 
             net = tf.image.resize_images(net, [299, 299])
             print ("gen net reshape: ", net)
@@ -80,31 +80,39 @@ def generator(z, reuse=True):
     return net
 
 def discriminator(x, name, classification=False, dropout=None, int_feats=False):
-    filters = (32, 64, 128, 256)
+    filters = (16, 32, 64, 128, 256)
     kernel_size = 5
     with slim.arg_scope([slim.fully_connected],
                         activation_fn=lrelu):
         with tf.variable_scope(name):
             net = x
             print ("net conv: ", net)
-            net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="padding")
+            net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="dis_padding")
             print ("net pad: ", net)
-            for i in range(len(filters)):
+            for i in range(len(filters) - 1):
                 net = conv2d(net,
                              num_output_channels=filters[i],
                              size_kernel=kernel_size,
-                             name="conv_"+str(i))
+                             name="dis_conv_"+str(i))
                 print ("net conv: {0} - {1}".format(i, net))
-                net = lrelu(net, name="relu"+str(i))
+                net = lrelu(net, name="dis_relu"+str(i))
                 print ("net relu: ", net)
 
+            i = len(filters)
+            net = conv2d(net,
+                         num_output_channels=filters[i],
+                         size_kernel=kernel_size,
+                         name="dis_conv_"+str(i))
+            print ("net conv {0} - {1}".format(i, net))
+            net = lrelu(net, name="dis_relu_"+str(i))
+            print ("net relu: ", net)
             net = slim.flatten(net,)
             print ("flatten: ", net)
-            net = slim.fully_connected(net, 1024, activation_fn=None, scope='fc1')
+            net = slim.fully_connected(net, 1024, activation_fn=None, scope='dis_fc1')
             print ("fc1: ", net)
-            net = tf.nn.dropout(net, keep_prob=0.5, name="dropout")
+            net = tf.nn.dropout(net, keep_prob=0.5, name="dis_dropout")
             print ("dropout: ", net)
-            net = slim.fully_connected(net, 1, activation_fn=tf.nn.sigmoid, scope='out')
+            net = slim.fully_connected(net, 1, activation_fn=tf.nn.sigmoid, scope='dis_out')
             print ("fc2: ", net)
     return net
 
@@ -220,13 +228,17 @@ def mnist_gan(train_images, train_labels):
     print ("Model Training")
     z_dim = 100
     x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
+    z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
+    print ("Building models!")
     d_model = discriminator(x, name="disc1")
     print ("d_model: ", d_model)
-    z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
+
     g_model = generator(z, reuse=False)
     print ("g_model: ", g_model)
+
     dg_model = discriminator(g_model, name="disc2")
     print ("dg_mode: ", dg_model)
+
     tf.add_to_collection("d_model", d_model)
     tf.add_to_collection("dg_model", dg_model)
     tf.add_to_collection('g_model', g_model)
@@ -238,7 +250,7 @@ def mnist_gan(train_images, train_labels):
     d_loss = -tf.reduce_mean(tf.log(d_model) + tf.log(1. - dg_model), name='d_loss')
     print ("d_loss: ", d_loss)
     tf.summary.scalar('d_loss', d_loss)
-    d_trainer = tf.train.AdamOptimizer(.0002, beta1=.5, name='d_adam').minimize(
+    d_trainer = tf.train.GradientDescentOptimizer(FLAGS.d_learn, name='d_adam').minimize(
         d_loss,
         global_step=global_step,
         var_list=[v for v in t_vars if 'disc' in v.name],
@@ -247,7 +259,7 @@ def mnist_gan(train_images, train_labels):
     g_loss = -tf.reduce_mean(tf.log(dg_model), name='g_loss')
     print ("g_loss: ", g_loss)
     tf.summary.scalar('g_loss', g_loss)
-    g_trainer = tf.train.AdamOptimizer(.0002, beta1=.5, name='g_adam').minimize(
+    g_trainer = tf.train.AdamOptimizer(FLAGS.g_learn, beta1=.5, name='g_adam').minimize(
         g_loss,
         var_list=[v for v in t_vars if 'gen' in v.name],
         name='g_min')
@@ -466,6 +478,10 @@ if __name__ == '__main__':
                         default=os.path.join(BASE_DIR, 'pathology', 'checkpoints'),
                         help='Directory to store Checkpoints for the model')
     parser.add_argument('--batch_size', default=10, type=int,
+                        help="The size of batch images [32]")
+    parser.add_argument('--d_learn', default=0.0000002, type=float,
+                        help="The size of batch images [32]")
+    parser.add_argument('--batch_size', default=0.0000002, type=int,
                         help="The size of batch images [32]")
     parser.add_argument('--data_dir', type=str,
                          default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
