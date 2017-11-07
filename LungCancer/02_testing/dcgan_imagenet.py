@@ -100,7 +100,7 @@ def discriminator(x, name, classification=False, dropout=None, int_feats=False):
 
             i = len(filters)
             net = conv2d(net,
-                         num_output_channels=filters[i],
+                         num_output_channels=filters[-1],
                          size_kernel=kernel_size,
                          name="dis_conv_"+str(i))
             print ("net conv {0} - {1}".format(i, net))
