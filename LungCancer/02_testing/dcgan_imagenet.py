@@ -480,9 +480,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=10, type=int,
                         help="The size of batch images [32]")
     parser.add_argument('--d_learn', default=0.0000002, type=float,
-                        help="The size of batch images [32]")
-    parser.add_argument('--g_learn', default=0.0000002, type=int,
-                        help="The size of batch images [32]")
+                        help="Discrominator Learning rate")
+    parser.add_argument('--g_learn', default=0.0000002, type=float,
+                        help="Generator Learning Rate")
     parser.add_argument('--data_dir', type=str,
                          default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
     parser.add_argument('--sampledir', type=str,
