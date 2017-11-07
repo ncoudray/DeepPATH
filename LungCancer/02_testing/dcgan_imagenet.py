@@ -229,7 +229,7 @@ def mnist_gan(train_images, train_labels):
     z_dim = 100
     x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
     z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
-    print ("Building models!")
+    print ("Building models!0")
     d_model = discriminator(x, name="disc1")
     print ("d_model: ", d_model)
 
@@ -481,7 +481,7 @@ if __name__ == '__main__':
                         help="The size of batch images [32]")
     parser.add_argument('--d_learn', default=0.0000002, type=float,
                         help="The size of batch images [32]")
-    parser.add_argument('--batch_size', default=0.0000002, type=int,
+    parser.add_argument('--g_learn', default=0.0000002, type=int,
                         help="The size of batch images [32]")
     parser.add_argument('--data_dir', type=str,
                          default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
