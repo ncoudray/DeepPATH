@@ -102,8 +102,6 @@ def tensor_to_image():
 def saveImage(img_out, dir_name):
     print("img_out.dtype", img_out.dtype)
     print("img_out", img_out)
-    img_out /= 2.
-    img_out += 0.5
     img_out *= 255.
     img_out = np.clip(img_out, 0, 255).astype('uint8')
     print("img_out", img_out)
@@ -314,7 +312,9 @@ def mnist_gan(train_images, train_labels):
             print ("Staring training")
             for step in range(2 if FLAGS.debug else int(1e6)):
                 print ("Step: ", step)
-                z_batch = np.random.uniform(-1, 1, [FLAGS.batch_size, z_dim]).astype(np.float32)
+                # z_batch = np.random.uniform(-1, 1, [FLAGS.batch_size, z_dim]).astype(np.float32)
+                # trying normal distribution than normal
+                z_batch = np.random.normal(loc=0.0, scale=1.0, size=[FLAGS.batch_size, z_dim]).astype(np.float32)
                 idx = np.random.randint(len(train_images), size=FLAGS.batch_size)
                 print ("len idx: ", len(idx))
                 images = train_images[idx, :, :, :]
@@ -347,13 +347,16 @@ def mnist_gan(train_images, train_labels):
                         if not os.path.exists(FLAGS.sampledir):
                             os.makedirs(FLAGS.sampledir)
                         samples = FLAGS.batch_size
-                        z2 = np.random.uniform(-1.0, 1.0, size=[samples, z_dim]).astype(np.float32)
+                        # z2 = np.random.uniform(-1.0, 1.0, size=[samples, z_dim]).astype(np.float32)
+                        # trying normal distribution other than uniform
+                        z2 = np.random.normal(loc=0.0, scale=1.0, size=[sample, z_dim]).astype(np.float32)
                         print ("z2 image shape: ", z2.shape)
                         images = sess.run(g_model, feed_dict={z: z2})
                         print ("sample image shape: ", images.shape)
                         images = np.reshape(images, [samples, 299, 299, 3])
                         images = (images + 1.) / 2.
                         print ("random comp: ", images)
+                        images = (255 * (images - np.max(images)) / -np.ptp(images)).astype(int)
                         scipy.misc.imsave(FLAGS.sampledir + '/sample'+str(step)+'.png',
                                           merge(images, [int(math.sqrt(samples))] * 2))
                         print ("save sample images")
@@ -534,4 +537,4 @@ if __name__ == '__main__':
     FLAGS, unparsed = parser.parse_known_args()
     images, labels = tensor_to_image()
     print ("loaded dataset!")
-    # mnist_gan(images, labels)
+    mnist_gan(images, labels)
