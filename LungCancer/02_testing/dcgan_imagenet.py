@@ -521,7 +521,7 @@ if __name__ == '__main__':
                         help='Save the sample image')
     parser.add_argument('--debug', default=False, action='store_false',
                         help="True if debug mode")
-    parser.add_argument('--image_save', default=False, action='store_false',
+    parser.add_argument('--image_save', default=True, action='store_true',
                         help="True if require to save the image")
     parser.add_argument('--imagesavedir', type=str,
                         default=os.path.join(BASE_DIR, 'pathology', 'imagesavedir'))
