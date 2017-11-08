@@ -59,7 +59,7 @@ def tensor_to_image():
     input_path = os.path.join(FLAGS.data_dir, 'train-*')
     data_files = tf.gfile.Glob(input_path)
     print(data_files)
-    for next_slide in data_files[0:32]:
+    for next_slide in data_files[0:1]:
         print ("next slide: ", next_slide)
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
             with tf.device("/gpu:0"):
@@ -78,10 +78,11 @@ def tensor_to_image():
                 print(nbr_slides)
                 for i in range(nbr_slides):
                     img_out, lab_out = sess.run([image, label])
-                    # print(img_out.shape)
                     train_images.append(img_out)
                     train_labels.append(lab_out)
-                # print ("train_images: ", len(train_images))
+                    if FLAGS.image_save:
+                        print("img_out.dtype", img_out.dtype)
+                        imsave(os.path.join(FLAGS.imagesavedir, next_slide+'_'+str(i)+'.png'), img_out)
                 coord.request_stop()
                 coord.join(threads)
     train_images = np.array(train_images)
@@ -89,7 +90,6 @@ def tensor_to_image():
     print(train_images.shape)
     print (train_labels.shape)
     return train_images, train_labels
-
 
 def readTFRecord():
     input_path = os.path.join(FLAGS.data_dir, 'test_*')
@@ -134,7 +134,6 @@ def readTFRecord():
     print ("len: ", train_images.shape)
     print ("len L: ", train_labels.shape)
     return train_images, train_labels
-
 
 def lrelu(x, leak=0.2, name="lrelu"):
     with tf.variable_scope(name):
@@ -497,7 +496,7 @@ if __name__ == '__main__':
     parser.add_argument('--d_learn', default=0.001, type=float,
                         help="Discrominator Learning rate")
     parser.add_argument('--g_learn', default=0.000002, type=float,
-                        help="Generator Learning Rate")
+                        help="Generator Learning Rates")
     parser.add_argument('--data_dir', type=str,
                          default=os.path.join(BASE_DIR, 'pathology', 'test_viz'))
     parser.add_argument('--sampledir', type=str,
@@ -505,8 +504,12 @@ if __name__ == '__main__':
                         help='Save the sample image')
     parser.add_argument('--debug', default=False, action='store_false',
                         help="True if debug mode")
+    parser.add_argument('--image_save', default=False, action='store_false',
+                        help="True if require to save the image")
+    parser.add_argument('--imagesavedir', type=str,
+                        default=os.path.join(BASE_DIR, 'pathology', 'imagesavedir'))
     parser.add_argument('--subset', type=str, default='train')
     FLAGS, unparsed = parser.parse_known_args()
     images, labels = tensor_to_image()
     print ("loaded dataset!")
-    mnist_gan(images, labels)
+    # mnist_gan(images, labels)
