@@ -58,7 +58,7 @@ def tensor_to_image():
     train_labels = []
     input_path = os.path.join(FLAGS.data_dir, 'train-*')
     data_files = tf.gfile.Glob(input_path)
-    print(data_files)
+    # print(data_files)
     for next_slide in data_files[0:32]:
         print ("next slide: ", next_slide)
         with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
@@ -82,6 +82,7 @@ def tensor_to_image():
                     train_labels.append(lab_out)
                     if FLAGS.image_save:
                         dir_name = os.path.join(FLAGS.imagesavedir, next_slide)
+                        print ("dirname: ", dir_name)
                         if not os.path.exists(dir_name):
                             os.makedirs(dir_name)
                             print ("Made dirname: ", dir_name)
