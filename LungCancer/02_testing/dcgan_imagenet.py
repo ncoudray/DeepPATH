@@ -81,8 +81,8 @@ def tensor_to_image():
                     train_images.append(img_out)
                     train_labels.append(lab_out)
                     if FLAGS.image_save:
-                        print("img_out.dtype", img_out.dtype)
-                        imsave(os.path.join(FLAGS.imagesavedir, next_slide+'_'+str(i)+'.png'), img_out)
+                        saveImage(img_out, os.path.join(FLAGS.imagesavedir,
+                                                        next_slide + '_' + str(i) + '.png'))
                 coord.request_stop()
                 coord.join(threads)
     train_images = np.array(train_images)
@@ -90,6 +90,16 @@ def tensor_to_image():
     print(train_images.shape)
     print (train_labels.shape)
     return train_images, train_labels
+
+def saveImage(img_out, name):
+    print("img_out.dtype", img_out.dtype)
+    print("img_out", img_out)
+    img_out /= 2.
+    img_out += 0.5
+    img_out *= 255.
+    img_out = np.clip(img_out, 0, 255).astype('uint8')
+    print("img_out", img_out)
+    imsave(name, img_out)
 
 def readTFRecord():
     input_path = os.path.join(FLAGS.data_dir, 'test_*')
@@ -301,6 +311,10 @@ def mnist_gan(train_images, train_labels):
                 print ("len idx: ", len(idx))
                 images = train_images[idx, :, :, :]
                 print ("images shape: ", images.shape)
+                # normalize the image array between -1 to 1
+                images = 2 * (images - np.max(images)) / -np.ptp(images) - 1
+                print ("images checks for -1 to 1", images[1,299, 299, 3])
+
                 # Update discriminator twice
                 sess.run(d_trainer, feed_dict={x: images, z: z_batch})
                 _, d_loss_val = sess.run([d_trainer, d_loss], feed_dict={x: images, z: z_batch})
