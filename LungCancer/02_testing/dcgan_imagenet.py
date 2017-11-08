@@ -81,6 +81,8 @@ def tensor_to_image():
                     train_images.append(img_out)
                     train_labels.append(lab_out)
                     if FLAGS.image_save:
+                        if not os.path.exists(FLAGS.imagesavedir):
+                            os.mkdir(FLAGS.imagesavedir)
                         saveImage(img_out, os.path.join(FLAGS.imagesavedir,
                                                         next_slide + '_' + str(i) + '.png'))
                 coord.request_stop()
@@ -91,7 +93,7 @@ def tensor_to_image():
     print (train_labels.shape)
     return train_images, train_labels
 
-def saveImage(img_out, name):
+def saveImage(img_out, dir_name):
     print("img_out.dtype", img_out.dtype)
     print("img_out", img_out)
     img_out /= 2.
@@ -99,7 +101,7 @@ def saveImage(img_out, name):
     img_out *= 255.
     img_out = np.clip(img_out, 0, 255).astype('uint8')
     print("img_out", img_out)
-    imsave(name, img_out)
+    imsave(dir_name, img_out)
 
 def readTFRecord():
     input_path = os.path.join(FLAGS.data_dir, 'test_*')
