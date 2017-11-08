@@ -81,9 +81,13 @@ def tensor_to_image():
                     train_images.append(img_out)
                     train_labels.append(lab_out)
                     if FLAGS.image_save:
-                        dir_name = os.path.join(FLAGS.imagesavedir, next_slide)
+                        slide = next_slide.split("/")[-1]
+                        print ("imagesavedir: ", FLAGS.imagesavedir)
+                        print ("slide: ", slide)
+                        dir_name = os.path.join(FLAGS.imagesavedir, slide)
                         print ("dirname: ", dir_name)
                         if not os.path.exists(dir_name):
+                            print ("Inside")
                             os.makedirs(dir_name)
                             print ("Made dirname: ", dir_name)
                         saveImage(img_out, os.path.join(dir_name, str(i) + '.png'))
