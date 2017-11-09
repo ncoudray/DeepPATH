@@ -334,7 +334,7 @@ def mnist_gan(train_images, train_labels):
                 x_max = np.max(images, axis=tuple(range(images.ndim - 1)), keepdims=True)
                 # normalize the image array between -1 to 1
                 images = 2 * (images - x_max) / -(x_max - x_min) - 1
-                print ("images checks for -1 to 1", images[1,299, 299, 3])
+                print ("images checks for -1 to 1", images.shape)
 
                 # Update discriminator twice
                 sess.run(d_trainer, feed_dict={x: images, z: z_batch})
