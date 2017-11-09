@@ -330,8 +330,8 @@ def mnist_gan(train_images, train_labels):
                 print ("len idx: ", len(idx))
                 images = train_images[idx, :, :, :]
                 print ("images shape: ", images.shape)
-                x_min = np.min(x, axis=tuple(range(x.ndim - 1)), keepdims=True)
-                x_max = np.max(x, axis=tuple(range(x.ndim - 1)), keepdims=True)
+                x_min = np.min(images, axis=tuple(range(images.ndim - 1)), keepdims=True)
+                x_max = np.max(images, axis=tuple(range(images.ndim - 1)), keepdims=True)
                 # normalize the image array between -1 to 1
                 images = 2 * (images - x_max) / -(x_max - x_min) - 1
                 print ("images checks for -1 to 1", images[1,299, 299, 3])
