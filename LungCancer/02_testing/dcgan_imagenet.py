@@ -362,7 +362,7 @@ def mnist_gan(train_images, train_labels):
                         samples = FLAGS.batch_size
                         # z2 = np.random.uniform(-1.0, 1.0, size=[samples, z_dim]).astype(np.float32)
                         # trying normal distribution other than uniform
-                        z2 = np.random.normal(loc=0.0, scale=1.0, size=[sample, z_dim]).astype(np.float32)
+                        z2 = np.random.normal(loc=0.0, scale=1.0, size=[samples, z_dim]).astype(np.float32)
                         print ("z2 image shape: ", z2.shape)
                         images = sess.run(g_model, feed_dict={z: z2})
                         print ("sample image shape: ", images.shape)
