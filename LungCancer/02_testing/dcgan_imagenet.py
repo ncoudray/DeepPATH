@@ -254,8 +254,10 @@ def mnist_gan(train_images, train_labels):
     axis = list(range(len(inputs.get_shape()) - 1))
     mean, variance = tf.nn.moments(inputs, axis, name="mean_var")
     params_shape = inputs[-1:]
-    beta = tf.get_variable('beta', params_shape, initializer=tf.zeros_initializer())
-    gamma = tf.get_variable('gamma', params_shape, initializer=tf.ones_initializer())
+    beta = tf.get_variable('beta', params_shape, initializer=tf.zeros_initializer(),
+                           trainable=True, dtype=tf.float32)
+    gamma = tf.get_variable('gamma', params_shape, initializer=tf.ones_initializer(),
+                            trainable=True, dtype=tf.float32)
     x = tf.nn.batch_normalization(inputs, mean=mean, variance=variance, offset=beta, scale=gamma,
                                   variance_epsilon=0.001, name="Batch_norm")
     x.set_shape(inputs.get_shape())
