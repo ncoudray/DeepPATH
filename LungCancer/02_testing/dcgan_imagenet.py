@@ -250,7 +250,11 @@ def mnist_gan(train_images, train_labels):
     # Models
     print ("Model Training")
     z_dim = 100
-    x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
+    inputs = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
+    axis = list(range(len(inputs.get_shape()) - 1))
+    mean, variance = tf.nn.moments(inputs, axis, name="mean_var")
+    x = tf.nn.batch_normalization(inputs, mean=mean, variance=variance, name="Batch_norm")
+    x.set_shape(inputs.get_shape())
     z = tf.placeholder(tf.float32, shape=[None, z_dim], name='z')
     print ("Building models!0")
     d_model = discriminator(x, name="disc1_1")
@@ -319,8 +323,10 @@ def mnist_gan(train_images, train_labels):
                 print ("len idx: ", len(idx))
                 images = train_images[idx, :, :, :]
                 print ("images shape: ", images.shape)
+                x_min = np.min(x, axis=tuple(range(x.ndim - 1)), keepdims=True)
+                x_max = np.max(x, axis=tuple(range(x.ndim - 1)), keepdims=True)
                 # normalize the image array between -1 to 1
-                images = 2 * (images - np.max(images)) / -np.ptp(images) - 1
+                images = 2 * (images - x_max) / -(x_max - x_min) - 1
                 print ("images checks for -1 to 1", images[1,299, 299, 3])
 
                 # Update discriminator twice
