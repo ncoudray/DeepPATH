@@ -81,7 +81,7 @@ def tensor_to_image():
                     h = 32
                     w = 32
                     win = 9
-                    for row in range(0, img_out.shape[0] / (h - win)):
+                    for row in range(0, int(img_out.shape[0] / (h - win))):
                         r = row * h - 9 if row > 0 else row * h
                         print ("r: ", r)
                         for col in range(0, img_out.shape[1] / (w - win)):
@@ -560,4 +560,4 @@ if __name__ == '__main__':
     FLAGS, unparsed = parser.parse_known_args()
     images, labels = tensor_to_image()
     print ("loaded dataset!")
-    mnist_gan(images, labels)
+    #mnist_gan(images, labels)
