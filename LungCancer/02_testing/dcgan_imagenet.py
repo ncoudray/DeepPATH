@@ -78,8 +78,19 @@ def tensor_to_image():
                 print(nbr_slides)
                 for i in range(nbr_slides):
                     img_out, lab_out = sess.run([image, label])
-                    train_images.append(img_out)
-                    train_labels.append(lab_out)
+                    h = 32
+                    w = 32
+                    win = 9
+                    for row in range(0, img_out.shape[0] / (h - win)):
+                        r = row * h - 9 if row > 0 else row * h
+                        print ("r: ", r)
+                        for col in range(0, img_out.shape[1] / (w - win)):
+                            c = col * w - 9 if col > 0 else col * w
+                            print ("c: ", c)
+                            img = img_out[r: r + h, c: c + w, :]
+                            print ("img shape", img.shape)
+                            train_images.append(img)
+                            train_labels.append(lab_out)
                     if FLAGS.image_save:
                         slide = next_slide.split("/")[-1]
                         print ("imagesavedir: ", FLAGS.imagesavedir)
@@ -157,10 +168,7 @@ def lrelu(x, leak=0.2, name="lrelu"):
         f2 = 0.5 * (1 - leak)
         return f1 * x + f2 * abs(x)
 
-def generator(z, reuse=True):
-    init_width = 19
-    filters = (128, 64, 32, 16, 3)
-    kernel_size = 5
+def generator(z, image_size=299, image_channel=3, filters=(128, 64, 32, 16), init_width=19, kernel_size=5, reuse=True):
     with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
                         reuse=reuse,
                         normalizer_fn=slim.batch_norm):
@@ -182,9 +190,10 @@ def generator(z, reuse=True):
                 print("gen net relu: ", net)
                 tf.summary.histogram('gen_deconv_'+str(i), net)
 
-            i = len(filters)
+            # create the output with image channel
+            i = len(filters) + 1
             net = slim.conv2d_transpose(
-                net, filters[-1],
+                net, image_channel,
                 kernel_size=kernel_size,
                 stride=1,
                 scope='gen_deconv_' + str(i))
@@ -192,16 +201,15 @@ def generator(z, reuse=True):
             net = tf.nn.tanh(net, name="gen_tanh")
             print ("gen net tanh: ", net)
 
-            net = tf.image.resize_images(net, [299, 299])
+            net = tf.image.resize_images(net, [image_size, image_size])
             print ("gen net reshape: ", net)
 
             tf.summary.histogram('gen/out', net)
             tf.summary.image("gen", net, max_outputs=8)
     return net
 
-def discriminator(x, name, classification=False, dropout=None, int_feats=False):
-    filters = (16, 32, 64, 128, 256)
-    kernel_size = 5
+def discriminator(x, name, filters = (16, 32, 64, 128, 256), kernel_size = 5,
+                  classification=False, dropout=None, int_feats=False):
     tf.summary.histogram(name, x)
     tf.summary.image(name, x, max_outputs=8)
     with slim.arg_scope([slim.fully_connected],
@@ -250,7 +258,9 @@ def mnist_gan(train_images, train_labels):
     # Models
     print ("Model Training")
     z_dim = 100
-    x = tf.placeholder(tf.float32, shape=[None, 299, 299, 3], name='X')
+    image_size = 32
+    image_channel = 3
+    x = tf.placeholder(tf.float32, shape=[None, image_size, image_size, image_channel], name='X')
     # axis = list(range(len(inputs.get_shape()) - 1))
     # mean, variance = tf.nn.moments(inputs, axis, name="mean_var")
     # params_shape = inputs[-1:]
@@ -267,7 +277,7 @@ def mnist_gan(train_images, train_labels):
     d_model = discriminator(x, name="disc1_1")
     print ("d_model: ", d_model)
 
-    g_model = generator(z, reuse=False)
+    g_model = generator(z, filters=(256, 128, 64, 32, 3), image_size=image_size, image_channel=3, reuse=False)
     print ("g_model: ", g_model)
 
     dg_model = discriminator(g_model, name="disc2")
@@ -366,7 +376,7 @@ def mnist_gan(train_images, train_labels):
                         print ("z2 image shape: ", z2.shape)
                         images = sess.run(g_model, feed_dict={z: z2})
                         print ("sample image shape: ", images.shape)
-                        images = np.reshape(images, [samples, 299, 299, 3])
+                        images = np.reshape(images, [samples, image_size, image_size, image_channel])
                         images = (images + 1.) / 2.
                         print ("random comp: ", images)
                         images = (255 * (images - np.max(images)) / -np.ptp(images)).astype(int)
