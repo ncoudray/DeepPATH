@@ -84,7 +84,7 @@ def tensor_to_image():
                     for row in range(0, int(img_out.shape[0] / (h - win))):
                         r = row * h - 9 if row > 0 else row * h
                         print ("r: ", r)
-                        for col in range(0, img_out.shape[1] / (w - win)):
+                        for col in range(0, int(img_out.shape[1] / (w - win))):
                             c = col * w - 9 if col > 0 else col * w
                             print ("c: ", c)
                             img = img_out[r: r + h, c: c + w, :]
