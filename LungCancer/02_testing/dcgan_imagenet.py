@@ -204,7 +204,7 @@ class BlackboxDCGAN(object):
                 print ("gen net: ", net)
                 net = slim.fully_connected(net, init_width ** 2 * filters[0], scope='gen_fc1')
                 print ("gen fc net", net)
-                net = tf.reshapes(net, [-1, init_width, init_width, filters[0]])
+                net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
                 print ("gen fc reshped net: ", net)
                 for i in range(1, len(filters) - 1):
                     net = slim.conv2d_transpose(
@@ -583,4 +583,4 @@ if __name__ == '__main__':
     bl = BlackboxDCGAN(image_size=32, image_channel=3)
     images, labels = bl.tensor_to_image()
     print ("loaded dataset!")
-    mnist_gan(images, labels)
+    bl.mnist_gan(images, labels)
