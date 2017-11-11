@@ -69,7 +69,7 @@ class BlackboxDCGAN(object):
             j = 1
             r1 = r2 - win if i > 1 else 0
             r2 = i * h - (i - 1) * win
-            print("r1, r2", r1, r2)
+            # print("r1, r2", r1, r2)
 
             if r2 >= img_out.shape[0]:
                 break
@@ -77,7 +77,7 @@ class BlackboxDCGAN(object):
             while True:
                 c1 = c2 - win if j > 1 else 0
                 c2 = j * w - (j - 1) * win
-                print("r1: {0} - r2: {1} , c1: {2} - c2: {3}".format(r1, r2, c1, c2))
+                # print("r1: {0} - r2: {1} , c1: {2} - c2: {3}".format(r1, r2, c1, c2))
 
                 if c2 >= img_out.shape[1]:
                     break
@@ -204,7 +204,7 @@ class BlackboxDCGAN(object):
                 print ("gen net: ", net)
                 net = slim.fully_connected(net, init_width ** 2 * filters[0], scope='gen_fc1')
                 print ("gen fc net", net)
-                net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
+                net = tf.reshapes(net, [-1, init_width, init_width, filters[0]])
                 print ("gen fc reshped net: ", net)
                 for i in range(1, len(filters) - 1):
                     net = slim.conv2d_transpose(
@@ -583,4 +583,4 @@ if __name__ == '__main__':
     bl = BlackboxDCGAN(image_size=32, image_channel=3)
     images, labels = bl.tensor_to_image()
     print ("loaded dataset!")
-    #mnist_gan(images, labels)
+    mnist_gan(images, labels)
