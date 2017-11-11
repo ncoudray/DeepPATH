@@ -580,7 +580,7 @@ if __name__ == '__main__':
                         default=os.path.join(BASE_DIR, 'pathology', 'imagesavedir'))
     parser.add_argument('--subset', type=str, default='train')
     FLAGS, unparsed = parser.parse_known_args()
-    bl = BlackboxDCGAN(image_size=32, image_channel=3)
+    bl = BlackboxDCGAN(image_size=28, image_channel=3)
     images, labels = bl.tensor_to_image()
     print ("loaded dataset!")
     bl.mnist_gan(images, labels)
