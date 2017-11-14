@@ -195,7 +195,7 @@ class BlackboxDCGAN(object):
             f2 = 0.5 * (1 - leak)
             return f1 * x + f2 * abs(x)
 
-    def generator(self, z, filters=(128, 64, 32, 16), init_width=19, kernel_size=5, reuse=True):
+    def generator(self, z, filters=(128, 64, 33, 16, 3), init_width=7, kernel_size=4, reuse=True):
         with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
                             reuse=reuse,
                             normalizer_fn=slim.batch_norm):
@@ -228,8 +228,8 @@ class BlackboxDCGAN(object):
                 net = tf.nn.tanh(net, name="gen_tanh")
                 print ("gen net tanh: ", net)
 
-                net = tf.image.resize_images(net, [self.image_size, self.image_size])
-                print ("gen net reshape: ", net)
+                # net = tf.image.resize_images(net, [self.image_size, self.image_size])
+                # print ("gen net reshape: ", net)
 
                 tf.summary.histogram('gen/out', net)
                 tf.summary.image("gen", net, max_outputs=8)
@@ -298,13 +298,13 @@ class BlackboxDCGAN(object):
         # x.set_shape(inputs.get_shape())
         z = tf.placeholder(tf.float32, shape=[None, self.z_dim], name='z')
         print ("Building models!0")
-        d_model = self.discriminator(x, name="disc1_1")
+        d_model = self.discriminator(x, filters=(256, 128, 64, 3), name="disc1_1")
         print ("d_model: ", d_model)
 
         g_model = self.generator(z, filters=(256, 128, 64, 32, 3), reuse=False)
         print ("g_model: ", g_model)
 
-        dg_model = self.discriminator(g_model, name="disc2")
+        dg_model = self.discriminator(g_model, filters=(32, 64, ), name="disc2")
         print ("dg_mode: ", dg_model)
 
         tf.add_to_collection("d_model", d_model)
