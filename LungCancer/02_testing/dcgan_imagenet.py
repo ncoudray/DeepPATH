@@ -296,19 +296,19 @@ class BlackboxDCGAN(object):
                 print ("net relu: ", net)
                 tf.summary.histogram('dis_conv_'+str(i), net)
 
-                net = tf.contrib.layers.flatten(net, scope="disc_flatten")
+                net = tf.contrib.layers.flatten(net, scope="dis_flatten")
                 # net = tf.reshape(net, [net.get_shape()[0]._value,
                                        # net.get_shape()[1]._value * net.get_shape()[2]._value * net.get_shape()[3]])
                 print ("flatten: ", net)
 
-                net = fc(input_vector=net, num_output_length=1024, name="dic_fc")
+                net = fc(input_vector=net, num_output_length=1024, name="disc_fc_1")
                 print ("fc1: ", net)
                 tf.summary.histogram('dis_fc1', net)
 
                 net = tf.nn.dropout(net, keep_prob=0.5, name="dis_dropout")
                 print ("dropout: ", net)
 
-                net = fc(input_vector=net, num_output_length=1, name="dic_fc")
+                net = fc(input_vector=net, num_output_length=1, name="disc_fc_2")
                 print ("fc2: ", net)
                 tf.summary.histogram('dis_fc2', net)
         return net
