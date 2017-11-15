@@ -114,7 +114,10 @@ class BlackboxDCGAN(object):
                         img_out, lab_out = sess.run([image, label])
 
                         # 32 size image patches from each image - window size of 9
-                        self.saveImagePatches(img_out=img_out, lab_out=lab_out)
+                        # self.saveImagePatches(img_out=img_out, lab_out=lab_out)
+
+                        self.train_images.append(img_out)
+                        self.train_labels.append(labels)
 
                         # save the original images
                         if FLAGS.image_save:
@@ -195,47 +198,73 @@ class BlackboxDCGAN(object):
             f2 = 0.5 * (1 - leak)
             return f1 * x + f2 * abs(x)
 
-    def generator(self, z, filters=(128, 64, 32, 16, 3), init_width=7, kernel_size=4, reuse=True):
+    def generator(self, z, filters=(128, 64, 32, 16, 3), init_width=19, kernel_size=4, reuse=True):
+
         with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
                             reuse=reuse,
                             normalizer_fn=slim.batch_norm):
             with tf.variable_scope("gen"):
                 net = z
                 print ("gen net: ", net)
-                net = slim.fully_connected(net, init_width ** 2 * filters[0], scope='gen_fc1')
+                # net = slim.fully_connected(net, init_width ** 2 * filters[0], scope='gen_fc1')
+                net = fc(
+                    input_vector=net,
+                    num_output_length=filters[0] * init_width * init_width,
+                    name="gen_fc1"
+                )
                 print ("gen fc net", net)
                 net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
                 print ("gen fc reshped net: ", net)
-                for i in range(1, len(filters) - 1):
-                    net = slim.conv2d_transpose(
-                        net, filters[i],
-                        kernel_size=kernel_size,
-                        stride=2,
-                        scope='gen_deconv_'+str(i))
+                net = lrelu(net)
+                print ("gen relu: ", net)
+                for i in range(1, len(filters) - 3):
+                    net = deconv2d(input_map=net,
+                                   output_shape=[net.get_shape()[0],
+                                                init_width * 2 ** (i + 1),
+                                                init_width * 2 ** (i + 1),
+                                                filters[i]],
+                                   size_kernel=kernel_size,
+                                   name="gen_deconv_"+str(i)
+                                   )
                     print("gen net: {0} - {1}".format(i, net))
                     net = self.lrelu(net, name="gen_relu" + str(i))
                     print("gen net relu: ", net)
                     tf.summary.histogram('gen_deconv_'+str(i), net)
 
                 # create the output with image channel
-                i = len(filters) + 1
-                net = slim.conv2d_transpose(
-                    net, self.image_channel,
-                    kernel_size=kernel_size,
-                    stride=1,
-                    scope='gen_deconv_' + str(i))
+                i = len(filters) - 2
+                net = deconv2d(input_map=net,
+                               output_shape=[net.get_shape()[0],
+                                             init_width * 2 ** (i + 1),
+                                             init_width * 2 ** (i + 1),
+                                             filters[i]],
+                               size_kernel=kernel_size,
+                               stride=2,
+                               name="gen_deconv"+str(i))
                 print("gen net: {0} - {1}".format(i, net))
+                net = self.lrelu(net)
+                print ("gen net relu: ", net)
+
+                i = len(filters) - 1
+                net = deconv2d(input_map=net,
+                               output_shape=[net.get_shape()[0],
+                                             self.image_size,
+                                             self.image_size,
+                                             filters[i]],
+                               size_kernel=kernel_size,
+                               stride=2,
+                               name="gen_deconv" + str(i))
                 net = tf.nn.tanh(net, name="gen_tanh")
                 print ("gen net tanh: ", net)
 
-                # net = tf.image.resize_images(net, [self.image_size, self.image_size])
-                # print ("gen net reshape: ", net)
+                net = tf.image.resize_images(net, [self.image_size, self.image_size])
+                print ("gen net reshape: ", net)
 
                 tf.summary.histogram('gen/out', net)
                 tf.summary.image("gen", net, max_outputs=8)
         return net
 
-    def discriminator(self, x, name, filters = (16, 32, 64, 128, 256), kernel_size=5,
+    def discriminator(self, x, name, filters=(16, 32, 64, 128, 256), kernel_size=5,
                       classification=False, dropout=None, int_feats=False):
         tf.summary.histogram(name, x)
         tf.summary.image(name, x, max_outputs=8)
@@ -244,9 +273,9 @@ class BlackboxDCGAN(object):
             with tf.variable_scope(name):
                 net = x
                 print ("net conv: ", net)
-                net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="dis_padding")
+                # net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="dis_padding")
                 print ("net pad: ", net)
-                for i in range(len(filters) - 1):
+                for i in range(len(filters) - 2):
                     net = conv2d(net,
                                  num_output_channels=filters[i],
                                  size_kernel=kernel_size,
@@ -256,7 +285,7 @@ class BlackboxDCGAN(object):
                     print ("net relu: ", net)
                     tf.summary.histogram('dis_conv_'+str(i), net)
 
-                i = len(filters)
+                i = len(filters) - 1
                 net = conv2d(net,
                              num_output_channels=filters[-1],
                              size_kernel=kernel_size,
@@ -265,14 +294,17 @@ class BlackboxDCGAN(object):
                 net = self.lrelu(net, name="dis_relu_"+str(i))
                 print ("net relu: ", net)
                 tf.summary.histogram('dis_conv_'+str(i), net)
-                net = slim.flatten(net,)
+                net = tf.reshape(net, [-1, net.get_shape()[1], net.get_shape()[2], net.get_shape()[3]])
                 print ("flatten: ", net)
-                net = slim.fully_connected(net, 1024, activation_fn=None, scope='dis_fc1')
+
+                net = fc(input_vector=net, num_output_length=1024, name="dic_fc")
                 print ("fc1: ", net)
                 tf.summary.histogram('dis_fc1', net)
+
                 net = tf.nn.dropout(net, keep_prob=0.5, name="dis_dropout")
                 print ("dropout: ", net)
-                net = slim.fully_connected(net, 1, activation_fn=tf.nn.sigmoid, scope='dis_out')
+
+                net = fc(input_vector=net, num_output_length=1, name="dic_fc")
                 print ("fc2: ", net)
                 tf.summary.histogram('dis_fc2', net)
         return net
@@ -298,13 +330,13 @@ class BlackboxDCGAN(object):
         # x.set_shape(inputs.get_shape())
         z = tf.placeholder(tf.float32, shape=[None, self.z_dim], name='z')
         print ("Building models!0")
-        d_model = self.discriminator(x, filters=(32, 64), name="disc1_1")
+        d_model = self.discriminator(x, name="disc1_1")
         print ("d_model: ", d_model)
 
-        g_model = self.generator(z, filters=(256, 128, 64, 3), reuse=False)
+        g_model = self.generator(z, reuse=False)
         print ("g_model: ", g_model)
 
-        dg_model = self.discriminator(g_model, filters=(32, 64, ), name="disc2")
+        dg_model = self.discriminator(g_model, name="disc2")
         print ("dg_mode: ", dg_model)
 
         tf.add_to_collection("d_model", d_model)
@@ -580,7 +612,7 @@ if __name__ == '__main__':
                         default=os.path.join(BASE_DIR, 'pathology', 'imagesavedir'))
     parser.add_argument('--subset', type=str, default='train')
     FLAGS, unparsed = parser.parse_known_args()
-    bl = BlackboxDCGAN(image_size=28, image_channel=3)
+    bl = BlackboxDCGAN(image_size=299, image_channel=3)
     images, labels = bl.tensor_to_image()
     print ("loaded dataset!")
     bl.mnist_gan(images, labels)
