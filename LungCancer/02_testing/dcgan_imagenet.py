@@ -313,6 +313,75 @@ class BlackboxDCGAN(object):
                 tf.summary.histogram('dis_fc2', net)
         return net
 
+    def generator_slim(self, z, name):
+        init_width = 19
+        filters = (128, 64, 32, 16, 3)
+        kernel_size = 4
+        with slim.arg_scope([slim.conv2d_transpose, slim.fully_connected],
+                            normalizer_fn=slim.batch_norm):
+            with tf.variable_scope(name):
+                net = slim.fully_connected(
+                    z, init_width ** 2 * filters[0], scope='gen_fc1')
+                net = tf.reshape(net, [-1, init_width, init_width, filters[0]])
+                net = slim.conv2d_transpose(
+                    net, filters[1],
+                    kernel_size=kernel_size,
+                    stride=2,
+                    scope='gen_deconv1')
+                net = slim.conv2d_transpose(
+                    net, filters[2],
+                    kernel_size=kernel_size,
+                    stride=1,
+                    scope='gen_deconv2')
+                net = slim.conv2d_transpose(
+                    net,
+                    filters[3],
+                    kernel_size=kernel_size,
+                    stride=2,
+                    activation_fn=tf.nn.tanh,
+                    scope='gen_deconv3')
+
+                net = slim.conv2d_transpose(
+                    net,
+                    filters[4],
+                    kernel_size=kernel_size,
+                    stride=2,
+                    activation_fn=tf.nn.tanh,
+                    scope='gen_deconv4')
+
+                net = tf.image.resize_images(net, [self.image_size, self.image_size])
+                print("gen net reshape: ", net)
+
+                tf.summary.histogram('gen/out', net)
+                tf.summary.image("gen", net, max_outputs=8)
+        return net
+
+    def discriminator_slim(self, x, name, classification=False, dropout=None, int_feats=False):
+        filters = (16, 32, 64, 128, 256)
+        kernels = 4
+        with slim.arg_scope([slim.conv2d, slim.fully_connected],
+                            activation_fn=lrelu):
+            with tf.variable_scope(name):
+                net = tf.reshape(x, [-1, self.image_size, self.image_size, self.image_channel])
+                net = slim.conv2d(net, filters[0], kernels, stride=2, normalizer_fn=slim.batch_norm, scope='disc_conv1')
+                net = slim.conv2d(net, filters[1], kernels, stride=2, normalizer_fn=slim.batch_norm, scope='disc_conv2')
+                net = slim.conv2d(net, filters[2], kernels, stride=2, normalizer_fn=slim.batch_norm, scope='disc_conv3')
+                net = slim.conv2d(net, filters[3], kernels, stride=2, normalizer_fn=slim.batch_norm, scope='disc_conv4')
+                net = slim.conv2d(net, filters[4], kernels, stride=2, normalizer_fn=slim.batch_norm, scope='disc_conv5')
+
+                if classification:
+                    with tf.variable_scope("classify"):
+                        net = slim.flatten(net, )
+                        net = slim.dropout(net, dropout)
+                        net = slim.layers.fully_connected(net, 1024, activation_fn=None)
+                elif int_feats:
+                    net = slim.flatten(net, )
+                    return net
+                else:
+                    net = slim.flatten(net, )
+                    net = slim.fully_connected(net, 1, activation_fn=tf.nn.sigmoid, scope='disc_out')
+        return net
+
     #############
     # DC-GAN #
     #############
@@ -334,13 +403,13 @@ class BlackboxDCGAN(object):
         # x.set_shape(inputs.get_shape())
         z = tf.placeholder(tf.float32, shape=[None, self.z_dim], name='z')
         print ("Building models!0")
-        d_model = self.discriminator(x, name="disc1_1")
+        d_model = self.discriminator_slim(x, name="disc1_1")
         print ("d_model: ", d_model)
 
-        g_model = self.generator(z, reuse=False)
+        g_model = self.generator_slim(z, name="gen")
         print ("g_model: ", g_model)
 
-        dg_model = self.discriminator(g_model, name="disc2")
+        dg_model = self.discriminator_slim(g_model, name="disc2")
         print ("dg_mode: ", dg_model)
 
         tf.add_to_collection("d_model", d_model)
