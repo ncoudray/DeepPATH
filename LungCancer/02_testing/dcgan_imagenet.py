@@ -273,7 +273,7 @@ class BlackboxDCGAN(object):
             with tf.variable_scope(name):
                 net = x
                 print ("net conv: ", net)
-                # net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="dis_padding")
+                net = tf.pad(net, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode="SYMMETRIC", name="dis_padding")
                 print ("net pad: ", net)
                 for i in range(len(filters) - 2):
                     net = conv2d(net,
@@ -294,7 +294,8 @@ class BlackboxDCGAN(object):
                 net = self.lrelu(net, name="dis_relu_"+str(i))
                 print ("net relu: ", net)
                 tf.summary.histogram('dis_conv_'+str(i), net)
-                net = tf.reshape(net, [-1, net.get_shape()[1], net.get_shape()[2], net.get_shape()[3]])
+
+                net = tf.reshape(net, [net.get_shape()[0], net.get_shape()[1] * net.get_shape()[2] * net.get_shape()[3]])
                 print ("flatten: ", net)
 
                 net = fc(input_vector=net, num_output_length=1024, name="dic_fc")
