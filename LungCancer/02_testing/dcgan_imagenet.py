@@ -220,7 +220,7 @@ class BlackboxDCGAN(object):
                 print ("gen relu: ", net)
                 for i in range(1, len(filters) - 3):
                     net = deconv2d(input_map=net,
-                                   output_shape=[net.get_shape()[0],
+                                   output_shape=[net.get_shape()[0]._value,
                                                 init_width * 2 ** (i + 1),
                                                 init_width * 2 ** (i + 1),
                                                 filters[i]],
@@ -235,7 +235,7 @@ class BlackboxDCGAN(object):
                 # create the output with image channel
                 i = len(filters) - 2
                 net = deconv2d(input_map=net,
-                               output_shape=[net.get_shape()[0],
+                               output_shape=[net.get_shape()[0]._value,
                                              init_width * 2 ** (i + 1),
                                              init_width * 2 ** (i + 1),
                                              filters[i]],
@@ -248,7 +248,7 @@ class BlackboxDCGAN(object):
 
                 i = len(filters) - 1
                 net = deconv2d(input_map=net,
-                               output_shape=[net.get_shape()[0],
+                               output_shape=[net.get_shape()[0]._value,
                                              self.image_size,
                                              self.image_size,
                                              filters[i]],
