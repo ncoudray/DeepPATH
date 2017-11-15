@@ -3,6 +3,7 @@ from __future__ import print_function
 import math
 import numpy as np
 import os
+import sys
 import scipy.misc
 import tensorflow as tf
 from sklearn.cluster import KMeans
@@ -295,7 +296,7 @@ class BlackboxDCGAN(object):
                 print ("net relu: ", net)
                 tf.summary.histogram('dis_conv_'+str(i), net)
 
-                net = tf.contrib.layers.flatten(net, name="disc_flatten")
+                net = tf.contrib.layers.flatten(net, scope="disc_flatten")
                 # net = tf.reshape(net, [net.get_shape()[0]._value,
                                        # net.get_shape()[1]._value * net.get_shape()[2]._value * net.get_shape()[3]])
                 print ("flatten: ", net)
@@ -417,7 +418,7 @@ class BlackboxDCGAN(object):
                     print (z_batch.shape)
                     summary_str = sess.run(summary, feed_dict={x: images, z: z_batch})
                     summary_writer.add_summary(summary_str, global_step.eval())
-
+                    sys.stdout.flush()
                     # Early stopping
                     if np.isnan(g_loss_val) or np.isnan(g_loss_val):
                         print('Early stopping')
