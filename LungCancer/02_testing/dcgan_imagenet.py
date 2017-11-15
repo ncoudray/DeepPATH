@@ -295,7 +295,9 @@ class BlackboxDCGAN(object):
                 print ("net relu: ", net)
                 tf.summary.histogram('dis_conv_'+str(i), net)
 
-                net = tf.reshape(net, [net.get_shape()[0], net.get_shape()[1] * net.get_shape()[2] * net.get_shape()[3]])
+                net = tf.contrib.layers.flatten(net, name="disc_flatten")
+                # net = tf.reshape(net, [net.get_shape()[0]._value,
+                                       # net.get_shape()[1]._value * net.get_shape()[2]._value * net.get_shape()[3]])
                 print ("flatten: ", net)
 
                 net = fc(input_vector=net, num_output_length=1024, name="dic_fc")
