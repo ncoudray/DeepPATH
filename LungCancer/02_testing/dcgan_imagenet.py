@@ -117,7 +117,7 @@ class BlackboxDCGAN(object):
                         # self.saveImagePatches(img_out=img_out, lab_out=lab_out)
 
                         self.train_images.append(img_out)
-                        self.train_labels.append(labels)
+                        self.train_labels.append(lab_out)
 
                         # save the original images
                         if FLAGS.image_save:
