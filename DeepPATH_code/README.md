@@ -122,8 +122,12 @@ module load numpy/intel/1.13.1
    - `9` Sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
    - `10` Do not sort. Just create symbolic links to all images in a single label folder and assign images to train/test/valid sets.
    - `11` Sample location (Normal, metastatic, etc...)
-   - `12` Osman's melanoma: Response to Treatment (Best Response) (POD vs other)
-   - `13` Osman's melanoma: Toxicity observed 
+   - `12` temp
+   - `13` temp
+   - `14` Json is actually a text file. First column is ID, second is the labels
+   - `15` Copy (not symlink) SVS slides (not jpeg tiles) to new directory if condition#1
+   - `16` Copy (not symlink) SVS slides (not jpeg tiles) to new directory if condition#2
+
 * `--TMB`: addional option for optoin 8: path to json file with mutational loads
 *  `--PercentTest`: percentage of images for validation (example: 15); 
 *  `--PercentValid` Percentage of images for testing (example: 15). All the other tiles will be used for training by default.

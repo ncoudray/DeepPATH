@@ -20,7 +20,7 @@ from glob import glob
 import os
 from argparse import ArgumentParser
 import random
-
+from shutil import copyfile
 
 def extract_stage(metadata):
     stage = metadata['cases'][0]['diagnoses'][0]['tumor_stage']
@@ -110,8 +110,8 @@ def sort_mutation_metastatic(metadata, load_dic, **kwargs):
             return load_dic[submitter_id]
         except KeyError:
             return None
-
     return None
+
 
 def sort_setonly(metadata, load_dic, **kwargs):
     return 'All'
@@ -134,6 +134,35 @@ def sort_melanoma_Toxicity(metadata, load_dic, **kwargs):
 def sort_text(metadata, load_dic, **kwargs):
     return metadata
 
+def copy_svs_lymph_melanoma(metadata, load_dic, **kwargs):
+    sample_type = extract_sample_type(metadata)
+    if "Metastatic" in sample_type:
+        submitter_id = metadata["cases"][0]["diagnoses"][0]["tissue_or_organ_of_origin"]
+        if 'c77' in submitter_id:
+            try:
+                return True
+            except KeyError:
+                return False
+        else:
+            return False
+    return False
+
+
+
+def copy_svs_skin_primtumor(metadata, load_dic, **kwargs):
+    sample_type = extract_sample_type(metadata)
+    if "Primary" in sample_type:
+        submitter_id = metadata["cases"][0]["diagnoses"][0]["tissue_or_organ_of_origin"]
+        if 'c44' in submitter_id:
+            try:
+                return True
+            except KeyError:
+                return False
+        else:
+            return False
+    return False
+
+
 
 sort_options = [
         sort_cancer_stage_separately,
@@ -149,7 +178,9 @@ sort_options = [
         sort_location,
         sort_melanoma_POD,
         sort_melanoma_Toxicity,
-        sort_text
+        sort_text,
+	copy_svs_lymph_melanoma,
+	copy_svs_skin_primtumor,
 ]
 
 if __name__ == '__main__':
@@ -179,6 +210,9 @@ if __name__ == '__main__':
        12. Osman's melanoma: Response to Treatment (Best Response) (POD vs other)
        13. Osman's melanoma: Toxicity observed 
        14. Json is actually a text file. First column is ID, second is the labels
+       15. Copy (not symlink) SVS slides (not jpeg tiles) to new directory if Melanoma + Lymph
+       16. Copy (not symlink) SVS slides (not jpeg tiles) to new directory if Primary Tumor + skin
+
 
     """
     ## Define Arguments
@@ -209,8 +243,13 @@ if __name__ == '__main__':
         args.PercentTest = 0
 
     SourceFolder = os.path.abspath(args.SourceFolder)
-    imgFolders = glob(os.path.join(SourceFolder, "*_files"))
-    random.shuffle(imgFolders)  # randomize order of images
+    if args.SortingOption in [15, 16]:
+        # raw TCGA svs images
+        imgFolders = glob(os.path.join(SourceFolder, "*.svs"))
+        random.shuffle(imgFolders)  # randomize order of images
+    else:
+        imgFolders = glob(os.path.join(SourceFolder, "*_files"))
+        random.shuffle(imgFolders)  # randomize order of images
 
     JsonFile = args.JsonFile
     if '.json' in JsonFile:
@@ -238,6 +277,27 @@ if __name__ == '__main__':
     except IndexError:
         raise ValueError("Unknown sort option")
 
+
+    # Special case: svs images - copy and exit program
+    if args.SortingOption in [15, 16]:
+        # raw TCGA svs images
+        for cFolderName in imgFolders:
+            imgRootName = os.path.basename(cFolderName)
+            imgRootName = imgRootName.rstrip('.svs')
+            try:
+                image_meta = jdata[imgRootName]
+            except KeyError:
+                try:
+                    image_meta = jdata[imgRootName[:args.PatientID]]
+                except KeyError:
+                    print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
+                    continue
+            IsCopy = sort_function(image_meta, load_dic={})
+            if IsCopy:
+                copyfile(cFolderName, os.path.join(os.getcwd(), imgRootName) )
+
+        quit()
+
     PercentValid = args.PercentValid / 100.
     if not 0 <= PercentValid <= 1:
         raise ValueError("PercentValid is not between 0 and 100")
@@ -259,6 +319,8 @@ if __name__ == '__main__':
                 mut_load = json.loads(fid.read())
         else:
             raise ValueError("For SortingOption = 9 you must specify the --TMB option")
+
+
 
     ## Main Loop
     print("******************")
@@ -302,6 +364,7 @@ if __name__ == '__main__':
 
         SubDir = sort_function(image_meta, load_dic=mut_load)
         if int(args.nSplit) > 0:
+            # n-fold cross validation
             for nSet in range(int(args.nSplit)):
                 SetDir = "set_" + str(nSet)
                 if not os.path.exists(SetDir):
