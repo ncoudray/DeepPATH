@@ -497,13 +497,31 @@ expected processing time for this step: on a gpu, about 1000 tiles per minute.
 ## Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
 code in 03_postprocessing/0f_HeatMap_nClasses.py:
 
+on the Phoenix cluster, the headet for the following commands could be:
+```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rq_nHeatmap
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q all.q
+#$ -l mem_free=100G
+
+module load python/3.5.3
+```
+
+code:
 ```shell
 python 0f_HeatMap_nClasses.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0 --output_dir 'result_folder' --tiles_stats 'out_filename_Stats.txt' --resample_factor 10 --slide_filter 'TCGA-05-5425' --filter_tile '' --Cmap 'CancerType' --tiles_size 512
 ```
 * ```slide_filter```: process only images with this basename.
 * ```filter_tile```: if map is a mutation, apply cmap of mutations only if tiles are LUAD (```out_filename_Stats.txt``` of Noemal/LUAD/LUSC classification)
 * ```Cmap```: ```CancerType``` for Normal/LUAD/LUSC classification, or mutation name
+* optiotnal: ```thresholds```: thresholds to use for each label - string, for example: 0.285,0.288,0.628. If none, take the highest one. 
 
+colors are:
+black for class 1, red for class 2, blue for class 3, orange for class 4, green for class 5, purple otherwise
 
 
 ## Code in 03_postprocessing/3Classes for 3 classes for ROC curves:
