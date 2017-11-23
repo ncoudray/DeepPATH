@@ -282,6 +282,9 @@ if __name__ == '__main__':
     if args.SortingOption in [15, 16]:
         # raw TCGA svs images
         for cFolderName in imgFolders:
+            print("-----------")
+            print(cFolderName)
+
             imgRootName = os.path.basename(cFolderName)
             imgRootName = imgRootName.rstrip('.svs')
             try:
@@ -294,8 +297,7 @@ if __name__ == '__main__':
                     continue
             IsCopy = sort_function(image_meta, load_dic={})
             if IsCopy:
-                copyfile(cFolderName, os.path.join(os.getcwd(), imgRootName) )
-
+                copyfile(cFolderName, os.path.join(os.getcwd(), imgRootName + '.svs' ) )
         quit()
 
     PercentValid = args.PercentValid / 100.
