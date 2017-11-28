@@ -312,7 +312,7 @@ def main():
 		print(k)
 		if FLAGS.slide_filter in k:
 			filtered_dict[k] =stats_dict[k]
-			print("yes")
+	#		print("yes")
 
 	## Aggregate the results and build heatmaps
 	Start = True
@@ -337,6 +337,11 @@ def main():
 					break
 			if isError == False:
 				break
+		if isError == True:
+			print("image not found:")
+			print(tile)
+			break
+
 
 		# remove slide number from image name:
 		cTileRootName =  '_'.join(os.path.basename(test_filename).split('_')[0:-2]) 
