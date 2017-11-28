@@ -324,7 +324,6 @@ def main():
 		cTileRootName =  '_'.join(tile.split('_')[0:-2]) 
 		extensions = ['.jpeg', '.jpg']
 		IsError = True
-		dirname = 'unknown'
 		for extension in extensions:
 			for sub_dir in list(sub_dirs):
 				try:
