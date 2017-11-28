@@ -306,150 +306,153 @@ def main():
 	skip = False
 	# get all the label names
 
-	# For each class
-	#for sub_dir in list(sub_dirs):
-	for sub_dir in list(reversed(sub_dirs)):
-		dir_name = os.path.basename(sub_dir)
-		#extensions = ['jpg', 'jpeg', 'JPG', 'JPEG']
-		extensions = ['jpeg']
-		file_list = []
+	filtered_dict = {}
+	for k in stats_dict.keys():
+		print(k)
+		if FLAGS.slide_filter in k:
+			filtered_dict[k] =stats_dict[k]
+			print("yes")
 
-		print("list the images in folder %s..." % (dir_name) )
+	## Aggregate the results and build heatmaps
+	Start = True
+	NewSlide = True
+
+	# For each image in the out_filename_stats:
+	for tile in sorted(filtered_dict.keys()):
+		# remove slide number from image name:
+		cTileRootName =  '_'.join(tile.split('_')[0:-2]) 
+		extensions = ['.jpeg', '.jpg']
+		IsError = True
 		for extension in extensions:
-      			#file_glob = os.path.join(image_dir, dir_name, 'test_*.' + extension)
-      			file_glob = os.path.join(image_dir, dir_name, '*' + FLAGS.slide_filter + '*.' + extension)
-      			#file_list.extend(gfile.Glob(file_glob))
-      			file_list.extend(glob.glob(file_glob))
-		if not file_list:
-      			print('No images found')
-      			print(os.path.join(image_dir, dir_name, '*' + FLAGS.slide_filter + '*.' + extension))
-      			continue
+			for sub_dir in list(sub_dirs):
+				try:
+					test_filename = os.path.join(sub_dir, tile + extension)
+					im2 = imread(test_filename)
+					dir_name = os.path.basename(sub_dir)
+					isError = False
+				except:
+					isError = True
+				if isError == False:
+					break
+			if isError == False:
+				break
 
+		# remove slide number from image name:
+		cTileRootName =  '_'.join(os.path.basename(test_filename).split('_')[0:-2]) 
+		# extract coordinates of the tile
+		ixTile = int(os.path.basename(test_filename).split('_')[-2])
+		iyTile = int(os.path.basename(test_filename).split('_')[-1].split('.')[0])
+		# check how bif the "re-combined" slide should be (invert col/row because of the swapaxes required)
+		rTile = im2.shape[1]
+		cTile = im2.shape[0]
+					
+		xTile =  (ixTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap)
+		yTile =  (iyTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap)
+		req_xLength = xTile + rTile
+		req_yLength = yTile + cTile
 
-		## Aggregate the results and build heatmaps
-		Start = True
-		NewSlide = True
-		# 1. For each slide, compute the number of good and bad classifications
-		for test_filename in sorted(file_list):
-			#cTileRootName = os.path.basename(test_filename).split('_files')[0]
-			#cTileRootName = os.path.basename(test_filename)[0:50]	
-			# remove slide number from image name:
-			cTileRootName =  '_'.join(os.path.basename(test_filename).split('_')[0:-2]) 
-			# extract coordinates of the tile
-			ixTile = int(os.path.basename(test_filename).split('_')[-2])
-			iyTile = int(os.path.basename(test_filename).split('_')[-1].split('.')[0])
-			im2 = imread(test_filename)
-			# check how bif the "re-combined" slide should be (invert col/row because of the swapaxes required)
-			rTile = im2.shape[1]
-			cTile = im2.shape[0]
-						
-			xTile =  (ixTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap)
-			yTile =  (iyTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap)
+		if FLAGS.resample_factor > 0:
+			print("old / new r&cTile")
+			print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
+			rTile = int(rTile / FLAGS.resample_factor)
+			cTile = int(cTile / FLAGS.resample_factor)
+			#print(rTile, cTile)
+			im2s = scipy.misc.imresize(im2, (cTile, rTile))
+			rTile = im2s.shape[1]
+			cTile = im2s.shape[0]
+
+			#ixTile = int(ixTile / FLAGS.resample_factor)
+			#iyTile = int(iyTile / FLAGS.resample_factor)
+			xTile = int(xTile / FLAGS.resample_factor)
+			yTile = int(yTile / FLAGS.resample_factor)
 			req_xLength = xTile + rTile
 			req_yLength = yTile + cTile
+			print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
+		else:
+			im2s = im2
+		#print(ixTile, iyTile, rTile, cTile, req_xLength, req_yLength, xTile, yTile)
+		if cTileRootName == SlideRootName:
+			if skip:
+				continue
 
-			if FLAGS.resample_factor > 0:
-				print("old / new r&cTile")
-				print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
-				rTile = int(rTile / FLAGS.resample_factor)
-				cTile = int(cTile / FLAGS.resample_factor)
-				#print(rTile, cTile)
-				im2s = scipy.misc.imresize(im2, (cTile, rTile))
-				rTile = im2s.shape[1]
-				cTile = im2s.shape[0]
+			NewSlide = False
+			#if skip:
+			#	continue
 
-				#ixTile = int(ixTile / FLAGS.resample_factor)
-				#iyTile = int(iyTile / FLAGS.resample_factor)
-				xTile = int(xTile / FLAGS.resample_factor)
-				yTile = int(yTile / FLAGS.resample_factor)
-				req_xLength = xTile + rTile
-				req_yLength = yTile + cTile
-				print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
+
+		else:
+			# Moved to a new slide
+			print("Analyzing %s" % (cTileRootName) )
+			if Start:
+				Start = False
+			#else:
+			elif skip==False:
+				# For previous the slide which is now finished, compute the averages 
+
+				skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide,dir_name)
+
+			NewSlide = True
+			skip = False
+			SlideRootName = cTileRootName
+			
+			# create a new re-combined slide	
+			WholeSlide_0 = np.zeros([req_xLength, req_yLength, 3])
+			HeatMap_0 = np.zeros([req_xLength, req_yLength, 3])
+			HeatMap_divider = np.zeros([req_xLength, req_yLength, 3])
+			
+
+		# Check score associated with that image:
+		# print("FLAGS.tiles_stats")
+		# print(FLAGS.tiles_stats)
+		# text file with stats from fully retrained network
+		oClass, cmap, current_score = get_inference_from_file(test_filename, cTileRootName, stats_dict)
+
+
+		# prepare heatmap
+		print("current score")
+		print(current_score)
+		if current_score < 0:
+			print("No probability found")
+		else:
+			if NewSlide == False:
+				# append to the new re-combined slide		
+				WholeSlide_temp = np.zeros([max(WholeSlide_0.shape[0], req_xLength), max(WholeSlide_0.shape[1],req_yLength), 3])
+				WholeSlide_temp[0:WholeSlide_0.shape[0],0:WholeSlide_0.shape[1],:] = WholeSlide_0
+				WholeSlide_temp[xTile:req_xLength, yTile:req_yLength,:] = np.swapaxes(im2s,0,1)
+				WholeSlide_0 = WholeSlide_temp
+				del WholeSlide_temp
+
+				HeatMap_temp = WholeSlide_0 * 0
+				HeatMap_temp[0:HeatMap_0.shape[0], 0:HeatMap_0.shape[1],:] = HeatMap_0
+				HeatMap_0 = HeatMap_temp
+				del HeatMap_temp
+		
+				HeatMap_divider_tmp = WholeSlide_0 * 0
+				HeatMap_divider_tmp[0:HeatMap_divider.shape[0], 0:HeatMap_divider.shape[1],:] = HeatMap_divider
+				HeatMap_divider = HeatMap_divider_tmp
+				del HeatMap_divider_tmp
+
+				#skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, label_name, NewSlide)
+
 			else:
-				im2s = im2
-			#print(ixTile, iyTile, rTile, cTile, req_xLength, req_yLength, xTile, yTile)
-			if cTileRootName == SlideRootName:
-				if skip:
-					continue
-
-				NewSlide = False
-				#if skip:
-				#	continue
+				WholeSlide_0[xTile:req_xLength, yTile:req_yLength,:] = np.swapaxes(im2s,0,1)
 
 
-			else:
-				# Moved to a new slide
-				print("Analyzing %s" % (cTileRootName) )
-				if Start:
-					Start = False
-				#else:
-				elif skip==False:
-					# For previous the slide which is now finished, compute the averages 
+			#heattile = np.ones([512,512]) * current_score
+			heattile = np.ones([req_xLength-xTile,req_yLength-yTile]) * current_score
 
-					skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide,dir_name)
+			heattile = cmap(heattile)
+			heattile = heattile[:,:,0:3]
 
-				NewSlide = True
-				skip = False
-				SlideRootName = cTileRootName
-				
-				# create a new re-combined slide	
-				WholeSlide_0 = np.zeros([req_xLength, req_yLength, 3])
-				HeatMap_0 = np.zeros([req_xLength, req_yLength, 3])
-				HeatMap_divider = np.zeros([req_xLength, req_yLength, 3])
-				
+			HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] + heattile
+			HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] + 1
 
-			# Check score associated with that image:
-			# print("FLAGS.tiles_stats")
-			# print(FLAGS.tiles_stats)
-			# text file with stats from fully retrained network
-			oClass, cmap, current_score = get_inference_from_file(test_filename, cTileRootName, stats_dict)
+			skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide, dir_name)
+			if skip:
+				continue
 	
 
-			# prepare heatmap
-			print("current score")
-			print(current_score)
-			if current_score < 0:
-				print("No probability found")
-			else:
-				if NewSlide == False:
-					# append to the new re-combined slide		
-					WholeSlide_temp = np.zeros([max(WholeSlide_0.shape[0], req_xLength), max(WholeSlide_0.shape[1],req_yLength), 3])
-					WholeSlide_temp[0:WholeSlide_0.shape[0],0:WholeSlide_0.shape[1],:] = WholeSlide_0
-					WholeSlide_temp[xTile:req_xLength, yTile:req_yLength,:] = np.swapaxes(im2s,0,1)
-					WholeSlide_0 = WholeSlide_temp
-					del WholeSlide_temp
-
-					HeatMap_temp = WholeSlide_0 * 0
-					HeatMap_temp[0:HeatMap_0.shape[0], 0:HeatMap_0.shape[1],:] = HeatMap_0
-					HeatMap_0 = HeatMap_temp
-					del HeatMap_temp
-			
-					HeatMap_divider_tmp = WholeSlide_0 * 0
-					HeatMap_divider_tmp[0:HeatMap_divider.shape[0], 0:HeatMap_divider.shape[1],:] = HeatMap_divider
-					HeatMap_divider = HeatMap_divider_tmp
-					del HeatMap_divider_tmp
-
-					#skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, label_name, NewSlide)
-
-				else:
-					WholeSlide_0[xTile:req_xLength, yTile:req_yLength,:] = np.swapaxes(im2s,0,1)
-
-
-				#heattile = np.ones([512,512]) * current_score
-				heattile = np.ones([req_xLength-xTile,req_yLength-yTile]) * current_score
-
-				heattile = cmap(heattile)
-				heattile = heattile[:,:,0:3]
-
-				HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] + heattile
-				HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] + 1
-
-				skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide, dir_name)
-				if skip:
-					continue
-		
-
-		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide, dir_name)
+	skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide, dir_name)
 
 
 
