@@ -227,6 +227,9 @@ python build_image_data_multiClass.py --directory='jpeg_main_directory' --output
 * ``` label_names.txt``` is a text file with the 10 possible labels, 1 per line
 * ```labels_files.txt``` is a text file listing the mutations present ifor each patient. 1 patient per line, first column is patient ID (TCGA-38-4632 for example), second is mutation (TP53 for example)
 * ```--PatientID``` The file names are expected to start with the patient ID. This value represent the number of digits used for the PatientID
+* ```jpeg_main_directory```: in this case the directory must be the unique subfolder where the jpg images are. They must all be within one single folder (not one folder per class). 
+
+Check that the TFRecords are properly created and not empty. 
 
 
 For the test set:

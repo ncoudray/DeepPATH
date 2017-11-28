@@ -239,6 +239,7 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 	HeatMap_0 = np.divide(HeatMap_0, HeatMap_divider)
 	alpha = 0.33
 	out = HeatMap_0 * 255 * (1.0 - alpha) + WholeSlide_0 * alpha
+	out = out.transpose((1, 0, 2))
 	heatmap_path = os.path.join(FLAGS.output_dir,'heatmaps')
 	print(heatmap_path)
 	if os.path.isdir(heatmap_path):	
