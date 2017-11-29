@@ -317,14 +317,16 @@ def main():
 	## Aggregate the results and build heatmaps
 	Start = True
 	NewSlide = True
-
+	old_dir_name = ''
+	dir_name = 'unknown'
 	# For each image in the out_filename_stats:
 	for tile in sorted(filtered_dict.keys()):
 		# remove slide number from image name:
 		cTileRootName =  '_'.join(tile.split('_')[0:-2]) 
 		extensions = ['.jpeg', '.jpg']
 		IsError = True
-		dirname = 'unknown'
+		old_dir_name =  dir_name 
+		dir_name = 'unknown'
 		for extension in extensions:
 			for sub_dir in list(sub_dirs):
 				try:
@@ -343,9 +345,16 @@ def main():
 			print(tile)
 			break
 
-
 		# remove slide number from image name:
 		cTileRootName =  '_'.join(os.path.basename(test_filename).split('_')[0:-2]) 
+		print("cTileRootName")
+		print(cTileRootName)
+		print("test_filename")
+		print(test_filename)
+		print("dir_name")
+		print(dir_name)
+
+
 		# extract coordinates of the tile
 		ixTile = int(os.path.basename(test_filename).split('_')[-2])
 		iyTile = int(os.path.basename(test_filename).split('_')[-1].split('.')[0])
@@ -395,8 +404,7 @@ def main():
 			#else:
 			elif skip==False:
 				# For previous the slide which is now finished, compute the averages 
-
-				skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide,dir_name)
+				skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, SlideRootName, NewSlide, old_dir_name)
 
 			NewSlide = True
 			skip = False
