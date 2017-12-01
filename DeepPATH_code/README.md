@@ -27,9 +27,9 @@ Advised folder organization (directorties that may need to be created in plain, 
 | `images/Raw/*svs`                         		| original svs images 		|
 | `images/Raw/*json `                       		| json file from TCGA database 	|
 | `images/<##>pxTiles_<##>Bkg`				| output folder for tiles. Replace ## tile size and background threshold used to run the tiling process` | 
-| `images/<##>pxTiles_<##>Bkg/**<slide name>_files/20.0/<X index>_<Y index>.jpeg**`	| Each svs image will have a folder. Inside, there will be as many sub-folders as mangnification available and the tiles jpeg images inside | 
+| **`images/<##>pxTiles_<##>Bkg/<slide name>_files/20.0/<X index>_<Y index>.jpeg`**	| Each svs image will have a folder. Inside, there will be as many sub-folders as mangnification available and the tiles jpeg images inside | 
 | `images/<##>pxTiles_<##>Bkg/**<slide name>_files/10.0/<X index>_<Y index>.jpeg**`	|	|
-| `images/01_Cancer_Tumor/				| output folder for sorted tiled`	|
+| `images/01_Cancer_Tumor/				| output folder for sorted tiled	|
 | `images/01_Cancer_Tumor/**Solid_Normal_Tissue/<t/v/t set>_<slide name>_<X index>_<Y index>.jpg**`	| folders with class names will be generated. Symbolic links to the tiled jpeg will be created and renamed.` 	|
 | `images/01_Cancer_Tumor/**Tumor/<t/v/t set>_<slide name>_<X index>_<Y index>.jpg**`		|	|
 | `images/TFRecord_TrainValid/`				| create folder for TFRecord |
@@ -40,6 +40,7 @@ Advised folder organization (directorties that may need to be created in plain, 
 
 
 * For classes obtained from Aperio's selected ROIs, you would have these additional folders:
+
 | Additional directories                   	| Comments           |
 | ------------------------------------------------------|--------------------------|
 | `images/xml_<label 1>/*xml`		| 	|
