@@ -232,6 +232,10 @@ if __name__ == '__main__':
     ## Parse Arguments
     args = parser.parse_args()
 
+    if args.JsonFile is None:
+        print("No JsonFile found")
+        args.JsonFile = ''
+
     if args.PatientID is None:
         print("PatientID ignored")
         args.PatientID = 0
@@ -259,6 +263,9 @@ if __name__ == '__main__':
             jdata = dict((jd['file_name'].rstrip('.svs'), jd) for jd in jdata)
         except:
             jdata = dict((jd['Patient ID'], jd) for jd in jdata)
+    elif args.SortingOption == 10:
+        # no sorting, take everything
+        jdata = {}
     else:
         with open(JsonFile, "rU") as f:
             jdata = {}
@@ -309,13 +316,13 @@ if __name__ == '__main__':
     # Tumor mutational burden dictionary
     TMBFile = args.TMB
     mut_load = {}
-    if SortingOption == 7:
+    if args.SortingOption == 8:
         if TMBFile:
             with open(TMBFile) as fid:
                 mut_load = json.loads(fid.read())
         else:
             raise ValueError("For SortingOption = 8 you must specify the --TMB option")
-    elif SortingOption == 8:
+    elif args.SortingOption == 9:
         if TMBFile:
             with open(TMBFile) as fid:
                 mut_load = json.loads(fid.read())
@@ -355,18 +362,19 @@ if __name__ == '__main__':
         imgRootName = os.path.basename(cFolderName)
         imgRootName = imgRootName.rstrip('_files')
 
-        try:
-            image_meta = jdata[imgRootName]
-        except KeyError:
+        if args.SortingOption == 10:
+            SubDir = os.path.basename(os.path.normpath(SourceFolder))
+        else:
             try:
-                image_meta = jdata[imgRootName[:args.PatientID]]
+                image_meta = jdata[imgRootName]
             except KeyError:
-                print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
-                continue
+                try:
+                    image_meta = jdata[imgRootName[:args.PatientID]]
+                except KeyError:
+                    print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
+                    continue
+            SubDir = sort_function(image_meta, load_dic=mut_load)
 
-        SubDir = sort_function(image_meta, load_dic=mut_load)
-        if SortingOption == 10:
-            Subdir = os.path.basename(os.path.normpath(SourceFolder))
         if int(args.nSplit) > 0:
             # n-fold cross validation
             for nSet in range(int(args.nSplit)):
