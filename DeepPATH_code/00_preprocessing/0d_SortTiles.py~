@@ -365,8 +365,6 @@ if __name__ == '__main__':
                 continue
 
         SubDir = sort_function(image_meta, load_dic=mut_load)
-        if SortingOption == 10:
-            Subdir = os.path.basename(os.path.normpath(SourceFolder))
         if int(args.nSplit) > 0:
             # n-fold cross validation
             for nSet in range(int(args.nSplit)):

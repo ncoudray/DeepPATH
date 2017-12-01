@@ -462,8 +462,6 @@ if __name__ == '__main__':
 		parser.error('Missing slide argument')
 	if opts.basename is None:
 		opts.basename = os.path.splitext(os.path.basename(slidepath))[0]
-	if opts.xmlfile is None:
-		opts.xmlfile = ''
 
         #if ss != '':
         #    if os.path.isdir(opts.xmlfile):
