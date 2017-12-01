@@ -27,8 +27,8 @@ Advised folder organization (directorties that may need to be created in plain, 
 | images/Raw/*svs                         		| original svs images 		|
 | images/Raw/*json                        		| json file from TCGA database 	|
 | images/<##>pxTiles_<##>Bkg				| output folder for tiles. Replace ## tile size and background threshold used to run the tiling process | 
-| images/<##>pxTiles_<##>Bkg/**<slide_name>_files/20.0/*jpeg	| Each svs image will have a folder. Inside, there will be as many sub-folders as mangnification available and the tiles jpeg images inside | 
-| images/<##>pxTiles_<##>Bkg/**<slide_name>_files/10.0/*jpeg	|	|
+| images/<##>pxTiles_<##>Bkg/**<slide_name>_files/20.0/*jpeg**	| Each svs image will have a folder. Inside, there will be as many sub-folders as mangnification available and the tiles jpeg images inside | 
+| images/<##>pxTiles_<##>Bkg/**<slide_name>_files/10.0/*jpeg**	|	|
 | images/01_Cancer_Tumor/				| output folder for sorted tiled	|
 | images/01_Cancer_Tumor/**Solid_Normal_Tissue/<set>_<slide_name>_<X>_<Y>.jpg**	| folders with class names will be generated. Symbolic links to the tiled jpeg will be created and renamed. 	|
 | images/01_Cancer_Tumor/**Tumor/<set>_<slide_name>_<X>_<Y>.jpg**		|	|
@@ -41,6 +41,7 @@ Advised folder organization (directorties that may need to be created in plain, 
 
 * For classes obtained from Aperio's selected ROIs, you would have these additional folders:
 
+| ------------------------------------------------------|--------------------------|
 | images/xml_<label_1>/*xml		| 	|
 | images/xml_<label_2>/*xml  		|	|
 | images/<##>pxTiles_<##>Bkg_<label_1>	| You need as many output folders for the tiling process as input xml classes |
