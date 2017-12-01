@@ -31,12 +31,16 @@ import re
 import shutil
 from unicodedata import normalize
 import numpy as np
+import scipy.misc
 import subprocess
 from glob import glob
 from multiprocessing import Process, JoinableQueue
 import time
 import os
 import sys
+
+from xml.dom import minidom
+from PIL import Image, ImageDraw
 
 
 VIEWER_SLIDE_NAME = 'slide'
@@ -67,7 +71,7 @@ class TileWorker(Process):
                 self._queue.task_done()
                 break
             #associated, level, address, outfile = data
-            associated, level, address, outfile, format, outfile_bw = data
+            associated, level, address, outfile, format, outfile_bw, PercentMasked = data
             if last_associated != associated:
                 dz = self._get_dz(associated)
                 last_associated = associated
@@ -76,17 +80,17 @@ class TileWorker(Process):
                 try:
                     tile = dz.get_tile(level, address)
                     # A single tile is being read
-                    #nc added: check the percentage of the image with "information". Should be above 50%
+                    #check the percentage of the image with "information". Should be above 50%
                     gray = tile.convert('L')
                     bw = gray.point(lambda x: 0 if x<220 else 1, 'F')
                     arr = np.array(np.asarray(bw))
                     avgBkg = np.average(bw)
                     bw = gray.point(lambda x: 0 if x<220 else 1, '1')
-                    #outfile = os.path.join(outfile, '%s.%s' % (str(round(avgBkg, 3)),format) )
-                    #outfile_bw = os.path.join(outfile_bw, '%s.%s' % (str(round(avgBkg, 3)),format) )
-                    # bw.save(outfile_bw, quality=self._quality)
+                    # check if the image is mostly background
                     if avgBkg < (self._Bkg / 100):
-                        tile.save(outfile, quality=self._quality)
+                        # if an Aperio selection was made, check if is within the selected region
+                        if PercentMasked > 0.5:
+                            tile.save(outfile, quality=self._quality)
                         #print("%s good: %f" %(outfile, avgBkg))
                     #elif level>5:
                     #    tile.save(outfile, quality=self._quality)
@@ -108,7 +112,7 @@ class TileWorker(Process):
 class DeepZoomImageTiler(object):
     """Handles generation of tiles and metadata for a single image."""
 
-    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG):
+    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type):
         self._dz = dz
         self._basename = basename
         self._basenameJPG = basenameJPG
@@ -117,6 +121,8 @@ class DeepZoomImageTiler(object):
         self._queue = queue
         self._processed = 0
         self._slide = slide
+        self._xmlfile = xmlfile
+        self._mask_type = mask_type
 
     def run(self):
         self._write_tiles()
@@ -152,6 +158,21 @@ class DeepZoomImageTiler(object):
             Factor = Magnification / Available[Level]
         # end added
         #for level in range(self._dz.level_count):
+        xml_valid = False
+        # a dir was provided for xml files
+        ImgID = os.path.basename(self._basename)
+        if self._xmlfile != '':
+            xmldir = os.path.join(self._xmlfile, ImgID + '.xml')
+            if os.path.isfile(xmldir):
+                mask, xml_valid = self.xml_read(xmldir)
+                if xml_valid == False:
+                    print("Error: xml %s file cannot be read properly - please check format" % xmldir)
+                    return
+            else:
+                print("No xml file found for slide %s.svs (expected: %s). Directory or xml file does not exist" %  (ImgID, xmldir) )
+                return
+
+
         for level in range(self._dz.level_count-1,-1,-1):
             ThisMag = Available[0]/pow(2,self._dz.level_count-(level+1))
             ########################################
@@ -160,6 +181,23 @@ class DeepZoomImageTiler(object):
             if not os.path.exists(tiledir):
                 os.makedirs(tiledir)
             cols, rows = self._dz.level_tiles[level]
+            if xml_valid:
+                # If xml file is used, check for each tile what are their corresponding coordinate in the base image
+                IndX_orig, IndY_orig = self._dz.level_tiles[-1]
+                CurrentLevel_ReductionFactor = round(float(self._dz.level_dimensions[-1][0]) / float(self._dz.level_dimensions[level][0]))
+                startIndX_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(cols)]
+                #endIndX_current_level_conv = [i * CurrentLevel_ReductionFactor - 1 for i in range(cols)]
+                endIndX_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(cols)]
+                endIndX_current_level_conv.append(IndX_orig)
+                endIndX_current_level_conv.pop(0)
+
+                startIndY_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(rows)]
+                #endIndX_current_level_conv = [i * CurrentLevel_ReductionFactor - 1 for i in range(rows)]
+                endIndY_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(rows)]
+                endIndY_current_level_conv.append(IndY_orig)
+                endIndY_current_level_conv.pop(0)
+                
+
             for row in range(rows):
                 for col in range(cols):
                     InsertBaseName = False
@@ -173,11 +211,31 @@ class DeepZoomImageTiler(object):
                                       col, row, self._format))
                       tilename_bw = os.path.join(tiledir, '%d_%d_bw.%s' % (
                                       col, row, self._format))
+                    if xml_valid:
+                        # compute percentage of tile in mask
+                        print(row, col)
+                        print(startIndX_current_level_conv[col])
+                        print(endIndX_current_level_conv[col])
+                        print(startIndY_current_level_conv[row])
+                        print(endIndY_current_level_conv[row])
+                        print(mask.shape)
+                        print(mask[startIndX_current_level_conv[col]:endIndX_current_level_conv[col], startIndY_current_level_conv[row]:endIndY_current_level_conv[row]])
+                        PercentMasked = mask[startIndY_current_level_conv[row]:endIndY_current_level_conv[row], startIndX_current_level_conv[col]:endIndX_current_level_conv[col]].mean() 
+                        if PercentMasked > 0:
+                            print("PercentMasked_p " + str(PercentMasked))
+                        else:
+                            print("PercentMasked_0 " + str(PercentMasked))
 
+                        if self._mask_type == 0:
+                            # keep ROI outside of the mask
+                            PercentMasked = 1 - PercentMasked
+ 
+                    else:
+                        PercentMasked = 1
 
                     if not os.path.exists(tilename):
                         self._queue.put((self._associated, level, (col, row),
-                                    tilename, self._format, tilename_bw))
+                                    tilename, self._format, tilename_bw, PercentMasked))
                     self._tile_done()
 
     def _tile_done(self):
@@ -197,12 +255,52 @@ class DeepZoomImageTiler(object):
     def get_dzi(self):
         return self._dz.get_dzi(self._format)
 
+    def xml_read(self, xmldir):
+
+        # Original size of the image
+        ImgMaxSizeX_orig = float(self._dz.level_dimensions[-1][0])
+        ImgMaxSizeY_orig = float(self._dz.level_dimensions[-1][1])
+        # Number of centers at the highest resolution
+        cols, rows = self._dz.level_tiles[-1]
+        #print(ImgMaxSizeX_orig, ImgMaxSizeY_orig, cols, rows)
+        try:
+            xmlcontent = minidom.parse(xmldir)
+            xml_valid = True
+        except:
+            xml_valid = False
+            return [], xml_valid
+
+        regionlist = xmlcontent.getElementsByTagName('Region')
+        xy = {}
+        for region in regionlist:
+            vertices = region.getElementsByTagName('Vertex')
+            regionID = region.attributes['Id'].value
+            if len(vertices) > 0:
+                xy[regionID] = []
+                for vertex in vertices:
+                    # get the x value of the vertex / convert them into index in the tiled matrix of the base image
+                    x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * cols))
+                    y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * rows))
+                    xy[regionID].append((x,y))
+                #xy_a = np.array(xy[regionID])
+
+        #print("xy:")
+        #print(xy)
+        img = Image.new('L', (cols, rows), 0.0)
+        for regionID in xy.keys():
+            xy_a = xy[regionID]
+            ImageDraw.Draw(img,'L').polygon(xy_a, outline=1.0, fill=1.0)
+        mask = np.array(img)
+        scipy.misc.toimage(mask * 255).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + ".jpeg")) 
+        #print(mask)
+        return mask, xml_valid
+
 
 class DeepZoomStaticTiler(object):
     """Handles generation of tiles and metadata for all images in a slide."""
 
     def __init__(self, slidepath, basename, format, tile_size, overlap,
-                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG):
+                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type):
         if with_viewer:
             # Check extra dependency before doing a bunch of work
             import jinja2
@@ -210,6 +308,8 @@ class DeepZoomStaticTiler(object):
         self._slide = open_slide(slidepath)
         self._basename = basename
         self._basenameJPG = basenameJPG
+        self._xmlfile = xmlfile
+        self._mask_type = mask_type
         self._format = format
         self._tile_size = tile_size
         self._overlap = overlap
@@ -244,7 +344,7 @@ class DeepZoomStaticTiler(object):
             image = ImageSlide(self._slide.associated_images[associated])
             basename = os.path.join(self._basename, self._slugify(associated))
         dz = DeepZoomGenerator(image, self._tile_size, self._overlap,limit_bounds=self._limit_bounds)
-        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG)
+        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type)
         tiler.run()
         self._dzi_data[self._url_for(associated)] = tiler.get_dzi()
 
@@ -343,12 +443,17 @@ if __name__ == '__main__':
 	parser.add_option('-B', '--Background', metavar='PIXELS', dest='Bkg',
 		type='float', default=50,
 		help='Max background threshold [50]')
+	parser.add_option('-x', '--xmlfile', metavar='NAME', dest='xmlfile',
+		help='xml file if needed')
+	parser.add_option('-m', '--mask_type', metavar='COUNT', dest='mask_type',
+		type='int', default=1,
+		help='if xml file is used, keep tile within the ROI (1) or outside of it (0)')
 
 
 
 
 
-    	(opts, args) = parser.parse_args()
+	(opts, args) = parser.parse_args()
 
 
 	try:
@@ -358,7 +463,9 @@ if __name__ == '__main__':
 	if opts.basename is None:
 		opts.basename = os.path.splitext(os.path.basename(slidepath))[0]
 
-	
+        #if ss != '':
+        #    if os.path.isdir(opts.xmlfile):
+            
 
 	# Initialization
 	# imgExample = "/ifs/home/coudrn01/NN/Lung/RawImages/*/*svs"
@@ -401,7 +508,7 @@ if __name__ == '__main__':
 
 		
 		# dz_queue.put(DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG).run())
-		DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG).run()
+		DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type).run()
 	'''
 	dz_queue.join()
 	for i in range(opts.max_number_processes):

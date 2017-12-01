@@ -1,16 +1,26 @@
 
-Preliminary comment: On the NYU HPC cluster, 3 modules are needed. The commands mentioned below must be run through qsub scripts and not on the head node! Module mostly needed are:
-* module load cuda/8.0
-* module load python/3.5.3
-* module load bazel/0.4.4
+Preliminary comments:
+* For the path, it is advised to always put the full path name and not the relative paths.
+* For all the steps below, always submit the jobs via a qsub script (if on Pheonix) and always check the output and error log files are fine. 
+* This procesude is based on the inception v3 architecture from google. See [Inception v3](https://github.com/tensorflow/models/blob/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception/README.md) for information about it. 
 
-Most of the codes below show example of command line included in phoenix qsub scripts.
+The overall process is:
+* tile the svs images and convert into jpg
+* sort the jpg images into train/valid/test at a given magnification and put them in appropriate classes
+* convert each of the sets into TFRecord format
+* run training and validation
+* run testing
+* run ROC curve & heatmap
 
-For the path, it is advised to always put the full path name and not the relative paths.
+There are several ways to run the pre-processing steps depending on the desired classes:
+* if the classes come from the TCGA's metadata file: run the svs tiling step once using all the svs images inside 1 output folder, then run the sorting program (will generate 1 folder per class with the name of the folder being the name of the classes) and TFRecord conversion programs
+* if you aim for a multi-output classification (mutations for example): run the svs tiling step once using all the svs images inside 1 output folder, then run the sorting program using option 10 (only 1 output folder generated with all the jpg. They will be sorted into train/valid/test but not assigned any label yet), then run the TFRecord conversion programs for multi-output classification (will assign the label to each tile)
+* if a pathologist has selected/labelled regions with Aperio (contours of the ROIs saved in xml format), then you run the svs tiling step on each class of xml file, run the sorting program using optin 10 on each of them (the output folder will have the same name as the one where each class has been tiled), and then run the TFRecord conversion programs
 
-For all the steps below, always submit the jobs via a qsub script (if on Pheonix) and always check the output and error log files are fine. 
+Advised folder organization:
 
-This procesude is based on the inception v3 architecture from google. See [Inception v3](https://github.com/tensorflow/models/blob/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception/README.md) for information about it. 
+
+
 
 # 0 - Prepare the images.
 
@@ -26,9 +36,8 @@ Finally, the jpg images are converted into TFRecords. For the train and validati
 
 
 
-## 0.1 Tile the svs slide images
 
-This step also required ```module load openjpeg/2.1.1```.
+## 0.1 Tile the svs slide images
 
 Example of qsub script to submit this script on Phoenix cluster (python 2.7 used):
 
@@ -63,13 +72,16 @@ module load openslide-python/intel/1.1.1
 ```
 
 
-Example of options:
+Mandatory parameters:
 *  `-s` is tile_size: 299 (299x299 pixel tiles)
 *  `-e` is overlap, 0 (no overlap between adjacent tiles)
 *  `-j` is number of threads: 32 (for a full GPU node on gpu0.q)
 *  `-B` is Max Percentage of Background: 25% (tiles removed if background percentage above this value)
 *  `-o` is the path were the output images must be saved
 *  The final mandatory parameter is the path to all svs images.
+Optional parameters when regions have been selected with Aperio:
+* `-x` is the path to the xml files. The rootname of the xml file must match exactly the one of the svs images
+* `-m` 1 or 0 if you want to tile the region inside the ROI, or outside
 
 Output:
 * Each slide will have its own folder and inside, one sub-folder per magnification. Inside each magnification folder, tiles are named according to their position within the slide: ```<x>_<y>.jpeg```.
@@ -500,7 +512,7 @@ expected processing time for this step: on a gpu, about 1000 tiles per minute.
 ## Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
 code in 03_postprocessing/0f_HeatMap_nClasses.py:
 
-on the Phoenix cluster, the headet for the following commands could be:
+on the Phoenix cluster, the header for the following commands could be:
 ```shell
 #!/bin/tcsh
 #$ -pe openmpi 1
@@ -564,7 +576,16 @@ module load scikit-learn/intel/0.18.1
 
 ```
 
-## Code in 03_postprocessing/multiClasses for probability distributions (mutation analysis):
+## Code in 03_postprocessing/multiClasses for ROC curve and probability distributions (mutation analysis):
+
+
+For the ROC curve (should work on all.q and with module unload python/3.5.3):
+```shell
+python /ifs/home/coudrn01/NN/Lung/0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats3.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats ''
+```
+options:
+* ``` label_names.txt``` is a text file with the 10 possible labels, 1 per line
+* ``` ref_stats``` could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
 
 Generate probability distribution with means for each class for each slide:
 ```shell
