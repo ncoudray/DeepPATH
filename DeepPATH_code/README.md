@@ -27,25 +27,25 @@ Advised folder organization (directorties that may need to be created in plain, 
 | images/Raw/*svs                         		| original svs images 		|
 | images/Raw/*json                        		| json file from TCGA database 	|
 | images/<##>pxTiles_<##>Bkg				| output folder for tiles. Replace ## tile size and background threshold used to run the tiling process | 
-| images/<##>pxTiles_<##>Bkg/**<slide_name>_files/20.0/*jpeg**	| Each svs image will have a folder. Inside, there will be as many sub-folders as mangnification available and the tiles jpeg images inside | 
-| images/<##>pxTiles_<##>Bkg/**<slide_name>_files/10.0/*jpeg**	|	|
+| images/<##>pxTiles_<##>Bkg/**<slide name>_files/20.0/<X index>_<Y index>.jpeg**	| Each svs image will have a folder. Inside, there will be as many sub-folders as mangnification available and the tiles jpeg images inside | 
+| images/<##>pxTiles_<##>Bkg/**<slide name>_files/10.0/<X index>_<Y index>.jpeg**	|	|
 | images/01_Cancer_Tumor/				| output folder for sorted tiled	|
-| images/01_Cancer_Tumor/**Solid_Normal_Tissue/<set>_<slide_name>_<X>_<Y>.jpg**	| folders with class names will be generated. Symbolic links to the tiled jpeg will be created and renamed. 	|
-| images/01_Cancer_Tumor/**Tumor/<set>_<slide_name>_<X>_<Y>.jpg**		|	|
+| images/01_Cancer_Tumor/**Solid_Normal_Tissue/<t/v/t set>_<slide name>_<X index>_<Y index>.jpg**	| folders with class names will be generated. Symbolic links to the tiled jpeg will be created and renamed. 	|
+| images/01_Cancer_Tumor/**Tumor/<t/v/t set>_<slide name>_<X index>_<Y index>.jpg**		|	|
 | images/TFRecord_TrainValid/				| create folder for TFRecord |
 | images/TFRecord_Test/					|				|
 | images/TFRecord_TrainValid/**train-#####-of-#####**	| training tiles will be randomly assigned to different shards |
 | images/TFRecord_TrainValid/**valid-#####-of-#####**	| validation tiles as well |
-| images/TFRecord_Test/**test_<slide name>_<labelID>.TFRecord**	| For the test set, the tiles associated with a slides will be saved in the same TFRecord file. Check that the <labelID> are correct. |
+| images/TFRecord_Test/**test_<slide name>_<label ID>.TFRecord**	| For the test set, the tiles associated with a slides will be saved in the same TFRecord file. Check that the <label ID> are correct. |
 
 
 * For classes obtained from Aperio's selected ROIs, you would have these additional folders:
-
+| Additional directories                   	| Comments           |
 | ------------------------------------------------------|--------------------------|
-| images/xml_<label_1>/*xml		| 	|
-| images/xml_<label_2>/*xml  		|	|
-| images/<##>pxTiles_<##>Bkg_<label_1>	| You need as many output folders for the tiling process as input xml classes |
-| images/<##>pxTiles_<##>Bkg_<label_2>	|	|
+| images/xml_<label 1>/*xml		| 	|
+| images/xml_<label 2>/*xml  		|	|
+| images/<##>pxTiles_<##>Bkg_<label 1>	| You need as many output folders for the tiling process as input xml classes |
+| images/<##>pxTiles_<##>Bkg_<label 2>	|	|
 | images/01_label12/			| For the sorting, you should use the same output folder	|
 
 
