@@ -169,8 +169,12 @@ module load numpy/intel/1.13.1
    - `14` Json is actually a text file. First column is ID, second is the labels
    - `15` Copy (not symlink) SVS slides (not jpeg tiles) to new directory if condition#1
    - `16` Copy (not symlink) SVS slides (not jpeg tiles) to new directory if condition#2
+   - `17` Sort according to Normal (json file) vs other labels (from TMB text file)
 
-* `--TMB`: addional option for optoin 8: path to json file with mutational loads
+* `--TMB`: addional option 
+   - for options 8: path to json file with mutational loads
+   - for options 9: path to json file with mutant for metastatic
+   - for option 17: text file, second column is label for non-normal tissues
 *  `--PercentTest`: percentage of images for validation (example: 15); 
 *  `--PercentValid` Percentage of images for testing (example: 15). All the other tiles will be used for training by default.
 * `PatientID`: Number of digits used to code the patient ID (must be the first digits of the original image names)

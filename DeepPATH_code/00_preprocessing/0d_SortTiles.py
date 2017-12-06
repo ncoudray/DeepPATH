@@ -162,7 +162,16 @@ def copy_svs_skin_primtumor(metadata, load_dic, **kwargs):
             return False
     return False
 
-
+def sort_normal_txt(metadata, load_dic, **kwargs):
+    sample_type = extract_sample_type(metadata)
+    if "Normal" in sample_type:
+        return sample_type.replace(" ", "_")
+    else:
+        submitter_id = metadata["cases"][0]["submitter_id"]
+        try:
+            return load_dic[submitter_id].replace(" ", "_")
+        except: 
+            return False
 
 sort_options = [
         sort_cancer_stage_separately,
@@ -181,6 +190,7 @@ sort_options = [
         sort_text,
 	copy_svs_lymph_melanoma,
 	copy_svs_skin_primtumor,
+        sort_normal_txt
 ]
 
 if __name__ == '__main__':
@@ -212,7 +222,7 @@ if __name__ == '__main__':
        14. Json is actually a text file. First column is ID, second is the labels
        15. Copy (not symlink) SVS slides (not jpeg tiles) to new directory if Melanoma + Lymph
        16. Copy (not symlink) SVS slides (not jpeg tiles) to new directory if Primary Tumor + skin
-
+       17. Sort according to Normal (json file) vs other labels (from TMB text file)
 
     """
     ## Define Arguments
@@ -326,6 +336,15 @@ if __name__ == '__main__':
         if TMBFile:
             with open(TMBFile) as fid:
                 mut_load = json.loads(fid.read())
+        else:
+            raise ValueError("For SortingOption = 9 you must specify the --TMB option")
+    elif args.SortingOption == 17:
+        if TMBFile:
+            with open(TMBFile, "rU") as f:
+                mut_load = {}
+                for line in f:
+                    tmp_PID = line.split()[0]
+                    mut_load[tmp_PID] = line.split()[1]
         else:
             raise ValueError("For SortingOption = 9 you must specify the --TMB option")
 
