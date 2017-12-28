@@ -97,6 +97,7 @@ On Prince, you may want to try this header instead (and adjust option ```-j``` t
 #SBATCH --error=rq_00tile_%A_%a.err
 
 module load openslide-python/intel/1.1.1
+module load pillow/python3.5/intel/4.2.1 
 
 
 ```

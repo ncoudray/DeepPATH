@@ -286,10 +286,10 @@ class DeepZoomImageTiler(object):
 
         #print("xy:")
         #print(xy)
-        img = Image.new('L', (cols, rows), 0.0)
+        img = Image.new('L', (int(cols), int(rows)), 0)
         for regionID in xy.keys():
             xy_a = xy[regionID]
-            ImageDraw.Draw(img,'L').polygon(xy_a, outline=1.0, fill=1.0)
+            ImageDraw.Draw(img,'L').polygon(xy_a, outline=1, fill=1)
         mask = np.array(img)
         scipy.misc.toimage(mask * 255).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + ".jpeg")) 
         #print(mask)
