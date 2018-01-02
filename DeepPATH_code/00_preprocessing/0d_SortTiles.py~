@@ -173,15 +173,6 @@ def sort_normal_txt(metadata, load_dic, **kwargs):
         except: 
             return False
 
-def sort_melanoma_POD_Rec(metadata, load_dic, **kwargs):
-    Response = metadata['Response to Treatment (Best Response)']
-    if 'POD' in Response:
-        return 'POD'
-    elif 'SD':
-        return False
-    else:
-        return 'Response'
-
 sort_options = [
         sort_cancer_stage_separately,
         sort_cancer_stage,
@@ -199,8 +190,7 @@ sort_options = [
         sort_text,
 	copy_svs_lymph_melanoma,
 	copy_svs_skin_primtumor,
-        sort_normal_txt,
-	sort_melanoma_POD_Rec
+        sort_normal_txt
 ]
 
 if __name__ == '__main__':
