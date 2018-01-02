@@ -20,6 +20,9 @@ FLAGS = None
 def main():
 	AllData = {}
 	nstart = True
+	y_score_Avg_PerTile = []
+	y_score_PcS_PerTile = []
+	y_ref_PerTile = []
 
 	unique_labels = []
 	with open(FLAGS.labels_names, "r") as f:
@@ -235,7 +238,8 @@ def main():
 				print(true_label)
 				print(OutProb)
 
-
+				tmp_prob_avg = []
+				tmp_prob_pcs = []
 				if basename in AllData:
 					AllData[basename]['NbTiles'] += 1
 					for eachlabel in range(len(OutProb)):
@@ -243,6 +247,8 @@ def main():
 						#if OutProb[eachlabel] >= 0.5:
 						if OutProb[eachlabel] == max(OutProb):
 							AllData[basename]['Nb_Selected'][eachlabel] = AllData[basename]['Nb_Selected'][eachlabel] + 1.0
+						tmp_prob_avg.append(AllData[basename]['Nb_Selected'][eachlabel])
+						tmp_prob_pcs.append(AllData[basename]['Probs'][eachlabel])
 				else:
 					AllData[basename] = {}
 					AllData[basename]['NbTiles'] = 1
@@ -259,8 +265,17 @@ def main():
 						#print(max(OutProb[eachlabel]))
 						if OutProb[eachlabel] == max(OutProb):
 							AllData[basename]['Nb_Selected'][eachlabel] = 1.0
+						tmp_prob_avg.append(AllData[basename]['Nb_Selected'][eachlabel])
+						tmp_prob_pcs.append(AllData[basename]['Probs'][eachlabel])
+
 
 					nstart = False
+
+				
+				y_score_Avg_PerTile.append(tmp_prob_avg)
+				y_score_PcS_PerTile.append(tmp_prob_pcs)
+				y_ref_PerTile.append(AllData[basename]['Labelvec'])
+
 
 
 		print("%d tiles used for the ROC curves" % TotNbTiles)
@@ -299,6 +314,132 @@ def main():
 
 		output.close()
 
+	## Compute ROC per tile
+	y_score_Avg_PerTile = np.array(y_score_Avg_PerTile)
+	y_score_PcS_PerTile = np.array(y_score_PcS_PerTile)
+	y_ref_PerTile = np.array(y_ref_PerTile)
+	fpr = dict()
+	tpr = dict()
+	thresholds = dict()
+	opt_thresh = dict()
+	roc_auc = dict()
+	fpr_PcSel = dict()
+	tpr_PcSel = dict()
+	roc_auc_PcSel = dict()
+	print("n_classes")
+	print(n_classes)
+
+	for i in range(n_classes):
+		print(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i])
+		fpr[i], tpr[i], thresholds[i] = roc_curve(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i])
+		roc_auc[i] = auc(fpr[i], tpr[i])
+
+		fpr_PcSel[i], tpr_PcSel[i], _ = roc_curve(y_ref_PerTile[:, i], y_score_PcS_PerTile[:, i])
+		roc_auc_PcSel[i] = auc(fpr_PcSel[i], tpr_PcSel[i])
+		euc_dist = []
+		try:
+			for jj in range(len(fpr[i])):
+				euc_dist.append( euclidean_distances([0, 1], [fpr[i][jj], tpr[i][jj]]) )
+			opt_thresh[i] = thresholds[i][euc_dist.index(min(euc_dist))]
+		except:
+			opt_thresh[i] = 0
+
+	# Compute micro-average ROC curve and ROC area
+	fpr["micro"], tpr["micro"], _ = roc_curve(y_ref_PerTile.ravel(), y_score_Avg_PerTile.ravel())
+	roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+	fpr_PcSel["micro"], tpr_PcSel["micro"], thresholds["micro"] = roc_curve(y_ref_PerTile.ravel(), y_score_PcS_PerTile.ravel())
+	roc_auc_PcSel["micro"] = auc(fpr_PcSel["micro"], tpr_PcSel["micro"])
+	euc_dist = []
+	for jj in range(len(fpr_PcSel["micro"])):
+		euc_dist.append( euclidean_distances([0, 1], [fpr_PcSel["micro"][jj], tpr_PcSel["micro"][jj]]) )
+	print(min(euc_dist))
+	print(euc_dist.index(min(euc_dist)))
+	print(thresholds["micro"])
+	opt_thresh["micro"] = thresholds["micro"][euc_dist.index(min(euc_dist))]
+
+
+	## Compute macro-average ROC curve and ROC area
+	# First aggregate all false positive rates
+	all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+	all_fpr_PcSel = np.unique(np.concatenate([fpr_PcSel[i] for i in range(n_classes)]))
+
+	# Then interpolate all ROC curves at this points
+	mean_tpr = np.zeros_like(all_fpr)
+	for i in range(n_classes):
+	    mean_tpr += interp(all_fpr, fpr[i], tpr[i])
+
+	mean_tpr_PcSel= np.zeros_like(all_fpr_PcSel)
+	for i in range(n_classes):
+	    mean_tpr_PcSel += interp(all_fpr_PcSel, fpr_PcSel[i], tpr_PcSel[i])
+
+	# Finally average it and compute AUC
+	mean_tpr /= n_classes
+	fpr["macro"] = all_fpr
+	tpr["macro"] = mean_tpr
+	roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+	mean_tpr_PcSel /= n_classes
+	fpr_PcSel["macro"] = all_fpr_PcSel
+	tpr_PcSel["macro"] = mean_tpr_PcSel
+	roc_auc_PcSel["macro"] = auc(fpr_PcSel["macro"], tpr_PcSel["macro"])
+
+
+	# save data
+	print("******* FP / TP for average probabilitys")
+	print(fpr)
+	print(tpr)
+	for i in range(n_classes):
+		output = open(os.path.join(FLAGS.output_dir, corr + 'out1_perTile_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_t' + str("%.3f" % opt_thresh[i]) + '.txt'),'w')
+		for kk in range(len(tpr[i])):
+			output.write("%f\t%f\n" % (fpr[i][kk], tpr[i][kk]) )
+		output.close()
+
+	output = open(os.path.join(FLAGS.output_dir, corr + 'out1_perTile_roc_data_AvPb_macro_auc_' + str("%.4f" % roc_auc["macro"]) + '.txt'),'w')
+	for kk in range(len(tpr["macro"])):
+		output.write("%f\t%f\n" % (fpr["macro"][kk], tpr["macro"][kk]) )
+	output.close()
+
+	output = open(os.path.join(FLAGS.output_dir, corr + 'out1_perTile_roc_data_AvPb_micro_auc_' + str("%.4f" % roc_auc["micro"]) + '_t' + str("%.3f" % opt_thresh["micro"]) + '.txt'),'w')
+	for kk in range(len(tpr["micro"])):
+		output.write("%f\t%f\n" % (fpr["micro"][kk], tpr["micro"][kk]) )
+	output.close()
+
+	print("******* FP / TP for percent selected")
+	print(fpr_PcSel)
+	print(tpr_PcSel)
+	for i in range(n_classes):
+		output = open(os.path.join(FLAGS.output_dir, corr + 'out1_perTile_roc_data_PcSel_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc_PcSel[i]) + '.txt'),'w')
+		for kk in range(len(tpr_PcSel[i])):
+			output.write("%f\t%f\n" % (fpr_PcSel[i][kk], tpr_PcSel[i][kk]) )
+		output.close()
+
+
+	output = open(os.path.join(FLAGS.output_dir, corr+ 'out1_perTile_roc_data_PcSel_macro_auc_' + str("%.4f" % roc_auc_PcSel["macro"]) + '.txt'),'w')
+	for kk in range(len(tpr_PcSel["macro"])):
+		output.write("%f\t%f\n" % (fpr_PcSel["macro"][kk], tpr_PcSel["macro"][kk]) )
+	output.close()
+
+	output = open(os.path.join(FLAGS.output_dir, corr+ 'out1_perTile_roc_data_PcSel_micro_auc_' + str("%.4f" % roc_auc_PcSel["micro"]) + '.txt'),'w')
+	for kk in range(len(tpr_PcSel["micro"])):
+		output.write("%f\t%f\n" % (fpr_PcSel["micro"][kk], tpr_PcSel["micro"][kk]) )
+	output.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	## Compute ROC per slide
 	y_score = np.array(y_score)
 	y_score_PcSelect = np.array(y_score_PcSelect)
 	y_ref = np.array(y_ref)

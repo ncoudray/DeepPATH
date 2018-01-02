@@ -19,6 +19,10 @@ FLAGS = None
 
 def main():
 	AllData = {}
+	#AllData_rawROC = {}
+	y_score_perTile = []
+	y_ref_perTile = []
+
 	nstart = True
 	with open(FLAGS.file_stats) as f:
 		for line in f:
@@ -84,6 +88,23 @@ def main():
 				AllData[basename]['Labelvec'][true_label-1] = 1
 				nstart = False
 
+			# data not merged per patient - but kept per tile
+			AllData_rawROC[filename] = {}
+			#AllData_rawROC[filename]['Avg_Prob'] = nclass
+			#AllData_rawROC[filename]['LabelIndx'] = true_label
+			AllData_rawROC[filename]['Labelvec'] = np.zeros(len(nclass))
+			#if is_TP == 'True':
+			#	AllData_rawROC[filename]['Percent_Selected'] = 1.0
+			#else:
+			#	AllData_rawROC[filename]['Percent_Selected'] = 0.0
+
+			for kk in range(len(AllData_rawROC[filename]['Labelvec'])):
+				AllData_rawROC[filename]['Labelvec'][kk] = 0
+			AllData_rawROC[filename]['Labelvec'][true_label-1] = 1
+
+			y_score_perTile.append(nclass)
+			y_ref_perTile.append(AllData_rawROC[filename]['Labelvec'])
+
 	output = open(os.path.join(FLAGS.output_dir, 'out2_perSlideStats.txt'),'w')
 	y_score = []
 	y_ref = []
@@ -105,8 +126,10 @@ def main():
 	y_score = np.array(y_score)
 	y_ref = np.array(y_ref)
 	
+	# Compute ROC curve and AUC for each class - per tile
 
-	# Compute ROC curve and ROC area for each class
+
+	# Compute ROC curve and ROC area for each class - per slide
 	fpr = dict()
 	tpr = dict()
 	thresholds = dict()

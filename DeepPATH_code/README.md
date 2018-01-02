@@ -574,11 +574,16 @@ colors are:
 black for class 1, red for class 2, blue for class 3, orange for class 4, green for class 5, purple otherwise
 
 
-## Code in 03_postprocessing/3Classes for 3 classes for ROC curves:
-ROC curves (to be run with native python: "module unload python/3.5.3"):
+## Code for ROC curves:
+
+For the ROC curve (should work on all.q and with module unload python/3.5.3):
 ```shell
-python 0h_ROC_sklearn.py  --file_stats out_filename_Stats.txt  --output_dir 'output folder'
+python 0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats3.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats ''
 ```
+options:
+* ```labels_names```: text file with the names of the labels, 1 per line
+* ``` ref_stats``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
+
 
 
 On the Phoenix  cluster, the header for the following commands could be something like:
@@ -611,16 +616,8 @@ module load scikit-learn/intel/0.18.1
 
 ```
 
-## Code in 03_postprocessing/multiClasses for ROC curve and probability distributions (mutation analysis):
+## Code in 03_postprocessing/multiClasses for  probability distributions (mutation analysis):
 
-
-For the ROC curve (should work on all.q and with module unload python/3.5.3):
-```shell
-python /ifs/home/coudrn01/NN/Lung/0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats3.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats ''
-```
-options:
-* ``` label_names.txt``` is a text file with the 10 possible labels, 1 per line
-* ``` ref_stats``` could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
 
 Generate probability distribution with means for each class for each slide:
 ```shell

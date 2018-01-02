@@ -192,7 +192,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
               with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
                 myfile.write(imageName + "\t")
                 myfile.write(str(top_1[kk]) + "\t")
-                myfile.write(str(max_percent[kk]) + "\t")
+                myfile.write(" ".join(str(max_percent[kk]).splitlines()) + "\t")
                 myfile.write(str(tmp) + "\t")
                 myfile.write("labels: \t")
                 myfile.write(str(labels[kk]) + "\n")
