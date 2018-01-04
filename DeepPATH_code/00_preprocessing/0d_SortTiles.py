@@ -456,10 +456,10 @@ if __name__ == '__main__':
 
         if SubDir in NbrTilesCateg.keys():
             print("Already in dictionary:")
-            print(Subdir)
+            print(SubDir)
         else:
             print("Not yet in dictionary:")
-            print(Subdir)
+            print(SubDir)
             NbrTilesCateg[SubDir] = 0
             NbrTilesCateg[SubDir + "_train"] = 0
             NbrTilesCateg[SubDir + "_test"] = 0
