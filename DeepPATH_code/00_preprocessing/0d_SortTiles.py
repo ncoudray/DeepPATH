@@ -171,14 +171,15 @@ def sort_normal_txt(metadata, load_dic, **kwargs):
         try:
             return load_dic[submitter_id].replace(" ", "_")
         except: 
-            return False
+            return None
+            #return False
 
 def sort_melanoma_POD_Rec(metadata, load_dic, **kwargs):
     Response = metadata['Response to Treatment (Best Response)']
     if 'POD' in Response:
         return 'POD'
     elif 'SD':
-        return False
+        return None
     else:
         return 'Response'
 
