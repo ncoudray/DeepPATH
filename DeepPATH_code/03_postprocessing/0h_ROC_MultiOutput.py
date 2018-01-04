@@ -247,8 +247,6 @@ def main():
 						#if OutProb[eachlabel] >= 0.5:
 						if OutProb[eachlabel] == max(OutProb):
 							AllData[basename]['Nb_Selected'][eachlabel] = AllData[basename]['Nb_Selected'][eachlabel] + 1.0
-						tmp_prob_avg.append(AllData[basename]['Nb_Selected'][eachlabel])
-						tmp_prob_pcs.append(AllData[basename]['Probs'][eachlabel])
 				else:
 					AllData[basename] = {}
 					AllData[basename]['NbTiles'] = 1
@@ -265,13 +263,15 @@ def main():
 						#print(max(OutProb[eachlabel]))
 						if OutProb[eachlabel] == max(OutProb):
 							AllData[basename]['Nb_Selected'][eachlabel] = 1.0
-						tmp_prob_avg.append(AllData[basename]['Nb_Selected'][eachlabel])
-						tmp_prob_pcs.append(AllData[basename]['Probs'][eachlabel])
-
-
 					nstart = False
 
-				
+				for eachlabel in range(len(OutProb)):
+					tmp_prob_avg.append(OutProb[eachlabel])
+					if OutProb[eachlabel] == max(OutProb):
+						tmp_prob_pcs.append(1.)
+					else:
+						tmp_prob_pcs.append(0.)
+					
 				y_score_Avg_PerTile.append(tmp_prob_avg)
 				y_score_PcS_PerTile.append(tmp_prob_pcs)
 				y_ref_PerTile.append(AllData[basename]['Labelvec'])
