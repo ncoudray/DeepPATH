@@ -455,9 +455,11 @@ if __name__ == '__main__':
         AllTiles = glob(SourceImageDir)
 
         if SubDir in NbrTilesCateg.keys():
-            print(SubDir + " already in dictionary")
+            print("Already in dictionary:")
+            print(Subdir)
         else:
-            print(SubDir + " not yet in dictionary")
+            print("Not yet in dictionary:")
+            print(Subdir)
             NbrTilesCateg[SubDir] = 0
             NbrTilesCateg[SubDir + "_train"] = 0
             NbrTilesCateg[SubDir + "_test"] = 0
