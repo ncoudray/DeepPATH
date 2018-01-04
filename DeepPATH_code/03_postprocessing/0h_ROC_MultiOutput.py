@@ -330,7 +330,7 @@ def main():
 	print(n_classes)
 
 	for i in range(n_classes):
-		print(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i])
+		print(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i], y_score_PcS_PerTile[:, i])
 		fpr[i], tpr[i], thresholds[i] = roc_curve(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i])
 		roc_auc[i] = auc(fpr[i], tpr[i])
 
