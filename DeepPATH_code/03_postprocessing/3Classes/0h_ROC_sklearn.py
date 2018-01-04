@@ -19,7 +19,7 @@ FLAGS = None
 
 def main():
 	AllData = {}
-	#AllData_rawROC = {}
+	AllData_rawROC = {}
 	y_score_perTile = []
 	y_ref_perTile = []
 
