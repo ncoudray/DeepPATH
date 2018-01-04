@@ -408,6 +408,9 @@ if __name__ == '__main__':
             SubDir = sort_function(image_meta, load_dic=mut_load)
 
         if int(args.nSplit) > 0:
+            if SubDir is None:
+                print("image not valid for this sorting option")
+                continue
             # n-fold cross validation
             for nSet in range(int(args.nSplit)):
                 SetDir = "set_" + str(nSet)
