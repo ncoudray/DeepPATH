@@ -73,6 +73,7 @@ def get_inference_from_file(test_filename, cTileRootName, stats_dict):
 	basename = ('.').join(basename.split('.')[:-1])
 	print("basename is :" + basename)
 	current_score = -1
+	score_correction = 0
 	oClass = -1
 	cmap = plt.get_cmap('binary')
 	Found = False
@@ -130,6 +131,9 @@ def get_inference_from_file(test_filename, cTileRootName, stats_dict):
 				#		oClass = 4
 				#if class_3 > thresholds[2]:
 				#	oClass = 3
+				score_correction = thresholds[oClass-1]
+			else:
+				score_correction = 1.0 / len(class_all)
 			if oClass == 1:
 				cmap = plt.get_cmap('binary')
 			elif oClass == 2:
@@ -227,8 +231,8 @@ def get_inference_from_file(test_filename, cTileRootName, stats_dict):
 	if Found ==False:
 		print("image not found in text file... and that's weird...")
 
-	print(oClass, current_score)
-	return oClass, cmap, current_score 
+	print(oClass, current_score, (current_score-score_correction)/(1.0-score_correction))
+	return oClass, cmap, (current_score-score_correction)/(1.0-score_correction)
 
 
 def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide, dir_name):
