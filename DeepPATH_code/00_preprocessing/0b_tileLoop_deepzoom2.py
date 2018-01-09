@@ -480,6 +480,8 @@ if __name__ == '__main__':
 	files = glob(slidepath)  
 	#files
 	#len(files)
+	print(args)
+	print(args[0])
 	print(slidepath)
 	print(files)
 	print("***********************")

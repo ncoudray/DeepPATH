@@ -374,17 +374,18 @@ if __name__ == '__main__':
     PercentSlidesCateg = {}
     Patient_set = {}
     NbSlides = 0
-    if int(args.nSplit) > 0:
-        ttv_split = []
-        nbr_valid = []
-        for nSet in range(int(args.nSplit)):
-            ttv_split.append("train")
-            nbr_valid.append(0)
-        ttv_split[0] = "test"
-
-    print("imgFolders")
-    print(imgFolders)
     for cFolderName in imgFolders:
+        if int(args.nSplit) > 0:
+            ttv_split = []
+            nbr_valid = []
+            for nSet in range(int(args.nSplit)):
+                ttv_split.append("train")
+                nbr_valid.append(0)
+            ttv_split[0] = "test"
+
+        print("imgFolders")
+        print(imgFolders)
+
         NbSlides += 1
         #if NbSlides > 10:
         #    raise ValueError("small test debug")
@@ -520,6 +521,8 @@ if __name__ == '__main__':
 
                 ttv_split[SetIndx] = "test"
                 nbr_valid[SetIndx] = nbr_valid[SetIndx] + 1
+		print(ttv_split)
+		print(nbr_valid)
 
                 for nSet in range(int(args.nSplit)):
                     SetDir = "set_" + str(nSet)
