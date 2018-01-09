@@ -533,8 +533,8 @@ if __name__ == '__main__':
 
                 ttv_split[SubDir][SetIndx] = "test"
                 nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
-		print(ttv_split[SubDir])
-		print(nbr_valid[SubDir])
+                print(ttv_split[SubDir])
+                print(nbr_valid[SubDir])
 
                 for nSet in range(int(args.nSplit)):
                     SetDir = "set_" + str(nSet)
