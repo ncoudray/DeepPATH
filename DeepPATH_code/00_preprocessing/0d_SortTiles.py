@@ -577,13 +577,21 @@ if __name__ == '__main__':
         print("Train / Test / Validation tiles sets for %s = %f %%  / %f %% / %f %%" % (SubDir, PercentTilesCateg.get(SubDir + "_train"), PercentTilesCateg.get(SubDir + "_test"), PercentTilesCateg.get(SubDir + "_valid") ) )
         print("Train / Test / Validation slides sets for %s = %f %%  / %f %% / %f %%" % (SubDir, PercentSlidesCateg.get(SubDir + "_train"), PercentSlidesCateg.get(SubDir + "_test"), PercentSlidesCateg.get(SubDir + "_valid") ) )
 
+    for k, v in sorted(NbrTilesCateg.items()):
+        print(k, v)
+    for k, v in sorted(PercentTilesCateg.items()):
+        print(k, v)
+    for k, v in sorted(NbrImagesCateg.items()):
+        print(k, v)
+
+    '''
     for k, v in sorted(NbrTilesCateg.iteritems()):
         print(k, v)
     for k, v in sorted(PercentTilesCateg.iteritems()):
         print(k, v)
     for k, v in sorted(NbrImagesCateg.iteritems()):
         print(k, v)
-
+    '''
 
 
     '''
