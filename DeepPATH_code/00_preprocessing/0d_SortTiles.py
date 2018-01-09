@@ -538,7 +538,7 @@ if __name__ == '__main__':
 
                 for nSet in range(int(args.nSplit)):
                     SetDir = "set_" + str(nSet)
-                    NewImageDir = os.path.join(SetDir, SubDir, "_".join((ttv_split[nSet], imgRootName, TileName)))  # all train initially
+                    NewImageDir = os.path.join(SetDir, SubDir, "_".join((ttv_split[SubDir][nSet], imgRootName, TileName)))  # all train initially
                     os.symlink(TilePath, NewImageDir)
 
             else:
