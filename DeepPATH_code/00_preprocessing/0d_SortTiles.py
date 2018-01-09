@@ -374,17 +374,20 @@ if __name__ == '__main__':
     PercentSlidesCateg = {}
     Patient_set = {}
     NbSlides = 0
+    ttv_split = {}
+    nbr_valid = {}
+    '''
+    if int(args.nSplit) > 0:
+        ttv_split = []
+        nbr_valid = []
+        for nSet in range(int(args.nSplit)):
+            ttv_split.append("train")
+            nbr_valid.append(0)
+        ttv_split[0] = "test"
+    '''
+    print("imgFolders")
+    print(imgFolders)
     for cFolderName in imgFolders:
-        if int(args.nSplit) > 0:
-            ttv_split = []
-            nbr_valid = []
-            for nSet in range(int(args.nSplit)):
-                ttv_split.append("train")
-                nbr_valid.append(0)
-            ttv_split[0] = "test"
-
-        print("imgFolders")
-        print(imgFolders)
 
         NbSlides += 1
         #if NbSlides > 10:
@@ -481,6 +484,15 @@ if __name__ == '__main__':
             PercentSlidesCateg[SubDir + "_test"] = 0
             PercentSlidesCateg[SubDir + "_valid"] = 0
 
+            if int(args.nSplit) > 0:
+                ttv_split[SubDir] = []
+                nbr_valid[SubDir] = []
+                for nSet in range(int(args.nSplit)):
+                    ttv_split[SubDir].append("train")
+                    nbr_valid[SubDir].append(0)
+                ttv_split[SubDir][0] = "test"
+
+
         NbTiles = 0
         for TilePath in AllTiles:
             NbTiles += 1
@@ -507,22 +519,22 @@ if __name__ == '__main__':
 
             if int(args.nSplit) > 0:
                 for nSet in range(int(args.nSplit)):
-                    ttv_split[nSet] = "train"
+                    ttv_split[SubDir][nSet] = "train"
 
                 if args.PatientID > 0:
                     Patient = imgRootName[:args.PatientID]
                     if Patient in Patient_set:
                         SetIndx = Patient_set[Patient]
                     else:
-                        SetIndx = nbr_valid.index(min(nbr_valid))
+                        SetIndx = nbr_valid[SubDir].index(min(nbr_valid[SubDir]))
                         Patient_set[Patient] = SetIndx
                 else:
-                    SetIndx = nbr_valid.index(min(nbr_valid))
+                    SetIndx = nbr_valid[SubDir].index(min(nbr_valid[SubDir]))
 
-                ttv_split[SetIndx] = "test"
-                nbr_valid[SetIndx] = nbr_valid[SetIndx] + 1
-		print(ttv_split)
-		print(nbr_valid)
+                ttv_split[SubDir][SetIndx] = "test"
+                nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
+		print(ttv_split[SubDir])
+		print(nbr_valid[SubDir])
 
                 for nSet in range(int(args.nSplit)):
                     SetDir = "set_" + str(nSet)
