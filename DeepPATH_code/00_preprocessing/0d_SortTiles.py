@@ -178,10 +178,12 @@ def sort_melanoma_POD_Rec(metadata, load_dic, **kwargs):
     Response = metadata['Response to Treatment (Best Response)']
     if 'POD' in Response:
         return 'POD'
-    elif 'SD' in Response:
-        return None
-    else:
+    elif 'PR' in Response:
         return 'Response'
+    elif 'CR' in Response:
+        return 'Response'
+    else:
+        return None
 
 sort_options = [
         sort_cancer_stage_separately,

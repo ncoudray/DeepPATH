@@ -478,9 +478,10 @@ if __name__ == '__main__':
 
 	# get  images from the data/ file.
 	files = glob(slidepath)  
-	files
-	len(files)
-	# print(files)
+	#files
+	#len(files)
+	print(slidepath)
+	print(files)
 	print("***********************")
 
 	'''
