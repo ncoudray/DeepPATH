@@ -227,7 +227,7 @@ def train(target, dataset, cluster_spec):
       init_tokens_op = opt.get_init_tokens_op()
 
       # Create a saver.
-      saver = tf.train.Saver(max_to_keep=20)
+      saver = tf.train.Saver(max_to_keep=100)
 
       # Build the summary operation based on the TF collection of Summaries.
       summary_op = tf.summary.merge_all()
