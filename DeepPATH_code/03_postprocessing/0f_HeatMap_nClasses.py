@@ -313,7 +313,7 @@ def main():
 
 	filtered_dict = {}
 	for k in stats_dict.keys():
-		print(k)
+		#print(k)
 		if FLAGS.slide_filter in k:
 			filtered_dict[k] =stats_dict[k]
 	#		print("yes")

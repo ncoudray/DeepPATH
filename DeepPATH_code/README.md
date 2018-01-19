@@ -578,13 +578,13 @@ black for class 1, red for class 2, blue for class 3, orange for class 4, green 
 
 For the ROC curve (should work on all.q and with module unload python/3.5.3):
 ```shell
-python 0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats3.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats ''
+python 0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats ''
 ```
 options:
 * ```labels_names```: text file with the names of the labels, 1 per line
 * ``` ref_stats``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
 
-
+It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename. 
 
 On the Phoenix  cluster, the header for the following commands could be something like:
 ```shell
@@ -594,12 +594,22 @@ On the Phoenix  cluster, the header for the following commands could be somethin
 #$ -N rq_Analyze
 #$ -cwd
 #$ -S /bin/tcsh
-#$ -q gpu0.q
+#$ -q all.q
 
-module load cuda/8.0
-module unload python/3.5.3
+module load python/3.5.3
 # Note: the scikit-learn seems to work properly only wiyh Native python, so unload 3.5.3 - heatmaps work with python/3.5.3
 ```
+
+To also get confidence intervals (Bootstrap technique), use this code:
+
+```shell
+python 0h_ROC_MultiOutput_BootStrap.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats '' 
+```
+
+CIs will also be displays in the output filenames. 
+If you are running the ROC curves on multi-output classifier (sigmoid for example), then also add the option: ```--MultiThresh 0.5```
+
+
 
 On the Prince cluster, the header could be something like:
 ```shell
