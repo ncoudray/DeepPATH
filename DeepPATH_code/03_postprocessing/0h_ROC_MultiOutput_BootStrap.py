@@ -80,8 +80,8 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 	# Computing the lower and upper bound of the 90% confidence interval
 	# You can change the bounds percentiles to 0.025 and 0.975 to get
 	# a 95% confidence interval instead.
-	confidence_lower = sorted_scores[int(0.05 * len(sorted_scores))]
-	confidence_upper = sorted_scores[int(0.95 * len(sorted_scores))]
+	confidence_lower = sorted_scores[int(0.025 * len(sorted_scores))]
+	confidence_upper = sorted_scores[int(0.975 * len(sorted_scores))]
 	print("Confidence interval for the score: [{:0.3f} - {:0.3}]".format(confidence_lower, confidence_upper))
 	return confidence_lower, confidence_upper
 
