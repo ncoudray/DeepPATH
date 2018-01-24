@@ -253,6 +253,8 @@ if __name__ == '__main__':
     parser.add_argument("--PatientID", help="Patient ID is supposed to be the first PatientID characters (integer expected) of the folder in which the pyramidal jpgs are. Slides from same patient will be in same train/test/valid set. This option is ignored if set to 0 or -1 ", type=int, dest='PatientID')
     parser.add_argument("--TMB", help="path to json file with mutational loads; or to BRAF mutations", dest='TMB')
     parser.add_argument("--nSplit", help="interger n: Split into train/test in n different ways", dest='nSplit')
+    parser.add_argument("--outFilenameStats", help="Check if the tile exists in an out_filename_Stats.txt file and copy it only if it True", dest='outFilenameStats')
+
 
     ## Parse Arguments
     args = parser.parse_args()
@@ -270,6 +272,18 @@ if __name__ == '__main__':
     elif int(args.nSplit) > 0 :
         args.PercentValid = 100/int(args.nSplit)
         args.PercentTest = 0
+
+    if args.outFilenameStats is None:
+        outFilenameStats_dict = {}
+    else:
+        outFilenameStats_dict = {}
+        if os.path.isfile(args.outFilenameStats):
+            with open(args.outFilenameStats) as f:
+                for line in f:
+                    basename = line.split()[0]
+                    basename = ".".join("_".join(basename.split("_")[1:]).split(".")[:-1])
+                    isTrue = line.split()[1]
+                    outFilenameStats_dict[basename] = isTrue
 
     SourceFolder = os.path.abspath(args.SourceFolder)
     if args.SortingOption in [15, 16]:
@@ -330,6 +344,7 @@ if __name__ == '__main__':
             IsCopy = sort_function(image_meta, load_dic={})
             if IsCopy:
                 copyfile(cFolderName, os.path.join(os.getcwd(), imgRootName + '.svs' ) )
+                
         quit()
 
     PercentValid = args.PercentValid / 100.
@@ -497,7 +512,13 @@ if __name__ == '__main__':
         for TilePath in AllTiles:
             NbTiles += 1
             TileName = os.path.basename(TilePath)
- 
+            if len(outFilenameStats_dict)>0:
+                # process only if this tile was classified  as "True" by the classifier
+                ThisKey = imgRootName + "_" + TileName.split(".")[0]
+                if ThisKey in outFilenameStats_dict.keys():
+                    if 'False' in outFilenameStats_dict[ThisKey]:
+                        continue
+
             print("current percent in test, valid and ID")
             print(PercentSlidesCateg.get(SubDir + "_test"))
             print(PercentSlidesCateg.get(SubDir + "_valid"))
