@@ -171,6 +171,8 @@ module load numpy/intel/1.13.1
    - `15` Copy (not symlink) SVS slides (not jpeg tiles) to new directory if condition#1
    - `16` Copy (not symlink) SVS slides (not jpeg tiles) to new directory if condition#2
    - `17` Sort according to Normal (json file) vs other labels (from TMB text file)
+   - `18` temp
+   - `19` Slides are tiled in separate sub-folders. It will use  the sub-folders' names as labels
 
 * `--TMB`: addional option 
    - for options 8: path to json file with mutational loads

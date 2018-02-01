@@ -185,6 +185,10 @@ def sort_melanoma_POD_Rec(metadata, load_dic, **kwargs):
     else:
         return None
 
+def sort_subfolders(metadata, load_dic, **kwargs):
+    return 'All'
+
+
 sort_options = [
         sort_cancer_stage_separately,
         sort_cancer_stage,
@@ -203,7 +207,8 @@ sort_options = [
 	copy_svs_lymph_melanoma,
 	copy_svs_skin_primtumor,
         sort_normal_txt,
-	sort_melanoma_POD_Rec
+	sort_melanoma_POD_Rec,
+	sort_subfolders
 ]
 
 if __name__ == '__main__':
@@ -237,7 +242,7 @@ if __name__ == '__main__':
        16. Copy (not symlink) SVS slides (not jpeg tiles) to new directory if Primary Tumor + skin
        17. Sort according to Normal (json file) vs other labels (from TMB text file)
        18. Melanoma: "Response to Treatment (Best Response)" field (POD vs other without SD)
-
+       19. Slides are tiled in separate sub-folders. Use sub-folder names as labels
 
     """
     ## Define Arguments
@@ -290,6 +295,10 @@ if __name__ == '__main__':
         # raw TCGA svs images
         imgFolders = glob(os.path.join(SourceFolder, "*.svs"))
         random.shuffle(imgFolders)  # randomize order of images
+    elif args.SortingOption in [19]:
+        imgFolders = glob(os.path.join(SourceFolder,"*", "*_files"))
+        random.shuffle(imgFolders)  # randomize order of images
+        AllNewDirs = [name for name in os.listdir(SourceFolder) if os.path.isdir(name)]
     else:
         imgFolders = glob(os.path.join(SourceFolder, "*_files"))
         random.shuffle(imgFolders)  # randomize order of images
@@ -302,7 +311,7 @@ if __name__ == '__main__':
             jdata = dict((jd['file_name'].rstrip('.svs'), jd) for jd in jdata)
         except:
             jdata = dict((jd['Patient ID'], jd) for jd in jdata)
-    elif args.SortingOption == 10:
+    elif args.SortingOption in [10, 19]:
         # no sorting, take everything
         jdata = {}
     else:
@@ -417,6 +426,11 @@ if __name__ == '__main__':
 
         if args.SortingOption == 10:
             SubDir = os.path.basename(os.path.normpath(SourceFolder))
+        elif args.SortingOption == 19:
+            SubDir = os.path.basename(os.path.split(imgFolders[0])[0])
+            for nAllNewDirs in AllNewDirs:
+                if nAllNewDirs in imgFolders:
+                    SubDir = nAllNewDirs
         else:
             try:
                 image_meta = jdata[imgRootName]
