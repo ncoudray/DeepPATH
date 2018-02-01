@@ -147,9 +147,9 @@ def main():
 					thisID = os.path.basename(basename[0])[5:17]
 					if thisID in jpg_dict:
 						continue
-				AllData[basename] = {}				
 				tmp_out = line.split('[')[1]
 				tmp_out = tmp_out.split(']')[0]
+				AllData[basename] = {}				
 				AllData[basename]['Labelvec'] = [float(x) for x in tmp_out.split(',')]
 
 				tmp_out = line.split('Percent_Selected:')[1]
@@ -324,8 +324,10 @@ def main():
 					#print("True label: %d " % True_Label)
 					ExpectedProb[True_Label] = 1
 				true_label = []
+				true_label_name = ''
 				for iprob in ExpectedProb:
 					true_label.append(float(iprob))
+					true_label_name = true_label_name + str(iprob)
 				true_label.pop(0)
 				OutProb = []
 				for iprob in IncProb:
@@ -335,6 +337,7 @@ def main():
 				#print(OutProb)
 				tmp_prob_avg = []
 				tmp_prob_pcs = []
+				basename = basename + "_"+ true_label_name
 				if basename in AllData:
 					AllData[basename]['NbTiles'] += 1
 					for eachlabel in range(len(OutProb)):
