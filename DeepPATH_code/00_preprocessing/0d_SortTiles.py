@@ -427,9 +427,9 @@ if __name__ == '__main__':
         if args.SortingOption == 10:
             SubDir = os.path.basename(os.path.normpath(SourceFolder))
         elif args.SortingOption == 19:
-            SubDir = os.path.basename(os.path.split(imgFolders[0])[0])
+            SubDir = os.path.basename(os.path.split(cFolderName)[0])
             for nAllNewDirs in AllNewDirs:
-                if nAllNewDirs in imgFolders:
+                if nAllNewDirs in cFolderName:
                     SubDir = nAllNewDirs
         else:
             try:
