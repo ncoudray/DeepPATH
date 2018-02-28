@@ -58,8 +58,10 @@ def dict_tiles_stats():
 	with open(FLAGS.tiles_stats) as f:
 		for line in f:
 			line2 = line.replace('[','').replace(']','').split()
-			#print(line)
-			stats_dict['.'.join(line2[0].split('.')[:-1])] = line
+			if len(line2)>0:	
+				#print(line2)
+				#print(len(line2))
+				stats_dict['.'.join(line2[0].split('.')[:-1])] = line
 	return stats_dict
 
 
@@ -311,12 +313,14 @@ def main():
 	skip = False
 	# get all the label names
 
+	#print(stats_dict)
 	filtered_dict = {}
 	for k in stats_dict.keys():
 		#print(k)
 		if FLAGS.slide_filter in k:
 			filtered_dict[k] =stats_dict[k]
 	#		print("yes")
+	#print(filtered_dict)
 
 	## Aggregate the results and build heatmaps
 	Start = True
@@ -331,6 +335,7 @@ def main():
 		IsError = True
 		old_dir_name =  dir_name 
 		dir_name = 'unknown'
+		#print(tile)
 		for extension in extensions:
 			for sub_dir in list(sub_dirs):
 				try:

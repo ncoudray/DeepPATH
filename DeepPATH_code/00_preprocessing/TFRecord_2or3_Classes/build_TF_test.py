@@ -407,6 +407,8 @@ def _find_image_files(name, data_dir):
   labels = []
   filenames = []
   texts = []
+  print(unique_labels)
+
 
   # Leave label index 0 empty as a background class.
   label_index = 1

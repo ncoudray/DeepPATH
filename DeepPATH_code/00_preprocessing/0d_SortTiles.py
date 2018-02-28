@@ -523,6 +523,8 @@ if __name__ == '__main__':
 
 
         NbTiles = 0
+        if len(AllTiles) == 0:
+            continue
         for TilePath in AllTiles:
             NbTiles += 1
             TileName = os.path.basename(TilePath)

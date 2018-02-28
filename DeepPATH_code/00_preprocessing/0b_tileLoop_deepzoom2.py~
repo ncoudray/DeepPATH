@@ -60,7 +60,7 @@ class TileWorker(Process):
         self._quality = quality
         self._slide = None
         self._Bkg = _Bkg
-        self._ROIpc = _ROIpc
+        self.-ROIpc = _ROIpc
 
     def run(self):
         self._slide = open_slide(self._slidepath)

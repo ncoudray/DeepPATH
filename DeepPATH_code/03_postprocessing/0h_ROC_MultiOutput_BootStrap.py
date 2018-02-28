@@ -73,10 +73,12 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 			else:
 				score = roc_auc_score(y_true[indices], y_pred[indices])
 				bootstrapped_scores.append(score)
-				print("score:")
-				print(score)
+				#print("score:")
+				#print(score)
 	sorted_scores = np.array(bootstrapped_scores)
 	sorted_scores.sort()
+	if len(sorted_scores)==0:
+		return 0., 0.
 	# Computing the lower and upper bound of the 90% confidence interval
 	# You can change the bounds percentiles to 0.025 and 0.975 to get
 	# a 95% confidence interval instead.

@@ -107,12 +107,13 @@ Mandatory parameters:
 *  `-s` is tile_size: 299 (299x299 pixel tiles)
 *  `-e` is overlap, 0 (no overlap between adjacent tiles)
 *  `-j` is number of threads: 32 (for a full GPU node on gpu0.q)
-*  `-B` is Max Percentage of Background: 25% (tiles removed if background percentage above this value)
+*  `-B` is Max Percentage of Background allowed: 25% (tiles removed if background percentage above this value)
 *  `-o` is the path were the output images must be saved
 *  The final mandatory parameter is the path to all svs images.
 Optional parameters when regions have been selected with Aperio:
 * `-x` is the path to the xml files. The rootname of the xml file must match exactly the one of the svs images. All the xml files sharing the same label should be in the same folder (named after this label, for example xml_<label>). If there are ROIs with different labels, they should be saved in separate folders and tiles independently in separate output folders (also named after the label, for example <###>pxTiles_<label>)
 * `-m` 1 or 0 if you want to tile the region inside the ROI, or outside
+* `-R` minimum percentage of tile covered by ROI. If below the percentage, tile is not kept.
 
 Output:
 * Each slide will have its own folder and inside, one sub-folder per magnification. Inside each magnification folder, tiles are named according to their position within the slide: ```<x>_<y>.jpeg```.
