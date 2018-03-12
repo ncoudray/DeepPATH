@@ -121,6 +121,32 @@ def main():
 		#print(jpg_dict)
 
 
+	ref_file_data = {}
+	if os.path.isfile(FLAGS.ref_file):
+		corr = 'corrected_'
+		with open(FLAGS.ref_file) as fstat2:
+			for line in fstat2:
+				if line.find('.dat') != -1:
+					filename = line.split('.dat')[0]
+				elif line.find('.jpeg') != -1:
+					filename = line.split('.jpeg')[0]
+				elif line.find('.net2048') != -1:
+					filename = line.split('.net2048')[0]
+				else:
+					continue
+				# remove set "train/valid/test"
+				basenameXY = '_'.join(filename.split('_')[1:])
+
+				ExpectedProb = line.split('[')[-1]
+				ExpectedProb = ExpectedProb.split(']')[0]
+				ref_file_data[basenameXY] = {}
+				ref_file_data[basenameXY]['value'] = float(ExpectedProb.split()[FLAGS.ref_label])
+				if 'True' in line:
+					ref_file_data[basenameXY]['selected'] = True
+				else:
+					ref_file_data[basenameXY]['selected'] = False
+
+
 
 	AllData = {}
 	nstart = True
@@ -146,7 +172,8 @@ def main():
 				#print(line)
 				basename = line.split()[0]
 				if FLAGS.PatientID > 0:
-					thisID = os.path.basename(basename[0])[5:17]
+					#thisID = os.path.basename(basename[0])[5:17]
+					thisID = os.path.basename(basename[0])[5:5+FLAGS.PatientID]
 					if thisID in jpg_dict:
 						continue
 				tmp_out = line.split('[')[1]
@@ -164,8 +191,10 @@ def main():
 					tmp += 1
 				tmp = 0
 				AllData[basename]['Avg_Prob'] = {}
+				AllData[basename]['All_Prob'] = {}
 				for eachlabel in unique_labels:
 					AllData[basename]['Avg_Prob'][eachlabel] = float(AvgPrb[tmp])
+					AllData[basename]['All_Prob'][eachlabel] = [float(AvgPrb[tmp])]
 					tmp += 1
 				#print(line)
 				#print(basename)
@@ -194,6 +223,7 @@ def main():
 					for eachlabel in unique_labels:
 						AllData[basename]['Avg_Prob'][eachlabel] = float(AvgPrb[tmp]) + AllData[basename]['Avg_Prob'][eachlabel]
 						AllData[basename]['Avg_Prob'][eachlabel] = AllData[basename]['Avg_Prob'][eachlabel] / 2.0
+						AllData[basename]['All_Prob'][eachlabel].append(AllData[basename]['Avg_Prob'][eachlabel])
 						tmp += 1					
 				else:
 					AllData[basename] = {}
@@ -209,6 +239,7 @@ def main():
 					AllData[basename]['Avg_Prob'] = {}
 					for eachlabel in unique_labels:
 						AllData[basename]['Avg_Prob'][eachlabel] = float(AvgPrb[tmp])
+						AllData[basename]['All_Prob'][eachlabel] = [float(AvgPrb[tmp])]
 						tmp += 1
 
 				#print(line)
@@ -261,7 +292,8 @@ def main():
 					continue
 				basename = '_'.join(filename.split('_')[:-2])
 				if FLAGS.PatientID > 0:
-					thisID = os.path.basename(basename)[5:17]
+					#thisID = os.path.basename(basename)[5:17]
+					thisID = os.path.basename(basename)[5:5+FLAGS.PatientID]
 					if thisID in jpg_dict:
 						print("ID %s in jpg_dict" % thisID)
 						continue
@@ -272,9 +304,24 @@ def main():
 				# Check if tile should be considered for ROC (classified as LUAD) or not (Normal or LUSC)
 				corr = ''
 				analyze = True
-				if os.path.isfile(FLAGS.ref_stats):
+				if os.path.isfile(FLAGS.ref_file):
 					corr = 'corrected_'
-					with open(FLAGS.ref_stats) as fstat2:
+					basenameXY = '_'.join(filename.split('_')[1:])
+					if basenameXY in ref_file_data.keys():
+						if FLAGS.ref_thresh == -1:
+							# check if tile selected or not
+							analyze = ref_file_data[basenameXY]['selected']
+						elif ref_file_data[basenameXY]['value'] >= FLAGS.ref_thresh :
+							analyze = True
+							print("basenameXY %s identified with prob %f analyzed" % (basenameXY, ref_file_data[basenameXY]['value']) )
+						else:
+							analyze = False
+							print("basenameXY %s identified with prob %f Not analyzed" % (basenameXY, ref_file_data[basenameXY]['value']) )
+					else:
+						analyze = False
+						print("basenameXY %s not identified" % basenameXY)
+					'''
+					with open(FLAGS.ref_file) as fstat2:
 						for line2 in fstat2:
 							if filename in line2:
 								#print("Found:")
@@ -283,6 +330,8 @@ def main():
 									analyze = False
 								#print(analyze)
 								break
+					'''
+
 				if analyze == False:
 					#print("continue")
 					continue
@@ -344,6 +393,7 @@ def main():
 					AllData[basename]['NbTiles'] += 1
 					for eachlabel in range(len(OutProb)):
 						AllData[basename]['Probs'][eachlabel] = AllData[basename]['Probs'][eachlabel] + OutProb[eachlabel]
+						AllData[basename]['All_Prob'][eachlabel].append(OutProb[eachlabel])
 						#if OutProb[eachlabel] >= 0.5:
 						if FLAGS.MultiThresh > 0:
 							PcS_thresh = FLAGS.MultiThresh
@@ -357,10 +407,12 @@ def main():
 					AllData[basename]['Labelvec'] = true_label
 					AllData[basename]['Nb_Selected'] = {}
 					AllData[basename]['Probs'] = {}
+					AllData[basename]['All_Prob'] = {}
 					for eachlabel in range(len(OutProb)):
 						AllData[basename]['Nb_Selected'][eachlabel] = 0.0
 						#AllData[basename]['LabelIndx_'+unique_labels(eachlabel)] = true_label(eachlabel)
 						AllData[basename]['Probs'][eachlabel] = OutProb[eachlabel]
+						AllData[basename]['All_Prob'][eachlabel] = [OutProb[eachlabel]]
 						#if OutProb[eachlabel] >= 0.5:
 						#print(eachlabel)
 						#print(OutProb[eachlabel])
@@ -413,9 +465,15 @@ def main():
 			tmp_prob = []
 			output.write("Average_Probability: ")
 			for eachlabel in range(len(AllData[basename]['Probs'])): 
-				AllData[basename]['Avg_Prob'][eachlabel] = AllData[basename]['Probs'][eachlabel] / float(AllData[basename]['NbTiles'])
+				TopVal = -1
+				if TopVal > 0:
+					tmpDat = sorted(AllData[basename]['All_Prob'][eachlabel], reverse=True)
+					AllData[basename]['Avg_Prob'][eachlabel] = sum(tmpDat[:min(10, len(tmpDat))]) / float(TopVal)
+				else:
+					AllData[basename]['Avg_Prob'][eachlabel] = AllData[basename]['Probs'][eachlabel] / float(AllData[basename]['NbTiles'])
 				tmp_prob.append(AllData[basename]['Avg_Prob'][eachlabel])
 				output.write("%f\t" % (AllData[basename]['Avg_Prob'][eachlabel]) )
+			output.write("tiles#: %f\t" % float(AllData[basename]['NbTiles']))
 			output.write("\n")
 			y_score.append(tmp_prob)
 			y_ref.append(AllData[basename]['Labelvec'])
@@ -795,16 +853,28 @@ if __name__ == '__main__':
       help='Names of the possible output labels ordered as desired example, /ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/9_10mutations/label_names.txt'
   )
   parser.add_argument(
-      '--ref_stats',
+      '--ref_file',
       type=str,
       default='',
       help='Stats files used as a reference (obtained from a previous classification Normal/LUAD/LUSC). If the tile is associated with "True" (proper classification), it is used for mutation analysis'
   )
   parser.add_argument(
+      '--ref_label',
+      type=int,
+      default=1,
+      help='Label ID in ref_file that needs to be checked.'
+  )
+  parser.add_argument(
+      '--ref_thresh',
+      type=float,
+      default=0.5,
+      help='threshold to apply to ref_label: if the probability is above it, the tile is included, otherwise it is excluded'
+  )
+  parser.add_argument(
       '--MultiThresh',
       type=float,
       default=-1,
-      help='-1 if softmax was used. Otherwise, if multi-output, threshold above which a tile is considered are positive.'
+      help='used for aggregation by percentage of tiles selected (that tile tiles above this threshold).'
   )
   parser.add_argument(
       '--PatientID',

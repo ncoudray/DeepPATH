@@ -581,11 +581,11 @@ black for class 1, red for class 2, blue for class 3, orange for class 4, green 
 
 For the ROC curve (should work on all.q and with module unload python/3.5.3):
 ```shell
-python 0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats ''
+python 0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_file ''
 ```
 options:
 * ```labels_names```: text file with the names of the labels, 1 per line
-* ``` ref_stats``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
+* ``` ref_file``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
 
 It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename. 
 
