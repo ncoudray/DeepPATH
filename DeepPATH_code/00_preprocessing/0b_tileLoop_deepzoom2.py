@@ -1,9 +1,6 @@
 '''
     File name: 0b_tileLoop_deepzoom.py
     Date created: March/2017
-    Date last modified: 2/25/2017
-    Python Version: 2.7 (native on the cluster
-
 
 	Source:
 	Tiling code comes from:
@@ -18,7 +15,6 @@
 
 	Initial tests:
 	tested on Test_20_tiled/Test2 and Test5  using imgExample = "/ifs/home/coudrn01/NN/Lung/Test_20imgs/*/*svs"
-
 '''
 
 from __future__ import print_function
@@ -277,16 +273,27 @@ class DeepZoomImageTiler(object):
 
         regionlist = xmlcontent.getElementsByTagName('Region')
         xy = {}
+        xy_neg = {}
         for region in regionlist:
             vertices = region.getElementsByTagName('Vertex')
             regionID = region.attributes['Id'].value
+            NegativeROA = region.attributes['NegativeROA'].value
             if len(vertices) > 0:
-                xy[regionID] = []
-                for vertex in vertices:
-                    # get the x value of the vertex / convert them into index in the tiled matrix of the base image
-                    x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
-                    y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
-                    xy[regionID].append((x,y))
+                if NegativeROA=="0":
+                    xy[regionID] = []
+                    for vertex in vertices:
+                        # get the x value of the vertex / convert them into index in the tiled matrix of the base image
+                        x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
+                        y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
+                        xy[regionID].append((x,y))
+                elif NegativeROA=="1":
+                    xy_neg[regionID] = []
+                    for vertex in vertices:
+                        # get the x value of the vertex / convert them into index in the tiled matrix of the base image
+                        x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
+                        y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
+                        xy_neg[regionID].append((x,y))
+
 
                 #xy_a = np.array(xy[regionID])
 
@@ -298,6 +305,9 @@ class DeepZoomImageTiler(object):
         for regionID in xy.keys():
             xy_a = xy[regionID]
             ImageDraw.Draw(img,'L').polygon(xy_a, outline=255, fill=255)
+        for regionID in xy_neg.keys():
+            xy_a = xy_neg[regionID]
+            ImageDraw.Draw(img,'L').polygon(xy_a, outline=255, fill=0)
         #img = img.resize((cols,rows), Image.ANTIALIAS)
         mask = np.array(img)
         #print(mask.shape)

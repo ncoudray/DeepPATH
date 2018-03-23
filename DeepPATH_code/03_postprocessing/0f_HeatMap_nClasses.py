@@ -137,9 +137,15 @@ def get_inference_from_file(test_filename, cTileRootName, stats_dict):
 			else:
 				score_correction = 1.0 / len(class_all)
 			if oClass == 1:
-				cmap = plt.get_cmap('binary')
+				if len(class_all) == 2:
+					cmap = plt.get_cmap('OrRd')
+				else:
+					cmap = plt.get_cmap('binary')
 			elif oClass == 2:
-				cmap = plt.get_cmap('OrRd')
+				if len(class_all) == 2:
+					cmap = plt.get_cmap('Blues')
+				else:
+					cmap = plt.get_cmap('OrRd')
 			elif oClass == 3:
 				cmap = plt.get_cmap('Blues')
 			elif oClass == 4:
