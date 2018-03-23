@@ -81,8 +81,10 @@ Example of qsub script to submit this script on Phoenix cluster (python 2.7 used
 #$ -q gpu0.q
 #$ -l excl=true
 
-python /path_to/0b_tileLoop_deepzoom2.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
+python /path_to/0b_tileLoop_deepzoom3.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
 ```
+Note: /path_to/0b_tileLoop_deepzoom3.py is the latest code version updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). It is still under tests. If it happens to bug, you may return to the old code (0b_tileLoop_deepzoom2.py).
+
 
 On Prince, you may want to try this header instead (and adjust option ```-j``` to ```28```):
 
@@ -117,7 +119,7 @@ Optional parameters when regions have been selected with Aperio:
 
 Output:
 * Each slide will have its own folder and inside, one sub-folder per magnification. Inside each magnification folder, tiles are named according to their position within the slide: ```<x>_<y>.jpeg```.
-
+* If the extraction is made from masks defined in xml files, the tiles slides will be saved in folders named after the label of the layer (version 3 of the code only).
 
 ## 0.2 Sort the tiles into train/valid/test sets according to the classes defined
 
