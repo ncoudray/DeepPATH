@@ -588,6 +588,9 @@ python 0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats.txt  --ou
 options:
 * ```labels_names```: text file with the names of the labels, 1 per line
 * ``` ref_file``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
+*  ``` ref_label``` number of the label in the ref_file to use for filter
+* ```ref_thresh``` threshold to use for ref_label. Use "-1" to use True/False labels instead.
+
 
 It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename. 
 
