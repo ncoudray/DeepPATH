@@ -581,18 +581,6 @@ black for class 1, red for class 2, blue for class 3, orange for class 4, green 
 
 ## Code for ROC curves:
 
-For the ROC curve (should work on all.q and with module unload python/3.5.3):
-```shell
-python 0h_ROC_MultiOutput.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_file ''
-```
-options:
-* ```labels_names```: text file with the names of the labels, 1 per line
-* ``` ref_file``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
-*  ``` ref_label``` number of the label in the ref_file to use for filter
-* ```ref_thresh``` threshold to use for ref_label. Use "-1" to use True/False labels instead.
-
-
-It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename. 
 
 On the Phoenix  cluster, the header for the following commands could be something like:
 ```shell
@@ -614,8 +602,28 @@ To also get confidence intervals (Bootstrap technique), use this code:
 python 0h_ROC_MultiOutput_BootStrap.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats '' 
 ```
 
-CIs will also be displays in the output filenames. 
-If you are running the ROC curves on multi-output classifier (sigmoid for example), then also add the option: ```--MultiThresh 0.5```
+
+options:
+* ```labels_names```: text file with the names of the labels, 1 per line
+* ``` ref_file``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
+*  ``` ref_label``` number of the label in the ref_file to use for filter
+* ```ref_thresh``` threshold to use for ref_label. Use "-1" to use True/False labels instead.
+* ```--MultiThresh 0.5```. There are two ways to aggregate the values per slide. One is computing the percentage of tiles "selected", that is, above a threshold. By default, for two classes, a tile is selected for a given class if the probability is above 0.5. That threshold can be changed with this option.
+
+
+It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename. 
+File names of the outputs:
+* start with out1 if the ROC are per tile
+* start with out2 if the ROC are per slide
+* then contain <AvPb> if the per slide aggregation was done by averaging probabilities
+* or <PcSel> if the aggregation was done by computing the percentage of tile selected
+* then, the names end with something like
+........c1auc_0.6071_CIs_0.6023_0.6121_t0.367.txt
+-> c1 (or c2 or c3...) means class 1
+-> auc_0.6071. is the AUC for this class (if you have only 2 classes, the curves and AUC should be the same)
+* the next two numbers are the CIs
+* the last one with the "t" is the "optimal" threshold for this class (computed such as it's the nearest point on the ROC curve to the perfect (1,0) corner).
+
 
 
 
