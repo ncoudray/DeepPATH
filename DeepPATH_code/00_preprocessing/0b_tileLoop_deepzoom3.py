@@ -297,7 +297,8 @@ class DeepZoomImageTiler(object):
             labeltag = labelID.getElementsByTagName('Attribute')[0]
             #print("label ID, tag:")
             #print(labelID, Attribute_Name, labeltag.attributes['Name'].value)
-            if Attribute_Name==labeltag.attributes['Name'].value:
+            #if Attribute_Name==labeltag.attributes['Name'].value:
+            if Attribute_Name==labeltag.attributes['Value'].value:
                 regionlist = labelID.getElementsByTagName('Region')
                 for region in regionlist:
                     vertices = region.getElementsByTagName('Vertex')

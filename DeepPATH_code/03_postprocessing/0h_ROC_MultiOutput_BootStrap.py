@@ -31,7 +31,7 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 	#print(y_true)
 	#print(y_pred)
 	#rng_seed = int(len(y_true) * 0.9)
-	print("rng_seed: %d" % rng_seed)
+	#print("rng_seed: %d" % rng_seed)
 	rng = np.random.RandomState(rng_seed)
 	if isMacro:
 		for i in range(n_bootstraps):
@@ -39,6 +39,7 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 			if len(np.unique(y_true[indices,0])) < 2:
 				# We need at least one positive and one negative sample for ROC AUC
 				# to be defined: reject the sample
+				#print("We need at least one positive and one negative sample for ROC AUC")
 				continue
 			else:
 				y_true2 = dict()
@@ -69,12 +70,12 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 			if len(np.unique(y_true[indices])) < 2:
 				# We need at least one positive and one negative sample for ROC AUC
 				# to be defined: reject the sample
+				#print("We need at least one positive and one negative sample for ROC AUC")
 				continue
 			else:
 				score = roc_auc_score(y_true[indices], y_pred[indices])
 				bootstrapped_scores.append(score)
-				#print("score:")
-				#print(score)
+				#print("score: %f" % score)
 	sorted_scores = np.array(bootstrapped_scores)
 	sorted_scores.sort()
 	if len(sorted_scores)==0:
@@ -82,8 +83,14 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 	# Computing the lower and upper bound of the 90% confidence interval
 	# You can change the bounds percentiles to 0.025 and 0.975 to get
 	# a 95% confidence interval instead.
+	#print(sorted_scores)
+	#print(len(sorted_scores))
+	#print(int(0.025 * len(sorted_scores)))
+	#print(int(0.975 * len(sorted_scores)))
 	confidence_lower = sorted_scores[int(0.025 * len(sorted_scores))]
 	confidence_upper = sorted_scores[int(0.975 * len(sorted_scores))]
+	#print(confidence_lower)
+	#print(confidence_upper)
 	print("Confidence interval for the score: [{:0.3f} - {:0.3}]".format(confidence_lower, confidence_upper))
 	return confidence_lower, confidence_upper
 
@@ -279,6 +286,7 @@ def main():
 		#print(y_score_PcSelect)
 
 	else:
+		XY = {}
 		with open(FLAGS.file_stats) as f:
 			for line in f:
 				#print(line)
@@ -291,6 +299,14 @@ def main():
 				else:
 					continue
 				basename = '_'.join(filename.split('_')[:-2])
+				#X = filename.split('_')[-2]
+				#Y = filename.split('_')[-1]
+				if filename in XY.keys():
+					# tile already included
+					continue
+				else:
+					XY[filename] = True
+
 				if FLAGS.PatientID > 0:
 					#thisID = os.path.basename(basename)[5:17]
 					thisID = os.path.basename(basename)[5:5+FLAGS.PatientID]
@@ -447,7 +463,9 @@ def main():
 		y_ref = []
 		n_classes = len(unique_labels)
 		#print(unique_labels)
-		#print(AllData)
+		#print("DEBUG")
+		#print(len(AllData.keys()))
+		#print(len(AllData))
 		for basename in AllData.keys():
 			output.write("%s\ttrue_label: %s\t" % (basename, AllData[basename]['Labelvec']) )
 			tmp_prob = []
@@ -502,9 +520,15 @@ def main():
 	confidence_up_avg = dict()
 	confidence_low_PcS = dict()
 	confidence_up_PcS = dict()
-
-
-
+	'''
+	print("DEBUG:")
+	print(len(y_ref_PerTile))
+	print(y_ref_PerTile)
+	print(len(y_score_Avg_PerTile))
+	print(y_score_Avg_PerTile)
+	print(len(y_score_PcS_PerTile))
+	print(y_score_PcS_PerTile)
+	'''
 	for i in range(n_classes):
 		#print(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i], y_score_PcS_PerTile[:, i])
 		fpr[i], tpr[i], thresholds[i] = roc_curve(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i])
@@ -518,8 +542,8 @@ def main():
 			opt_thresh[i] = thresholds[i][euc_dist.index(min(euc_dist))]
 		except:
 			opt_thresh[i] = 0
-		print(y_ref_PerTile[:, i])
-		print(y_score_Avg_PerTile[:, i])
+		#print(y_ref_PerTile[:, i])
+		#print(y_score_Avg_PerTile[:, i])
 		confidence_low_avg[i], confidence_up_avg[i] = BootStrap(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i], False)
 		confidence_low_PcS[i], confidence_up_PcS[i] = BootStrap(y_ref_PerTile[:, i], y_score_PcS_PerTile[:, i], False)
 
@@ -650,7 +674,7 @@ def main():
 	print(n_classes)
 
 	for i in range(n_classes):
-		print(y_ref[:, i], y_score[:, i])
+		#print(y_ref[:, i], y_score[:, i])
 		fpr[i], tpr[i], thresholds[i] = roc_curve(y_ref[:, i], y_score[:, i])
 		roc_auc[i] = auc(fpr[i], tpr[i])
 
@@ -668,9 +692,13 @@ def main():
 
 
 	# Compute micro-average ROC curve and ROC area
+	# print(len(y_ref.ravel()), len(y_score.ravel()))
+
 	fpr["micro"], tpr["micro"], _ = roc_curve(y_ref.ravel(), y_score.ravel())
 	roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 	confidence_low_avg["micro"], confidence_up_avg["micro"] = BootStrap(y_ref.ravel(), y_score.ravel(), False)
+
+	print(len(y_ref.ravel()), len(y_score_PcSelect.ravel()))
 
 	fpr_PcSel["micro"], tpr_PcSel["micro"], thresholds["micro"] = roc_curve(y_ref.ravel(), y_score_PcSelect.ravel())
 	roc_auc_PcSel["micro"] = auc(fpr_PcSel["micro"], tpr_PcSel["micro"])
