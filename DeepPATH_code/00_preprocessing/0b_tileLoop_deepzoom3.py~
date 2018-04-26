@@ -479,8 +479,7 @@ def xml_read_labels(xmldir):
         labeltag = xmlcontent.getElementsByTagName('Attribute')
         xml_labels = []
         for xmllabel in labeltag:
-            #xml_labels.append(xmllabel.attributes['Name'].value)
-            xml_labels.append(xmllabel.attributes['Value'].value)
+            xml_labels.append(xmllabel.attributes['Name'].value)
         print(xml_labels)
         return xml_labels, xml_valid 
 
