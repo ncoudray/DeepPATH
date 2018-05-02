@@ -3,7 +3,7 @@
     Date created: March/2017
 
 	Source:
-	Tiling code comes from:
+	for a small part of the tiling code below, we used:
 	from https://github.com/openslide/openslide-python/blob/master/examples/deepzoom/deepzoom_tile.py
 	which is Copyright (c) 2010-2015 Carnegie Mellon University
 
@@ -12,9 +12,6 @@
 
 	Be careful:
 	Overload of the node - may have memory issue if node is shared with other jobs.
-
-	Initial tests:
-	tested on Test_20_tiled/Test2 and Test5  using imgExample = "/ifs/home/coudrn01/NN/Lung/Test_20imgs/*/*svs"
 '''
 
 from __future__ import print_function
@@ -110,7 +107,7 @@ class TileWorker(Process):
 class DeepZoomImageTiler(object):
     """Handles generation of tiles and metadata for a single image."""
 
-    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel):
+    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc):
         self._dz = dz
         self._basename = basename
         self._basenameJPG = basenameJPG
@@ -122,6 +119,7 @@ class DeepZoomImageTiler(object):
         self._xmlfile = xmlfile
         self._mask_type = mask_type
         self._xmlLabel = xmlLabel
+        self._ROIpc = ROIpc
 
     def run(self):
         self._write_tiles()
@@ -140,7 +138,13 @@ class DeepZoomImageTiler(object):
             print(self._basename + " - Obj information found")
         except:
             print(self._basename + " - No Obj information found")
-            return
+            print(self._xmlfile[:4])
+            if self._xmlfile[:4] == ".jpg":
+                Objective = self._ROIpc
+                Magnification = Objective
+                print("input is jpg - will be tiled as such with %f" % Objective)
+            else:
+                return
         #calculate magnifications
         Available = tuple(Objective / x for x in Factors)
         #find highest magnification greater than or equal to 'Desired'
@@ -149,6 +153,7 @@ class DeepZoomImageTiler(object):
         if len(AbsMismatch) < 1:
           print(self._basename + " - Objective field empty!")
           return
+        '''
         if(min(AbsMismatch) <= tol):
             Level = int(AbsMismatch.index(min(AbsMismatch)))
             Factor = 1
@@ -156,7 +161,7 @@ class DeepZoomImageTiler(object):
             Level = int(max([i for (i, val) in enumerate(Mismatch) if val > 0]))
             Factor = Magnification / Available[Level]
         # end added
-        #for level in range(self._dz.level_count):
+        '''
         xml_valid = False
         # a dir was provided for xml files
 
@@ -178,7 +183,8 @@ class DeepZoomImageTiler(object):
         '''
 
         if True:
-            if self._xmlfile != '':
+            #if self._xmlfile != '' && :
+            if (self._xmlfile != '') & (self._xmlfile[:4] != '.jpg'):
                 mask, xml_valid, Img_Fact = self.xml_read(xmldir, self._xmlLabel)
                 if xml_valid == False:
                     print("Error: xml %s file cannot be read properly - please check format" % xmldir)
@@ -397,7 +403,7 @@ class DeepZoomStaticTiler(object):
             image = ImageSlide(self._slide.associated_images[associated])
             basename = os.path.join(self._basename, self._slugify(associated))
         dz = DeepZoomGenerator(image, self._tile_size, self._overlap,limit_bounds=self._limit_bounds)
-        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel)
+        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc)
         tiler.run()
         self._dzi_data[self._url_for(associated)] = tiler.get_dzi()
 
@@ -598,8 +604,16 @@ if __name__ == '__main__':
 					DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel).run()
 
 			else:
-				print("No xml file found for slide %s.svs (expected: %s). Directory or xml file does not exist" %  (opts.basenameJPG, xmldir) )
-				continue
+				
+				if xmldir[:4] == ".jpg":
+					print("Input image to be tiled is jpg and not svs - will be treated as such")
+					output = os.path.join(opts.basename, opts.basenameJPG)
+					DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '').run()
+
+
+				else:
+					print("No xml file found for slide %s.svs (expected: %s). Directory or xml file does not exist" %  (opts.basenameJPG, xmldir) )
+					continue
 		else:
 			output = os.path.join(opts.basename, opts.basenameJPG)
 			DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '').run()

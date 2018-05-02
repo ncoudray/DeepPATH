@@ -117,6 +117,10 @@ Optional parameters when regions have been selected with Aperio:
 * `-m` 1 or 0 if you want to tile the region inside the ROI, or outside
 * `-R` minimum percentage of tile covered by ROI. If below the percentage, tile is not kept.
 
+Note:
+* This code can also be used to tile input jpg images: the full path to input images will end in <*jpg">, and you need to set the option `-x` to the `'.jpg'` string value and `-R` to the magnification at which the images were acquired (`20.0` for example)
+
+
 Output:
 * Each slide will have its own folder and inside, one sub-folder per magnification. Inside each magnification folder, tiles are named according to their position within the slide: ```<x>_<y>.jpeg```.
 * If the extraction is made from masks defined in xml files, the tiles slides will be saved in folders named after the label of the layer (version 3 of the code only).
