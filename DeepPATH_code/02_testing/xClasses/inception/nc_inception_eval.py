@@ -91,7 +91,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         threads.extend(qr.create_threads(sess, coord=coord, daemon=True,
                                          start=True))
       print("-num_examples: %d" % (FLAGS.num_examples))
-      if "test" in FLAGS.ImageSet_basename:
+      if "test" in FLAGS.TVmode:
         num_iter = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)*2.0)
       else:
         num_iter_1 = int(math.ceil(FLAGS.num_examples / FLAGS.batch_size)*2.0)
@@ -188,7 +188,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
               myfile.write("\nlogits: \t")
               for nlogit in logits[kk]:
                 myfile.write(str(nlogit) + "\t")
-            if "test" in FLAGS.ImageSet_basename:
+            if "test" in FLAGS.TVmode:
               with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
                 myfile.write(imageName + "\t")
                 myfile.write(str(top_1[kk]) + "\t")
@@ -227,7 +227,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
 
 
 
-        if "test" in FLAGS.ImageSet_basename:
+        if "test" in FLAGS.TVmode:
           # save end of each layer of the network
           save = False
           if save:

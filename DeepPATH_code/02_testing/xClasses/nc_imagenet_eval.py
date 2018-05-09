@@ -27,6 +27,9 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('ImageSet_basename', 'test_',
                            """Either 'test_', 'valid' or 'train'.""")
 
+tf.app.flags.DEFINE_string('TVmode', 'test',
+                           """Either 'test' or 'valid' (test prep the output for AUC computation and expects 1 file per slide - valid only saves accuracy""")
+
 tf.app.flags.DEFINE_string('mode', '0_softmax',
                             """0_softmax or 1_sigmoid.""")
 
@@ -44,7 +47,7 @@ def main(unused_argv=None):
   count_slides = 0
 
   
-  if "test" in FLAGS.ImageSet_basename:
+  if "test" in FLAGS.TVmode:
     for next_slide in data_files:
       print("New Slide ------------ %d" % (count_slides))
       try:
@@ -69,7 +72,7 @@ def main(unused_argv=None):
     output = open(os.path.join(FLAGS.eval_dir, 'out_All_Stats.txt'), 'ab+')
     pickle.dump(mydict, output)
     output.close()
-  elif "valid" in FLAGS.ImageSet_basename:
+  elif "valid" in FLAGS.TVmode:
     #FLAGS.data_dir = FLAGS.data_dir + "/valid*"
     FLAGS.data_dir = os.path.join(FLAGS.data_dir, FLAGS.ImageSet_basename + '*')
     dataset = ImagenetData(subset=FLAGS.subset)

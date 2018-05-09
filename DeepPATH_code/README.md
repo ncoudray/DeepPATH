@@ -457,7 +457,7 @@ run the job:
 module load cuda/8.0
 module load python/3.5.3
 
-python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid' --ClassNumber 2 --mode='0_softmax' --run_once
+python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid' --ClassNumber 2 --mode='0_softmax' --run_once --TVmode='valid'
 ```
 
 
@@ -536,7 +536,7 @@ Code is the same as the one used for the validation, but with different options:
 module load cuda/8.0
 module load python/3.5.3
 
-python nc_imagenet_eval --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_perSlide_test/"  --batch_size 30 --ImageSet_basename='test_' --run_once --ClassNumber 2 --mode='0_softmax'
+python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_perSlide_test/"  --batch_size 30 --ImageSet_basename='test_' --run_once --ClassNumber 2 --mode='0_softmax' --TVmode='test
 ```
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
