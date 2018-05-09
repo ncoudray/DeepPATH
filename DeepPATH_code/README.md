@@ -435,8 +435,8 @@ Adjust the input parameters as required. For mode, this can also be '1_sigmoid'.
 
 
 ## 1.3 Validation
-### 1.3.b New Version
-Should be run on the validation test set at the same time as the training but on a different node (memory issues occur otherwise).
+### 1.3.a. Validation's Accuracy
+Thi script should be run on the validation test set *at the same time* as the training but on a different node (memory issues occur otherwise).
 
 
 Code is in 02_testing/xClasses/. 
@@ -486,6 +486,138 @@ You need to either:
 
 Note: The current validation code only saves the validation accuracy, not the loss (saved in an output file named `precision_at_1.txt`). The code still needs to be changed for that. 
 
+### 1.3.b. Validation's AUC
+To get the validation (or training AUC), this script can be run at the same time as the training, or after on the saved checkpoints.
+To achieve this, you would need to save the validation images in single TFRecord files (1 file per slide, and not random) as in section 0.2.b:
+
+```shell
+#!/bin/tcsh
+#$ -pe openmpi 1
+#$ -A TensorFlow
+#$ -N rqsub_TFR_test
+#$ -cwd
+#$ -S /bin/tcsh
+#$ -q gpu0.q 
+
+module load cuda/8.0
+module load python/3.5.3
+
+python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='valid'
+
+```
+
+Note, the option `ImageSet_basename` is set to valid.
+
+For Prince, the submission script header would be: 
+```
+#!/bin/bash
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=TFRv
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_TFR_%A_%a.out
+#SBATCH --error=rq_TFR_%A_%a.err
+#SBATCH --mem=30G
+#SBATCH --time=48:00:00
+
+module load numpy/intel/1.13.1
+module load cuda/8.0.44    
+module load tensorflow/python2.7/1.0.1
+
+```
+
+
+
+Once this is done, you can run the test/validation script (nc_imagenet_eval.py) BUT, using "valid" for the ```ImageSet_basename``` option and "test" for the ```TVmode``` option.
+The following script shows an example on how to run it for all of the checkpoints:
+
+```
+#!/bin/tcsh
+#SBATCH --gres=gpu:1
+#SBATCH --job-name=loop32
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --time=48:00:00
+#SBATCH --output=rq_valid_%A_%a.out
+#SBATCH --error=rq_valid_%A_%a.err
+#SBATCH --mem=100G
+
+#python -V
+# module swap python/intel  python3/intel/3.5.3
+# module load tensorflow/python3.5/1.0.1
+
+module load numpy/intel/1.13.1
+module load cuda/8.0.44    
+module load tensorflow/python2.7/1.0.1
+module load scikit-learn/intel/0.18.1
+
+setenv CHECKPOINT_PATH /beegfs/coudrn01/OsmanLab/training/32c_POD/results_32c
+setenv OUTPUT_DIR /beegfs/coudrn01/OsmanLab/valid_train/32c_POD/valid_all
+setenv DATA_DIR /beegfs/coudrn01/OsmanLab/images/set_3more/32c_TFRecord_valid
+setenv LABEL_FILE /beegfs/coudrn01/OsmanLab/valid_train/32c_POD/labels.txt
+
+# create temporary directory for checkpoints
+mkdir  -p $OUTPUT_DIR/tmp_checkpoints
+setenv CUR_CHECKPOINT $OUTPUT_DIR/tmp_checkpoints
+
+
+# check if next checkpoint available
+@ count = 0 
+@ step = 5000
+
+@ DoWait = 1
+while ($DoWait == 1)
+	echo count
+	if ( -f $CHECKPOINT_PATH/model.ckpt-$count.meta ) then
+		echo $CHECKPOINT_PATH/model.ckpt-$count.meta " exists"
+		# check if there's already a computation for this checkpoinmt
+		setenv TEST_OUTPUT  $OUTPUT_DIR/test_$count'k'
+		if (! -d $TEST_OUTPUT ) then
+			mkdir -p $TEST_OUTPUT
+			
+
+			ln -s $CHECKPOINT_PATH/*-$count.* $CUR_CHECKPOINT/.
+			touch $CUR_CHECKPOINT/checkpoint
+			echo 'model_checkpoint_path: "'$CUR_CHECKPOINT'/model.ckpt-'$count'"' > $CUR_CHECKPOINT/checkpoint
+			echo 'all_model_checkpoint_paths: "'$CUR_CHECKPOINT'/model.ckpt-'$count'"' >> $CUR_CHECKPOINT/checkpoint
+
+			# Test
+			python /beegfs/coudrn01/OsmanLab/code/DeepPATH/DeepPATH_code/02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT --eval_dir=$OUTPUT_DIR --data_dir=$DATA_DIR  --batch_size 30  --run_once --ImageSet_basename='valid_' --ClassNumber 2 --mode='0_softmax'  --TVmode='test'
+
+			mv $OUTPUT_DIR/out* $TEST_OUTPUT/.
+
+			# ROC
+			setenv OUTFILENAME $TEST_OUTPUT/out_filename_Stats.txt
+			python /beegfs/coudrn01/OsmanLab/code/DeepPATH/DeepPATH_code/03_postprocessing/0h_ROC_MultiOutput_BootStrap.py --file_stats=$OUTFILENAME  --output_dir=$TEST_OUTPUT --labels_names=$LABEL_FILE
+
+		else
+			echo 'checkpoint '$TEST_OUTPUT' skipped'
+		endif
+
+	else
+		echo $CHECKPOINT_PATH/model.ckpt-$count.meta " does not exist"
+		@ DoWait = 0
+	endif
+
+	# next checkpoint
+	@ count = `expr "$count" + "$step"`
+end
+
+# summarize all AUC per slide (average probability) for class 1: 
+ls $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c1*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'  | sort -k1n > $OUTPUT_DIR/valid_out2_AvPb_AUCs.txt
+
+
+# summarize all AUC per slide (average probability) for macro average: 
+ls $OUTPUT_DIR/test_*/out2_roc_data_AvPb_macro*  | sed -e 's/k\/out2_roc_data_AvPb_macro_/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'  | sort -k1n > $OUTPUT_DIR/valid_out2_AvPb_AUCs.txt
+
+
+# summarize all AUC per slide (average probability) for micro average: 
+ls $OUTPUT_DIR/test_*/out2_roc_data_AvPb_micro*  | sed -e 's/k\/out2_roc_data_AvPb_micro_/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'  | sort -k1n > $OUTPUT_DIR/valid_out2_AvPb_AUCs.txt
+
+```
+
+That script will run the validation script and the compute the ROC curve (code and namings explained in section 3). 
+
 
 
 ## 1.4 Comments on the code
@@ -512,7 +644,7 @@ Main modifications when adjusting the code:
 
 
 
-
+--TVmode='test'
 
 
 
@@ -536,7 +668,7 @@ Code is the same as the one used for the validation, but with different options:
 module load cuda/8.0
 module load python/3.5.3
 
-python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_perSlide_test/"  --batch_size 30 --ImageSet_basename='test_' --run_once --ClassNumber 2 --mode='0_softmax' --TVmode='test
+python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_perSlide_test/"  --batch_size 30 --ImageSet_basename='test_' --run_once --ClassNumber 2 --mode='0_softmax' --TVmode='test'
 ```
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
