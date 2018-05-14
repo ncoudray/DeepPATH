@@ -24,8 +24,8 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 	n_bootstraps = 2000
 	rng_seed = 42  # control reproducibility
 	bootstrapped_scores = []
-	print(y_true)
-	print(y_pred)
+	#print(y_true)
+	#print(y_pred)
 	# y_true = y_true.reshape(1,-1)
 	# y_pred = y_pred.reshape(1,-1)
 	#print(y_true)

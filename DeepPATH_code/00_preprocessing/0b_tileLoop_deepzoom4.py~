@@ -304,19 +304,14 @@ class DeepZoomImageTiler(object):
         xy_neg = {}
         labelIDs = xmlcontent.getElementsByTagName('Annotation')
         for labelID in labelIDs:
-            if (Attribute_Name==[]) | (Attribute_Name==''):
-                    isLabelOK = True
-            else:
+            try:
                 labeltag = labelID.getElementsByTagName('Attribute')[0]
-                if (Attribute_Name==labeltag.attributes['Value'].value):
-                    isLabelOK = True
-                else:
-                    isLabelOK = False
-
+            except:
+                labeltag = ''
             #print("label ID, tag:")
             #print(labelID, Attribute_Name, labeltag.attributes['Name'].value)
             #if Attribute_Name==labeltag.attributes['Name'].value:
-            if isLabelOK:
+            if (Attribute_Name==labeltag.attributes['Value'].value) | (Attribute_Name==[]) | (Attribute_Name==''):
                 regionlist = labelID.getElementsByTagName('Region')
                 for region in regionlist:
                     vertices = region.getElementsByTagName('Vertex')

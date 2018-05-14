@@ -136,9 +136,10 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
           for kk in range(len(out_filenames)):
             imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
             imageName = imageName + '.dat'
-            with open(os.path.join(data_path, imageName), "w") as myfile:
-              myfile.write(str(top_1[kk]) + "\t")
-              myfile.write(str(max_percent[kk]) + "\t")
+            if True:
+            #with open(os.path.join(data_path, imageName), "w") as myfile:
+              #myfile.write(str(top_1[kk]) + "\t")
+              #myfile.write(str(max_percent[kk]) + "\t")
               class_x = {}
               sum_class = 0
               max_Prob = 0
@@ -182,12 +183,12 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                   tmp = -1
                 '''
                 print("False found; score is %f" % (tmp))
-              myfile.write(str(tmp) + "\t\n")
-              myfile.write("labels: \t")
-              myfile.write(str(labels[kk]) + "\t")
-              myfile.write("\nlogits: \t")
-              for nlogit in logits[kk]:
-                myfile.write(str(nlogit) + "\t")
+              #myfile.write(str(tmp) + "\t\n")
+              #myfile.write("labels: \t")
+              #myfile.write(str(labels[kk]) + "\t")
+              #myfile.write("\nlogits: \t")
+              #for nlogit in logits[kk]:
+              #  myfile.write(str(nlogit) + "\t")
             if "test" in FLAGS.TVmode:
               with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
                 myfile.write(imageName + "\t")
@@ -215,10 +216,9 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
           for kk in range(len(out_filenames)):
             imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
             imageName = imageName + '.dat'
-            with open(os.path.join(data_path, imageName), "w") as myfile:
-              myfile.write(str(labels[kk]) + "\t")
-              #myfile.write(str(logits[kk]) + "\t")
-              myfile.write(" ".join(str(max_percent[kk]).splitlines()) + "\t")
+            #with open(os.path.join(data_path, imageName), "w") as myfile:
+              #myfile.write(str(labels[kk]) + "\t")
+              #myfile.write(" ".join(str(max_percent[kk]).splitlines()) + "\t")
           with open(os.path.join(FLAGS.eval_dir, 'out_filename_Stats.txt'), "a") as myfile:
             for kk in range(len(out_filenames)):
                 myfile.write(out_filenames[kk].decode('UTF-8') + "\t")
