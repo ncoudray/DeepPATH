@@ -355,7 +355,10 @@ def train(dataset):
                       'sec/batch)')
         print(format_str % (datetime.now(), step, loss_value,
                             examples_per_sec, duration))
-
+        with open(os.path.join(FLAGS.eval_dir, 'training_loss.txt'), "a") as myfile:
+          myfile.write(format_str % (datetime.now(), step, loss_value,
+                            examples_per_sec, duration))
+          myfile.write("\n")
       if step % 100 == 0:
         summary_str = sess.run(summary_op)
         summary_writer.add_summary(summary_str, step)

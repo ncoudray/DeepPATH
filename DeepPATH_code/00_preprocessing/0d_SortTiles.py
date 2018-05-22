@@ -20,6 +20,7 @@ from glob import glob
 import os
 from argparse import ArgumentParser
 import random
+import numpy as np
 from shutil import copyfile
 
 def extract_stage(metadata):
@@ -258,8 +259,9 @@ if __name__ == '__main__':
     parser.add_argument("--PatientID", help="Patient ID is supposed to be the first PatientID characters (integer expected) of the folder in which the pyramidal jpgs are. Slides from same patient will be in same train/test/valid set. This option is ignored if set to 0 or -1 ", type=int, dest='PatientID')
     parser.add_argument("--TMB", help="path to json file with mutational loads; or to BRAF mutations", dest='TMB')
     parser.add_argument("--nSplit", help="interger n: Split into train/test in n different ways", dest='nSplit')
-    parser.add_argument("--outFilenameStats", help="Check if the tile exists in an out_filename_Stats.txt file and copy it only if it True", dest='outFilenameStats')
-
+    parser.add_argument("--outFilenameStats", help="Check if the tile exists in an out_filename_Stats.txt file and copy it only if it True, or is the expLabel option had the highest probability", dest='outFilenameStats')
+    parser.add_argument("--expLabel", help="Index of the expected label within the outFilenameStats file (if only True/False is needed, leave this option empty).", dest='expLabel')
+    parser.add_argument("--threshold", help="threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability).", dest='threshold')
 
     ## Parse Arguments
     args = parser.parse_args()
@@ -283,12 +285,30 @@ if __name__ == '__main__':
     else:
         outFilenameStats_dict = {}
         if os.path.isfile(args.outFilenameStats):
+            print("outFilenameStats found")
             with open(args.outFilenameStats) as f:
                 for line in f:
                     basename = line.split()[0]
                     basename = ".".join("_".join(basename.split("_")[1:]).split(".")[:-1])
-                    isTrue = line.split()[1]
-                    outFilenameStats_dict[basename] = isTrue
+                    if args.expLabel is None:
+                        isTrue = line.split()[1]
+                        outFilenameStats_dict[basename] = isTrue
+                    else:
+                        ExpectedProb = line.split('[')[-1]
+                        ExpectedProb = ExpectedProb.split(']')[0]
+                        ExpectedProb = ExpectedProb.split()
+                        ExpectedProb=np.array(ExpectedProb)
+                        ExpectedProb=np.asfarray(ExpectedProb,float)
+                        print(ExpectedProb)
+                        print("labels exp/true:%d, %d" % (int(args.expLabel) ,ExpectedProb.argmax() ))
+                        if args.threshold is None:
+                            outFilenameStats_dict[basename] = str(int(args.expLabel) ==ExpectedProb.argmax())
+                        else:
+                            outFilenameStats_dict[basename] = str(ExpectedProb[args.expLabel]>= float(args.threshold))
+                print(outFilenameStats_dict)
+        else:
+            print("outFilenameStats NOT found")
+            exit()
 
     SourceFolder = os.path.abspath(args.SourceFolder)
     if args.SortingOption in [15, 16]:
@@ -528,12 +548,16 @@ if __name__ == '__main__':
         for TilePath in AllTiles:
             NbTiles += 1
             TileName = os.path.basename(TilePath)
+            print(TileName)
             if len(outFilenameStats_dict)>0:
                 # process only if this tile was classified  as "True" by the classifier
                 ThisKey = imgRootName + "_" + TileName.split(".")[0]
+                print(ThisKey)
                 if ThisKey in outFilenameStats_dict.keys():
                     if 'False' in outFilenameStats_dict[ThisKey]:
                         continue
+                else:
+                    continue
 
             print("current percent in test, valid and ID")
             print(PercentSlidesCateg.get(SubDir + "_test"))
@@ -543,7 +567,7 @@ if __name__ == '__main__':
             print(PercentSlidesCateg.get(SubDir + "_valid")<PercentValid)
 
             # rename the images with the root name, and put them in train/test/valid
-            if PercentSlidesCateg.get(SubDir + "_test") <= PercentTest:
+            if (PercentSlidesCateg.get(SubDir + "_test") <= PercentTest) and (PercentTest > 0):
                 ttv = "test"
             elif PercentSlidesCateg.get(SubDir + "_valid") < PercentValid:
                 ttv = "valid"
