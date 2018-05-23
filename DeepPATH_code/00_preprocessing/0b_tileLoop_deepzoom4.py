@@ -31,6 +31,8 @@ from multiprocessing import Process, JoinableQueue
 import time
 import os
 import sys
+import dicom
+from scipy.misc import imsave
 
 from xml.dom import minidom
 from PIL import Image, ImageDraw
@@ -140,7 +142,7 @@ class DeepZoomImageTiler(object):
         except:
             print(self._basename + " - No Obj information found")
             print(self._ImgExtension)
-            if (self._ImgExtension == ".jpg") | (self._ImgExtension == ".dcm"):
+            if ("jpg" in self._ImgExtension) | ("dcm" in self._ImgExtension):
                 Objective = self._ROIpc
                 Magnification = Objective
                 print("input is jpg - will be tiled as such with %f" % Objective)
@@ -574,7 +576,8 @@ if __name__ == '__main__':
 
 	# get  images from the data/ file.
 	files = glob(slidepath)  
-	ImgExtension = os.path.splitext(slidepath)[1]
+	#ImgExtension = os.path.splitext(slidepath)[1]
+	ImgExtension = slidepath.split('*')[-1]
 	#files
 	#len(files)
 	print(args)
@@ -599,15 +602,29 @@ if __name__ == '__main__':
 		filename = files[imgNb]
 		#print(filename)
 		opts.basenameJPG = os.path.splitext(os.path.basename(filename))[0]
-		print("processing: " + opts.basenameJPG)
+		print("processing: " + opts.basenameJPG + " with extension: " + ImgExtension)
 		#opts.basenameJPG = os.path.splitext(os.path.basename(slidepath))[0]
 		#if os.path.isdir("%s_files" % (basename)):
 		#	print("EXISTS")
 		#else:
 		#	print("Not Found")
 
-		if (ImgExtension == ".dcm") :
-			print("convert dcm to jpg")
+		if ("dcm" in ImgExtension) :
+			print("convert %s dcm to jpg" % filename)
+			ImageFile=dicom.read_file(filename)
+			im1 = ImageFile.pixel_array
+			maxVal = float(im1.max())
+			height = im1.shape[0]
+			width = im1.shape[1]
+			image = np.zeros((height,width,3), 'uint8')
+			image[...,0] = (im1[:,:].astype(float)  / maxVal * 255.0).astype(int)
+			image[...,1] = (im1[:,:].astype(float)  / maxVal * 255.0).astype(int)
+			image[...,2] = (im1[:,:].astype(float)  / maxVal * 255.0).astype(int)
+			filename = os.path.join(os.path.dirname(slidepath), opts.basenameJPG + ".jpg")
+			print(filename)
+			imsave(filename,image)
+
+
 
 		if opts.xmlfile != '':
 			xmldir = os.path.join(opts.xmlfile, opts.basenameJPG + '.xml')

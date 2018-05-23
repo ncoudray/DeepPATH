@@ -147,7 +147,8 @@ def main():
 				ExpectedProb = line.split('[')[-1]
 				ExpectedProb = ExpectedProb.split(']')[0]
 				ref_file_data[basenameXY] = {}
-				ref_file_data[basenameXY]['value'] = float(ExpectedProb.split()[FLAGS.ref_label])
+				#ref_file_data[basenameXY]['value'] = float(ExpectedProb.split()[FLAGS.ref_label])
+				ref_file_data[basenameXY]['value'] = (float(ExpectedProb.split()[FLAGS.ref_label])) / (1.0 - float(ExpectedProb.split()[0]))
 				if 'True' in line:
 					ref_file_data[basenameXY]['selected'] = True
 				else:
@@ -600,7 +601,7 @@ def main():
 	print(fpr)
 	print(tpr)
 	for i in range(n_classes):
-		output = open(os.path.join(FLAGS.output_dir, corr + 'out1_perTile_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_CIs_' + str("%.4f" % confidence_low_avg[i]) + "_" + str("%.4f" % confidence_up_avg[i]) +  '_t' + str("%.3f" % opt_thresh[i]) + '.txt'),'w')
+		output = open(os.path.join(FLAGS.output_dir, corr + 'out1_perTile_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_CIs_' + str("%.4f" % confidence_low_avg[i]) + "_" + str("%.4f" % confidence_up_avg[i]) +  '_t' + str("%.6f" % opt_thresh[i]) + '.txt'),'w')
 
 		for kk in range(len(tpr[i])):
 			output.write("%f\t%f\n" % (fpr[i][kk], tpr[i][kk]) )
@@ -747,7 +748,7 @@ def main():
 	print(fpr)
 	print(tpr)
 	for i in range(n_classes):
-		output = open(os.path.join(FLAGS.output_dir, corr + 'out2_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_CIs_' + str("%.4f" % confidence_low_avg[i]) + "_" + str("%.4f" % confidence_up_avg[i]) + '_t' + str("%.3f" % opt_thresh[i]) + '.txt'),'w')
+		output = open(os.path.join(FLAGS.output_dir, corr + 'out2_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_CIs_' + str("%.4f" % confidence_low_avg[i]) + "_" + str("%.4f" % confidence_up_avg[i]) + '_t' + str("%.6f" % opt_thresh[i]) + '.txt'),'w')
 		for kk in range(len(tpr[i])):
 			output.write("%f\t%f\n" % (fpr[i][kk], tpr[i][kk]) )
 		output.close()
