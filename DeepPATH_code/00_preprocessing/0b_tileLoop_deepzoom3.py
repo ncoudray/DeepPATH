@@ -165,8 +165,8 @@ class DeepZoomImageTiler(object):
         xml_valid = False
         # a dir was provided for xml files
 
-        '''
         ImgID = os.path.basename(self._basename)
+        '''
         Nbr_of_masks = 0
         if self._xmlfile != '':
             xmldir = os.path.join(self._xmlfile, ImgID + '.xml')
@@ -185,6 +185,9 @@ class DeepZoomImageTiler(object):
         if True:
             #if self._xmlfile != '' && :
             if (self._xmlfile != '') & (self._xmlfile[:4] != '.jpg'):
+                xmldir = os.path.join(self._xmlfile, ImgID + '.xml')
+                print("xml:")
+                print(xmldir)
                 mask, xml_valid, Img_Fact = self.xml_read(xmldir, self._xmlLabel)
                 if xml_valid == False:
                     print("Error: xml %s file cannot be read properly - please check format" % xmldir)

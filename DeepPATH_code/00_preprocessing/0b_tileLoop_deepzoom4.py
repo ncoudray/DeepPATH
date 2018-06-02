@@ -33,6 +33,7 @@ import os
 import sys
 import dicom
 from scipy.misc import imsave
+from scipy.misc import imread
 
 from xml.dom import minidom
 from PIL import Image, ImageDraw
@@ -84,6 +85,7 @@ class TileWorker(Process):
                     bw = gray.point(lambda x: 0 if x<220 else 1, '1')
                     # check if the image is mostly background
                     if avgBkg <= (self._Bkg / 100):
+                        print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
                         if PercentMasked >= (self._ROIpc / 100.0):
 			#if PercentMasked > 0.05:
@@ -143,7 +145,8 @@ class DeepZoomImageTiler(object):
             print(self._basename + " - No Obj information found")
             print(self._ImgExtension)
             if ("jpg" in self._ImgExtension) | ("dcm" in self._ImgExtension):
-                Objective = self._ROIpc
+                #Objective = self._ROIpc
+                Objective = 1.
                 Magnification = Objective
                 print("input is jpg - will be tiled as such with %f" % Objective)
             else:
@@ -188,12 +191,26 @@ class DeepZoomImageTiler(object):
         if True:
             #if self._xmlfile != '' && :
             print(self._xmlfile, self._ImgExtension)
-            if (self._xmlfile != '') & (self._ImgExtension != '.jpg') & (self._ImgExtension != '.dcm'):
+            ImgID = os.path.basename(self._basename)
+            xmldir = os.path.join(self._xmlfile, ImgID + '.xml')
+            print("xml:")
+            print(xmldir)
+            if (self._xmlfile != '') & (self._ImgExtension != 'jpg') & (self._ImgExtension != 'dcm'):
                 print("read xml file...")
                 mask, xml_valid, Img_Fact = self.xml_read(xmldir, self._xmlLabel)
                 if xml_valid == False:
                     print("Error: xml %s file cannot be read properly - please check format" % xmldir)
                     return
+            elif (self._xmlfile != '')  & (self._ImgExtension == 'dcm'):
+                print("check mask for dcm")
+                mask, xml_valid, Img_Fact = self.jpg_mask_read(xmldir)
+                # mask <-- read mask 
+                #  Img_Fact <-- 1
+                # xml_valid <-- True if mask file exists.
+                if xml_valid == False:
+                    print("Error: xml %s file cannot be read properly - please check format" % xmldir)
+                    return
+
             print("current directory: %s" % self._basename)
 
             #return
@@ -214,14 +231,21 @@ class DeepZoomImageTiler(object):
                     # print(CurrentLevel_ReductionFactor, Img_Fact, float(mask.shape[1]), float(self._dz.level_dimensions[-1][0]), float(self._dz.level_dimensions[level][0]))
                     startIndX_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(cols)]
                     #endIndX_current_level_conv = [i * CurrentLevel_ReductionFactor - 1 for i in range(cols)]
+                    print("***********")
+                    #print(IndX_orig,IndY_orig)
+                    #print( self._dz.level_dimensions[level][0], self._dz.level_dimensions[level][1], self._dz.level_dimensions)
+                    #print(CurrentLevel_ReductionFactor, cols)
                     endIndX_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(cols)]
-                    endIndX_current_level_conv.append(IndX_orig)
+                    #print(endIndX_current_level_conv)
+                    endIndX_current_level_conv.append(self._dz.level_dimensions[level][0])
+                    #print(endIndX_current_level_conv)
                     endIndX_current_level_conv.pop(0)
+                    #print(endIndX_current_level_conv)
     
                     startIndY_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(rows)]
                     #endIndX_current_level_conv = [i * CurrentLevel_ReductionFactor - 1 for i in range(rows)]
                     endIndY_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(rows)]
-                    endIndY_current_level_conv.append(IndY_orig)
+                    endIndY_current_level_conv.append(self._dz.level_dimensions[level][1])
                     endIndY_current_level_conv.pop(0)
                     
     
@@ -248,14 +272,17 @@ class DeepZoomImageTiler(object):
                             # print(mask.shape)
                             # print(mask[startIndX_current_level_conv[col]:endIndX_current_level_conv[col], startIndY_current_level_conv[row]:endIndY_current_level_conv[row]])
                             PercentMasked = mask[startIndY_current_level_conv[row]:endIndY_current_level_conv[row], startIndX_current_level_conv[col]:endIndX_current_level_conv[col]].mean() 
-                            # if PercentMasked > 0:
-                            #     print("PercentMasked_p " + str(PercentMasked))
-                            # else:
-                            #     print("PercentMasked_0 " + str(PercentMasked))
-
+                            #print(startIndY_current_level_conv[row], endIndY_current_level_conv[row], startIndX_current_level_conv[col], endIndX_current_level_conv[col])
+                            #print(mask[startIndY_current_level_conv[row]:endIndY_current_level_conv[row], startIndX_current_level_conv[col]:endIndX_current_level_conv[col]])
                             if self._mask_type == 0:
                                 # keep ROI outside of the mask
                                 PercentMasked = 1.0 - PercentMasked
+
+                            if PercentMasked > 0:
+                                print("PercentMasked_p %.3f" % (PercentMasked))
+                            else:
+                                print("PercentMasked_0 %.3f" % (PercentMasked))
+
  
                         else:
                             PercentMasked = 1.0
@@ -283,6 +310,29 @@ class DeepZoomImageTiler(object):
         return self._dz.get_dzi(self._format)
 
 
+    def jpg_mask_read(self, xmldir):
+        # Original size of the image
+        ImgMaxSizeX_orig = float(self._dz.level_dimensions[-1][0])
+        ImgMaxSizeY_orig = float(self._dz.level_dimensions[-1][1])
+        # Number of centers at the highest resolution
+        cols, rows = self._dz.level_tiles[-1]
+        Img_Fact = int(ImgMaxSizeX_orig / 1.0 / cols)
+        try:
+            # xmldir: change extension from xml to *jpg   
+            xmldir = xmldir[:-4] + "mask.jpg"
+            # xmlcontent = read xmldir image
+            xmlcontent = imread(xmldir)
+            xmlcontent = xmlcontent - np.min(xmlcontent)
+            mask = xmlcontent / np.max(xmlcontent)
+            # we want image between 0 and 1
+            xml_valid = True
+        except:
+            xml_valid = False
+            print("error with minidom.parse(xmldir)")
+            return [], xml_valid, 1.0
+
+        return mask, xml_valid, Img_Fact
+
 
     def xml_read(self, xmldir, Attribute_Name):
 
@@ -300,7 +350,7 @@ class DeepZoomImageTiler(object):
         except:
             xml_valid = False
             print("error with minidom.parse(xmldir)")
-            return [], xml_valid
+            return [], xml_valid, 1.0
 
         xy = {}
         xy_neg = {}
@@ -545,7 +595,7 @@ if __name__ == '__main__':
 		help='if xml file is used, keep tile within the ROI (1) or outside of it (0)')
 	parser.add_option('-R', '--ROIpc', metavar='PIXELS', dest='ROIpc',
 		type='float', default=50,
-		help='To be used with xml file - minimum percentage of tile covered by ROI')
+		help='To be used with xml file - minimum percentage of tile covered by ROI (white)')
 
 
 
@@ -611,6 +661,8 @@ if __name__ == '__main__':
 
 		if ("dcm" in ImgExtension) :
 			print("convert %s dcm to jpg" % filename)
+			if filename[-3:] == 'jpg':
+                            continue
 			ImageFile=dicom.read_file(filename)
 			im1 = ImageFile.pixel_array
 			maxVal = float(im1.max())
@@ -624,9 +676,11 @@ if __name__ == '__main__':
 			print(filename)
 			imsave(filename,image)
 
+			output = os.path.join(opts.basename, opts.basenameJPG)
+			DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension).run()
 
 
-		if opts.xmlfile != '':
+		elif opts.xmlfile != '':
 			xmldir = os.path.join(opts.xmlfile, opts.basenameJPG + '.xml')
 			print("xml:")
 			print(xmldir)
