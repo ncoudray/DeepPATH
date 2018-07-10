@@ -419,7 +419,11 @@ def _find_image_files(name, data_dir):
     typeIm = name + '*.jpeg'
     jpeg_file_path = os.path.join(data_dir, text, typeIm)
     matching_files = tf.gfile.Glob(jpeg_file_path)
-#    print(matching_files)
+    print(matching_files)
+    if len(matching_files) < 1:
+      typeIm = name + '*.jpg'
+      jpeg_file_path = os.path.join(data_dir, text, typeIm)
+      matching_files = tf.gfile.Glob(jpeg_file_path)
     matching_files.sort()
     labels.extend([label_index] * len(matching_files))
     texts.extend([text] * len(matching_files))

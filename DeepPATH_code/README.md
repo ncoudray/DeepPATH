@@ -191,6 +191,7 @@ module load numpy/intel/1.13.1
 * `nSplit`: interger n: Split into train/test in n different ways.  If split is > 0, then the data will be split in train/test only in "# split" non-overlapping ways (each way will have 100/(#split) % of test images). `PercentTest` and `PercentValid` will be ignored. If nSplit=0, then there will be one output split done according to `PercentValid` and `PercentTest`
 * (optional) `outFilenameStats`: if an "out_filename_Stats.txt file" is given, check if the tile exists in it an only copy the tile if its value is "true".
 * (optional) `expLabel`: Index of the label to sort on within the outFilenameStats file (if only True/False is needed, leave this option empty) - tiles will only be included if there labels is the one predicted (dominant) in the  outFilenameStats file.
+* (optional) `threshold`: threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability)
 
 The output will be generated in the current directory where the program is launched (so start it from a new empty folder). Images will not be copied but a symbolic link will be created toward the <tiled images path>. The links will be renamed ```<type>_<slide_root_name>_<x>_<y>.jpeg``` with <type> being 'train_', 'test_' or 'valid_' followed by the svs name and the tile ID. 
 

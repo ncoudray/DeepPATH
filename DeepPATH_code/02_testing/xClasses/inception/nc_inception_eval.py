@@ -126,11 +126,11 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         print(max_percent)
 
         # save overall stats
-        data_path = os.path.join(FLAGS.eval_dir, 'data')
-        if os.path.isdir(data_path):	
-          pass
-        else:
-          os.makedirs(data_path)
+        #data_path = os.path.join(FLAGS.eval_dir, 'data')
+        #if os.path.isdir(data_path):	
+        #  pass
+        #else:
+        #  os.makedirs(data_path)
 
         if FLAGS.mode == '0_softmax':
           for kk in range(len(out_filenames)):
