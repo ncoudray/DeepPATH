@@ -353,6 +353,26 @@ module load bazel/gnu/0.4.3
 ```
 
 
+On the bigpurple cluster (Note: you may have to adjust the partition and mem lines depending on your needs!! nodelist is optional but allows you to select which node exactly):
+
+```shell
+#!/bin/bash
+#SBATCH --partition=gpu4_long
+#SBATCH --job-name=Em_tr01
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_train1_%A_%a.out
+#SBATCH --error=rq_train1_%A_%a.err
+#SBATCH --mem=20G
+## #SBATCH --nodelist=gn-0003
+
+module load python/gpu/3.6.5
+module load bazel/0.15.2
+
+```
+
+
+
 Run it for all the training images:
 ```shell
 #!/bin/tcsh
@@ -480,6 +500,20 @@ module load numpy/intel/1.13.1
 module load cuda/8.0.44    
 module load tensorflow/python2.7/1.0.1
 ```
+On bigpurple, the head can be (adjust partition and mem as needed):
+
+```shell
+#!/bin/bash
+#SBATCH --partition=gpu4_long
+#SBATCH --job-name=Em0valid
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_train1_%A_%a.out
+#SBATCH --error=rq_train1_%A_%a.err
+#SBATCH --mem=100G
+
+module load python/gpu/3.6.5
+``` 
 
 Replace ClassNumber with the number of classes used and mode by "1_sigmoid" if multi-output classification done (ex for mutations). 
 
@@ -532,9 +566,94 @@ module load tensorflow/python2.7/1.0.1
 
 
 Once this is done, you can run the test/validation script (nc_imagenet_eval.py) BUT, using "valid" for the ```ImageSet_basename``` option and "test" for the ```TVmode``` option.
-The following script shows an example on how to run it for all of the checkpoints:
+The following script shows an example on how to run it for all of the checkpoints on bigpurple:
+
+```shell
+#!/bin/bash
+#SBATCH --partition=gpu4_long
+#SBATCH --job-name=Em0valid
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_train1_%A_%a.out
+#SBATCH --error=rq_train1_%A_%a.err
+#SBATCH --mem=100G
+#SBATCH --nodelist=gn-0004
+
+export CHECKPOINT_PATH='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/training/01_All/results_00'
+export OUTPUT_DIR='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/test/01_All/valid2'
+export DATA_DIR='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/images/0_TFRecords_valid'
+export LABEL_FILE='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/test/01_All/labels.txt'
+
+module load python/gpu/3.6.5
+
+
+# create temporary directory for checkpoints
+mkdir  -p $OUTPUT_DIR/tmp_checkpoints
+export CUR_CHECKPOINT=$OUTPUT_DIR/tmp_checkpoints
+
+
+# check if next checkpoint available
+declare -i count=5000 
+declare -i step=5000
+
+while true; do
+	echo count
+	if ( -f $CHECKPOINT_PATH/model.ckpt-$count.meta ); then
+		echo $CHECKPOINT_PATH/model.ckpt-$count.meta " exists"
+		# check if there's already a computation for this checkpoinmt
+		export TEST_OUTPUT=va$OUTPUT_DIR/test_$count'k'
+		if (! -d $TEST_OUTPUT ); then
+			mkdir -p $TEST_OUTPUT
+			
+
+			ln -s $CHECKPOINT_PATH/*-$count.* $CUR_CHECKPOINT/.
+			touch $CUR_CHECKPOINT/checkpoint
+			echo 'model_checkpoint_path: "'$CUR_CHECKPOINT'/model.ckpt-'$count'"' > $CUR_CHECKPOINT/checkpoint
+			echo 'all_model_checkpoint_paths: "'$CUR_CHECKPOINT'/model.ckpt-'$count'"' >> $CUR_CHECKPOINT/checkpoint
+
+			# Test
+			python /gpfs/scratch/coudrn01/NN_test/code/DeepPATH/DeepPATH_code/02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT --eval_dir=$OUTPUT_DIR --data_dir=$DATA_DIR  --batch_size 30  --run_once --ImageSet_basename='valid_' --ClassNumber 2 --mode='0_softmax'  --TVmode='test'
+			wait
+
+			mv $OUTPUT_DIR/out* $TEST_OUTPUT/.
+
+			# ROC
+			export OUTFILENAME=$TEST_OUTPUT/out_filename_Stats.txt
+			python /gpfs/scratch/coudrn01/NN_test/code/DeepPATH/DeepPATH_code/03_postprocessing/0h_ROC_MultiOutput_BootStrap.py --file_stats=$OUTFILENAME  --output_dir=$TEST_OUTPUT --labels_names=$LABEL_FILE
+
+		else
+			echo 'checkpoint '$TEST_OUTPUT' skipped'
+		fi
+
+	else
+		echo $CHECKPOINT_PATH/model.ckpt-$count.meta " does not exist"
+		break
+	fi
+
+	# next checkpoint
+	count=`expr "$count" + "$step"`
+done
+
+# summarize all AUC per slide (average probability) for class 1: 
+ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c1*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_1.txt
+
+
+# summarize all AUC per slide (average probability) for macro average: 
+ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_macro*  | sed -e 's/k\/out2_roc_data_AvPb_macro_/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_macro.txt
+
+
+# summarize all AUC per slide (average probability) for micro average: 
+ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_micro*  | sed -e 's/k\/out2_roc_data_AvPb_micro_/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_micro.txt
+
+ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c2*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_2.txt
+
+ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c3*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_3.txt
+
 
 ```
+
+and the same for Prince cluster:
+```shell
 #!/bin/tcsh
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=loop32
