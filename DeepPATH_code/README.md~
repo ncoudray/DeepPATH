@@ -577,11 +577,10 @@ The following script shows an example on how to run it for all of the checkpoint
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
 #SBATCH --mem=100G
-## #SBATCH --nodelist=gn-0005
-### nodelist is optional - only if you want a specific node
+#SBATCH --nodelist=gn-0004
 
 export CHECKPOINT_PATH='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/training/01_All/results_00'
-export OUTPUT_DIR='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/test/01_All/valid'
+export OUTPUT_DIR='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/test/01_All/valid2'
 export DATA_DIR='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/images/0_TFRecords_valid'
 export LABEL_FILE='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/test/01_All/labels.txt'
 
@@ -598,12 +597,12 @@ declare -i count=5000
 declare -i step=5000
 
 while true; do
-	echo $count
-	if [ -f $CHECKPOINT_PATH/model.ckpt-$count.meta ]; then
+	echo count
+	if ( -f $CHECKPOINT_PATH/model.ckpt-$count.meta ); then
 		echo $CHECKPOINT_PATH/model.ckpt-$count.meta " exists"
 		# check if there's already a computation for this checkpoinmt
-		export TEST_OUTPUT=$OUTPUT_DIR/test_$count'k'
-		if [ ! -d $TEST_OUTPUT ]; then
+		export TEST_OUTPUT=va$OUTPUT_DIR/test_$count'k'
+		if (! -d $TEST_OUTPUT ); then
 			mkdir -p $TEST_OUTPUT
 			
 
@@ -614,7 +613,7 @@ while true; do
 
 			# Test
 			python /gpfs/scratch/coudrn01/NN_test/code/DeepPATH/DeepPATH_code/02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT --eval_dir=$OUTPUT_DIR --data_dir=$DATA_DIR  --batch_size 30  --run_once --ImageSet_basename='valid_' --ClassNumber 2 --mode='0_softmax'  --TVmode='test'
-			# wait
+			wait
 
 			mv $OUTPUT_DIR/out* $TEST_OUTPUT/.
 
@@ -649,6 +648,7 @@ ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_micro*  | sed -e 's/k\/out2_roc_dat
 ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c2*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_2.txt
 
 ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c3*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_3.txt
+
 
 ```
 
