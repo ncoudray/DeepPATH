@@ -100,8 +100,20 @@ On Prince, you may want to try this header instead (and adjust option ```-j``` t
 
 module load openslide-python/intel/1.1.1
 module load pillow/python3.5/intel/4.2.1 
+```
 
+On bigpurple:
+```shell
+#!/bin/bash
+#SBATCH --partition=cpu_medium
+#SBATCH --job-name=EmTile
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=40
+#SBATCH --output=rq_train1_%A_%a.out
+#SBATCH --error=rq_train1_%A_%a.err
+#SBATCH --mem=128GB
 
+module load python/gpu/3.6.5
 ```
 
 
@@ -360,10 +372,11 @@ On the bigpurple cluster (Note: you may have to adjust the partition and mem lin
 #SBATCH --partition=gpu4_long
 #SBATCH --job-name=Em_tr01
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks=40
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
-#SBATCH --mem=20G
+#SBATCH --mem=200G
+#SBATCH --gres=gpu:4
 ## #SBATCH --nodelist=gn-0003
 
 module load python/gpu/3.6.5
@@ -375,24 +388,12 @@ module load bazel/0.15.2
 
 Run it for all the training images:
 ```shell
-#!/bin/tcsh
-#$ -pe openmpi 1
-#$ -A TensorFlow
-#$ -N rqs_train
-#$ -cwd
-#$ -S /bin/tcsh
-#$ -q gpu0.q
-#$ -l excl=true
-
-module load cuda/8.0
-module load python/3.5.3
-module load bazel/0.4.4
-
-
 bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --ClassNumber=3 --mode='0_softmax'
 ```
- The ```mode``` option must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
-
+Notes:
+* The ```mode``` option must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
+* In bigpurple, you can use 4 or 8 GPUs (if available) to make it faster. You will need, in the header, to set ```gres=gpu:4``` or ```gres=gpu:8``` and in the parameters of imagenet_train, set ```num_gpus``` to 4 or 8.
+ 
 
 ## 1.2 - Transfer learning
 
@@ -507,10 +508,11 @@ On bigpurple, the head can be (adjust partition and mem as needed):
 #SBATCH --partition=gpu4_long
 #SBATCH --job-name=Em0valid
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks=40
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
 #SBATCH --mem=100G
+#SBATCH --gres=gpu:4
 
 module load python/gpu/3.6.5
 ``` 
@@ -573,10 +575,11 @@ The following script shows an example on how to run it for all of the checkpoint
 #SBATCH --partition=gpu4_long
 #SBATCH --job-name=Em0valid
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks=40
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
 #SBATCH --mem=100G
+#SBATCH --gres=gpu:4
 ## #SBATCH --nodelist=gn-0005
 ### nodelist is optional - only if you want a specific node
 
