@@ -3,12 +3,13 @@
     Date created: March/2017
 
 	Source:
-	for a small part of the tiling code below, we used:
-	from https://github.com/openslide/openslide-python/blob/master/examples/deepzoom/deepzoom_tile.py
+	Tiling code inspired from
+	https://github.com/openslide/openslide-python/blob/master/examples/deepzoom/deepzoom_tile.py
 	which is Copyright (c) 2010-2015 Carnegie Mellon University
+	The code has been extensively modified 
 
 	Objective:
-	Tile svs images
+	Tile svs, jpg or dcm images with the possibility of rejecting some tiles based based on xml or jpg masks
 
 	Be careful:
 	Overload of the node - may have memory issue if node is shared with other jobs.

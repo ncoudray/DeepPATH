@@ -1,20 +1,18 @@
 '''
-    File name: 0b_tileLoop_deepzoom.py
+    File name: 0b_tileLoop_deepzoom
     Date created: March/2017
 
 	Source:
-	Tiling code comes from:
-	from https://github.com/openslide/openslide-python/blob/master/examples/deepzoom/deepzoom_tile.py
+	Tiling code inspired from
+	https://github.com/openslide/openslide-python/blob/master/examples/deepzoom/deepzoom_tile.py
 	which is Copyright (c) 2010-2015 Carnegie Mellon University
+	The code has been extensively modified 
 
 	Objective:
-	Tile svs images
+	Tile svs, jpg or dcm images with the possibility of rejecting some tiles based based on xml or jpg masks
 
 	Be careful:
 	Overload of the node - may have memory issue if node is shared with other jobs.
-
-	Initial tests:
-	tested on Test_20_tiled/Test2 and Test5  using imgExample = "/ifs/home/coudrn01/NN/Lung/Test_20imgs/*/*svs"
 '''
 
 from __future__ import print_function

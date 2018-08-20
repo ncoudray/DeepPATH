@@ -1,6 +1,8 @@
 '''
-Compute ROC for multiple output-classes (several TP possible for a given input) using sklearn package
-(works on python 2.7 but not 3.5.3 on the clusters)
+	Author: Nicolas Coudray (NYU)
+	Date created: 2017
+	Compute ROC for multiple output-classes (several TP possible for a given input) using sklearn package
+	(works on python 2.7 but not 3.5.3 on the phoenix cluster)
 '''
 import sys, getopt
 import argparse
