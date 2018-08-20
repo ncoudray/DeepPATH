@@ -81,9 +81,11 @@ Example of qsub script to submit this script on Phoenix cluster (python 2.7 used
 #$ -q gpu0.q
 #$ -l excl=true
 
-python /path_to/0b_tileLoop_deepzoom3.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
+python /path_to/0b_tileLoop_deepzoom4.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
 ```
-Note: /path_to/0b_tileLoop_deepzoom3.py is the latest code version updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). It is still under tests. If it happens to bug, you may return to the old code (0b_tileLoop_deepzoom2.py).
+Note: /path_to/0b_tileLoop_deepzoom4.py is the latest code version updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). Unlike 0b_tileLoop_deepzoom3.py, the label is now expected to be registered in the 'Name' field of the xml's Attributes (and not in the 'Value' field).
+
+Also 0b_tileLoop_deepzoom4.py shoudl now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and "-x" would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg".
 
 
 On Prince, you may want to try this header instead (and adjust option ```-j``` to ```28```):

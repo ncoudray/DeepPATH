@@ -360,10 +360,14 @@ class DeepZoomImageTiler(object):
                     isLabelOK = True
             else:
                 labeltag = labelID.getElementsByTagName('Attribute')[0]
-                if (Attribute_Name==labeltag.attributes['Value'].value):
+                #if (Attribute_Name==labeltag.attributes['Value'].value):
+                if (Attribute_Name==labeltag.attributes['Name'].value):
                     isLabelOK = True
                 else:
                     isLabelOK = False
+
+            if Attribute_Name == "non_selected_regions":
+                isLabelOK = True
 
             #print("label ID, tag:")
             #print(labelID, Attribute_Name, labeltag.attributes['Name'].value)
@@ -551,8 +555,8 @@ def xml_read_labels(xmldir):
         labeltag = xmlcontent.getElementsByTagName('Attribute')
         xml_labels = []
         for xmllabel in labeltag:
-            #xml_labels.append(xmllabel.attributes['Name'].value)
-            xml_labels.append(xmllabel.attributes['Value'].value)
+            xml_labels.append(xmllabel.attributes['Name'].value)
+            #xml_labels.append(xmllabel.attributes['Value'].value)
         if xml_labels==[]:
             xml_labels = ['']
         print(xml_labels)
@@ -685,8 +689,16 @@ if __name__ == '__main__':
 			print("xml:")
 			print(xmldir)
 			if os.path.isfile(xmldir):
-				xml_labels, xml_valid = xml_read_labels(xmldir)
-				for oLabel in xml_labels:
+				if opts.mask_type==1:
+					xml_labels, xml_valid = xml_read_labels(xmldir)
+					for oLabel in xml_labels:
+						output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
+						if not os.path.exists(os.path.join(opts.basename, oLabel)):
+							os.makedirs(os.path.join(opts.basename, oLabel))
+						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension).run()
+				else:
+					# Background
+					oLabel = "non_selected_regions"
 					output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
 					if not os.path.exists(os.path.join(opts.basename, oLabel)):
 						os.makedirs(os.path.join(opts.basename, oLabel))
