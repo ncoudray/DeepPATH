@@ -84,10 +84,9 @@ def sort_cancer_healthy_pairs(metadata, **kwargs):
 
 def sort_cancer_healthy(metadata, **kwargs):
     sample_type = extract_sample_type(metadata)
-    cancer = extract_cancer(metadata)
     if "Normal" in sample_type:
         return sample_type.replace(" ", "_")
-    return cancer
+    return "cancer"
 
 
 def sort_random(metadata, **kwargs):
@@ -351,7 +350,7 @@ if __name__ == '__main__':
         sort_function = sort_options[SortingOption]
     except IndexError:
         raise ValueError("Unknown sort option")
-
+    print("sort_function is %s" % sort_function)
 
     # Special case: svs images - copy and exit program
     if args.SortingOption in [15, 16]:
@@ -461,6 +460,7 @@ if __name__ == '__main__':
                     print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
                     continue
             SubDir = sort_function(image_meta, load_dic=mut_load)
+        print("SubDir is %s" % SubDir)
 
         if int(args.nSplit) > 0:
             if SubDir is None:
@@ -476,8 +476,6 @@ if __name__ == '__main__':
                     continue
                 if not os.path.exists(os.path.join(SetDir, SubDir)):
                     os.makedirs(os.path.join(SetDir, SubDir))
-
-
         else:
             SetDir = ""
             if SubDir is None:
@@ -485,7 +483,7 @@ if __name__ == '__main__':
                 continue
             if not os.path.exists(SubDir):
                 os.makedirs(SubDir)
-
+        print("SubDir is still %s" % SubDir)
         try:
             Classes[SubDir].append(imgRootName)
         except KeyError:
@@ -508,7 +506,7 @@ if __name__ == '__main__':
             continue
 
         # Copy/symbolic link the images into the appropriate folder-type
-        print("Symlinking tiles...")
+        print("Symlinking tiles... for subdir %s" % SubDir)
         SourceImageDir = os.path.join(cFolderName, AvailMagsDir, "*")
         AllTiles = glob(SourceImageDir)
 
