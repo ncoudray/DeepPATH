@@ -35,6 +35,7 @@ import sys
 import dicom
 from scipy.misc import imsave
 from scipy.misc import imread
+from scipy.misc import imresize
 
 from xml.dom import minidom
 from PIL import Image, ImageDraw
@@ -69,13 +70,13 @@ class TileWorker(Process):
                 self._queue.task_done()
                 break
             #associated, level, address, outfile = data
-            associated, level, address, outfile, format, outfile_bw, PercentMasked = data
+            associated, level, address, outfile, format, outfile_bw, PercentMasked, SaveMasks, TileMask = data
             if last_associated != associated:
                 dz = self._get_dz(associated)
                 last_associated = associated
             #try:
             if True:
-                try:
+                #try:
                     tile = dz.get_tile(level, address)
                     # A single tile is being read
                     #check the percentage of the image with "information". Should be above 50%
@@ -91,15 +92,28 @@ class TileWorker(Process):
                         if PercentMasked >= (self._ROIpc / 100.0):
 			#if PercentMasked > 0.05:
                             tile.save(outfile, quality=self._quality)
+                            if bool(SaveMasks)==True:
+                                height = TileMask.shape[0]
+                                width = TileMask.shape[1]
+                                TileMaskO = np.zeros((height,width,3), 'uint8')
+                                maxVal = float(TileMask.max())
+                                TileMaskO[...,0] = (TileMask[:,:].astype(float)  / maxVal * 255.0).astype(int)
+                                TileMaskO[...,1] = (TileMask[:,:].astype(float)  / maxVal * 255.0).astype(int)
+                                TileMaskO[...,2] = (TileMask[:,:].astype(float)  / maxVal * 255.0).astype(int)
+                                TileMaskO = imresize(TileMaskO, (arr.shape[0], arr.shape[1],3))
+                                TileMaskO[TileMaskO<10] = 0
+                                TileMaskO[TileMaskO>=10] = 255
+                                imsave(outfile_bw,TileMaskO) #(outfile_bw, quality=self._quality)
+
                         #print("%s good: %f" %(outfile, avgBkg))
                     #elif level>5:
                     #    tile.save(outfile, quality=self._quality)
                             #print("%s empty: %f" %(outfile, avgBkg))
                     self._queue.task_done()
-                except:
-                    print(level, address)
-                    print("image %s failed at dz.get_tile for level %f" % (self._slidepath, level))
-                    self._queue.task_done()
+                #except:
+                    #print(level, address)
+                    #print("image %s failed at dz.get_tile for level %f" % (self._slidepath, level))
+                    #self._queue.task_done()
 
     def _get_dz(self, associated=None):
         if associated is not None:
@@ -112,7 +126,7 @@ class TileWorker(Process):
 class DeepZoomImageTiler(object):
     """Handles generation of tiles and metadata for a single image."""
 
-    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc, ImgExtension):
+    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc, ImgExtension, SaveMasks):
         self._dz = dz
         self._basename = basename
         self._basenameJPG = basenameJPG
@@ -126,6 +140,7 @@ class DeepZoomImageTiler(object):
         self._xmlLabel = xmlLabel
         self._ROIpc = ROIpc
         self._ImgExtension = ImgExtension
+        self._SaveMasks = SaveMasks
 
     def run(self):
         self._write_tiles()
@@ -225,43 +240,48 @@ class DeepZoomImageTiler(object):
                     os.makedirs(tiledir)
                 cols, rows = self._dz.level_tiles[level]
                 if xml_valid:
-                    # If xml file is used, check for each tile what are their corresponding coordinate in the base image
+                    print("xml valid")
+                    '''# If xml file is used, check for each tile what are their corresponding coordinate in the base image
                     IndX_orig, IndY_orig = self._dz.level_tiles[-1]
-                    #CurrentLevel_ReductionFactor = round(float(self._dz.level_dimensions[-1][0]) / float(self._dz.level_dimensions[level][0]))
-                    CurrentLevel_ReductionFactor = round(Img_Fact * float(self._dz.level_dimensions[-1][0]) / float(self._dz.level_dimensions[level][0]))
-                    # print(CurrentLevel_ReductionFactor, Img_Fact, float(mask.shape[1]), float(self._dz.level_dimensions[-1][0]), float(self._dz.level_dimensions[level][0]))
+                    CurrentLevel_ReductionFactor = (Img_Fact * float(self._dz.level_dimensions[-1][0]) / float(self._dz.level_dimensions[level][0]))
                     startIndX_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(cols)]
-                    #endIndX_current_level_conv = [i * CurrentLevel_ReductionFactor - 1 for i in range(cols)]
                     print("***********")
-                    #print(IndX_orig,IndY_orig)
-                    #print( self._dz.level_dimensions[level][0], self._dz.level_dimensions[level][1], self._dz.level_dimensions)
-                    #print(CurrentLevel_ReductionFactor, cols)
                     endIndX_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(cols)]
-                    #print(endIndX_current_level_conv)
                     endIndX_current_level_conv.append(self._dz.level_dimensions[level][0])
-                    #print(endIndX_current_level_conv)
                     endIndX_current_level_conv.pop(0)
-                    #print(endIndX_current_level_conv)
     
                     startIndY_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(rows)]
                     #endIndX_current_level_conv = [i * CurrentLevel_ReductionFactor - 1 for i in range(rows)]
                     endIndY_current_level_conv = [int(i * CurrentLevel_ReductionFactor) for i in range(rows)]
                     endIndY_current_level_conv.append(self._dz.level_dimensions[level][1])
                     endIndY_current_level_conv.pop(0)
-                    
-    
+                    '''
+                    #startIndY_current_level_conv = []
+                    #endIndY_current_level_conv = []
+                    #startIndX_current_level_conv = []
+                    #endIndX_current_level_conv = []
+
+                    #for row in range(rows):
+                    #    for col in range(cols):
+                    #        Dlocation, Dlevel, Dsize = self._dz.get_tile_coordinates(level,(col, row))
+                    #        Ddimension = self._dz.get_tile_dimensions(level,(col, row))
+                    #        startIndY_current_level_conv.append(int((Dlocation[1]) / Img_Fact))
+                    #        endIndY_current_level_conv.append(int((Dlocation[1] + Ddimension[1]) / Img_Fact))
+                    #        startIndX_current_level_conv.append(int((Dlocation[0]) / Img_Fact))
+                    #        endIndX_current_level_conv.append(int((Dlocation[0] + Ddimension[0]) / Img_Fact))
+                            # print(Dlocation, Ddimension, int((Dlocation[1]) / Img_Fact), int((Dlocation[1] + Ddimension[1]) / Img_Fact), int((Dlocation[0]) / Img_Fact), int((Dlocation[0] + Ddimension[0]) / Img_Fact))
                 for row in range(rows):
                     for col in range(cols):
                         InsertBaseName = False
                         if InsertBaseName:
                           tilename = os.path.join(tiledir, '%s_%d_%d.%s' % (
                                           self._basenameJPG, col, row, self._format))
-                          tilename_bw = os.path.join(tiledir, '%s_%d_%d_bw.%s' % (
+                          tilename_bw = os.path.join(tiledir, '%s_%d_%d_mask.%s' % (
                                           self._basenameJPG, col, row, self._format))
                         else:
                           tilename = os.path.join(tiledir, '%d_%d.%s' % (
                                           col, row, self._format))
-                          tilename_bw = os.path.join(tiledir, '%d_%d_bw.%s' % (
+                          tilename_bw = os.path.join(tiledir, '%d_%d_mask.%s' % (
                                           col, row, self._format))
                         if xml_valid:
                             # compute percentage of tile in mask
@@ -272,9 +292,22 @@ class DeepZoomImageTiler(object):
                             # print(endIndY_current_level_conv[row])
                             # print(mask.shape)
                             # print(mask[startIndX_current_level_conv[col]:endIndX_current_level_conv[col], startIndY_current_level_conv[row]:endIndY_current_level_conv[row]])
-                            PercentMasked = mask[startIndY_current_level_conv[row]:endIndY_current_level_conv[row], startIndX_current_level_conv[col]:endIndX_current_level_conv[col]].mean() 
-                            #print(startIndY_current_level_conv[row], endIndY_current_level_conv[row], startIndX_current_level_conv[col], endIndX_current_level_conv[col])
-                            #print(mask[startIndY_current_level_conv[row]:endIndY_current_level_conv[row], startIndX_current_level_conv[col]:endIndX_current_level_conv[col]])
+                            # TileMask = mask[startIndY_current_level_conv[row]:endIndY_current_level_conv[row], startIndX_current_level_conv[col]:endIndX_current_level_conv[col]]
+                            # PercentMasked = mask[startIndY_current_level_conv[row]:endIndY_current_level_conv[row], startIndX_current_level_conv[col]:endIndX_current_level_conv[col]].mean() 
+                            # print(startIndY_current_level_conv[row], endIndY_current_level_conv[row], startIndX_current_level_conv[col], endIndX_current_level_conv[col])
+
+                            Dlocation, Dlevel, Dsize = self._dz.get_tile_coordinates(level,(col, row))
+                            Ddimension = tuple([pow(2,(self._dz.level_count - 1 - level)) * x for x in self._dz.get_tile_dimensions(level,(col, row))])
+                            startIndY_current_level_conv = (int((Dlocation[1]) / Img_Fact))
+                            endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
+                            startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
+                            endIndX_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact))
+                            TileMask = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv]
+                            PercentMasked = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv].mean() 
+
+                            print(Ddimension, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
+
+
                             if self._mask_type == 0:
                                 # keep ROI outside of the mask
                                 PercentMasked = 1.0 - PercentMasked
@@ -290,7 +323,7 @@ class DeepZoomImageTiler(object):
 
                         if not os.path.exists(tilename):
                             self._queue.put((self._associated, level, (col, row),
-                                        tilename, self._format, tilename_bw, PercentMasked))
+                                        tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask))
                         self._tile_done()
 
     def _tile_done(self):
@@ -317,7 +350,8 @@ class DeepZoomImageTiler(object):
         ImgMaxSizeY_orig = float(self._dz.level_dimensions[-1][1])
         # Number of centers at the highest resolution
         cols, rows = self._dz.level_tiles[-1]
-        Img_Fact = int(ImgMaxSizeX_orig / 1.0 / cols)
+        # Img_Fact = int(ImgMaxSizeX_orig / 1.0 / cols)
+        Img_Fact = 1
         try:
             # xmldir: change extension from xml to *jpg   
             xmldir = xmldir[:-4] + "mask.jpg"
@@ -342,7 +376,15 @@ class DeepZoomImageTiler(object):
         ImgMaxSizeY_orig = float(self._dz.level_dimensions[-1][1])
         # Number of centers at the highest resolution
         cols, rows = self._dz.level_tiles[-1]
-        Img_Fact = int(ImgMaxSizeX_orig / 5.0 / cols)
+
+        NewFact = max(ImgMaxSizeX_orig, ImgMaxSizeY_orig) / 20000.0
+        # Img_Fact = 
+        # read_region(location, level, size)
+        # dz.get_tile_coordinates(14,(0,2))
+        # ((0, 1792), 1, (320, 384))
+
+        Img_Fact = float(ImgMaxSizeX_orig) / 5.0 / float(cols)
+       
         print("image info:")
         print(ImgMaxSizeX_orig, ImgMaxSizeY_orig, cols, rows) 
         try:
@@ -385,8 +427,10 @@ class DeepZoomImageTiler(object):
                             xy[regionID] = []
                             for vertex in vertices:
                                 # get the x value of the vertex / convert them into index in the tiled matrix of the base image
-                                x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
-                                y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
+                                # x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
+                                # y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
+                                x = int(round(float(vertex.attributes['X'].value) / NewFact))
+                                y = int(round(float(vertex.attributes['Y'].value) / NewFact))
                                 xy[regionID].append((x,y))
                                 #print(vertex.attributes['X'].value, vertex.attributes['Y'].value, x, y )
     
@@ -394,8 +438,10 @@ class DeepZoomImageTiler(object):
                             xy_neg[regionID] = []
                             for vertex in vertices:
                                 # get the x value of the vertex / convert them into index in the tiled matrix of the base image
-                                x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
-                                y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
+                                # x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
+                                # y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
+                                x = int(round(float(vertex.attributes['X'].value) / NewFact))
+                                y = int(round(float(vertex.attributes['Y'].value) / NewFact))
                                 xy_neg[regionID].append((x,y))
     
 
@@ -405,9 +451,10 @@ class DeepZoomImageTiler(object):
         #print(xy)
         #print("xy_neg:")
         #print(xy_neg)
-        #print("Img_Fact:")
-        #print(Img_Fact)
-        img = Image.new('L', (int(cols*Img_Fact), int(rows*Img_Fact)), 0)
+        print("Img_Fact:")
+        print(NewFact)
+        # img = Image.new('L', (int(cols*Img_Fact), int(rows*Img_Fact)), 0)
+        img = Image.new('L', (int(ImgMaxSizeX_orig/NewFact), int(ImgMaxSizeY_orig/NewFact)), 0)
         for regionID in xy.keys():
             xy_a = xy[regionID]
             ImageDraw.Draw(img,'L').polygon(xy_a, outline=255, fill=255)
@@ -419,14 +466,15 @@ class DeepZoomImageTiler(object):
         #print(mask.shape)
         scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
         #print(mask)
-        return mask / 255.0, xml_valid, Img_Fact
+        return mask / 255.0, xml_valid, NewFact
+        # Img_Fact
 
 
 class DeepZoomStaticTiler(object):
     """Handles generation of tiles and metadata for all images in a slide."""
 
     def __init__(self, slidepath, basename, format, tile_size, overlap,
-                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type, ROIpc, oLabel, ImgExtension):
+                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type, ROIpc, oLabel, ImgExtension, SaveMasks):
         if with_viewer:
             # Check extra dependency before doing a bunch of work
             import jinja2
@@ -448,6 +496,7 @@ class DeepZoomStaticTiler(object):
         self._dzi_data = {}
         self._xmlLabel = oLabel
         self._ImgExtension = ImgExtension
+        self._SaveMasks = SaveMasks
 
         for _i in range(workers):
             TileWorker(self._queue, slidepath, tile_size, overlap,
@@ -474,7 +523,7 @@ class DeepZoomStaticTiler(object):
             image = ImageSlide(self._slide.associated_images[associated])
             basename = os.path.join(self._basename, self._slugify(associated))
         dz = DeepZoomGenerator(image, self._tile_size, self._overlap,limit_bounds=self._limit_bounds)
-        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension)
+        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks)
         tiler.run()
         self._dzi_data[self._url_for(associated)] = tiler.get_dzi()
 
@@ -601,6 +650,11 @@ if __name__ == '__main__':
 	parser.add_option('-R', '--ROIpc', metavar='PIXELS', dest='ROIpc',
 		type='float', default=50,
 		help='To be used with xml file - minimum percentage of tile covered by ROI (white)')
+	parser.add_option('-l', '--oLabelref', metavar='NAME', dest='oLabelref',
+		help='To be used with xml file - Only tile for label which contains the characters in oLabel')
+	parser.add_option('-S', '--SaveMasks', metavar='NAME', dest='SaveMasks',
+		default=False,
+		help='set to yes if you want to save ALL masks for ALL tiles (will be saved in same directory with <mask> suffix)')
 
 
 
@@ -682,7 +736,7 @@ if __name__ == '__main__':
 			imsave(filename,image)
 
 			output = os.path.join(opts.basename, opts.basenameJPG)
-			DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension).run()
+			DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks).run()
 
 
 		elif opts.xmlfile != '':
@@ -693,23 +747,25 @@ if __name__ == '__main__':
 				if opts.mask_type==1:
 					xml_labels, xml_valid = xml_read_labels(xmldir)
 					for oLabel in xml_labels:
-						output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
-						if not os.path.exists(os.path.join(opts.basename, oLabel)):
-							os.makedirs(os.path.join(opts.basename, oLabel))
-						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension).run()
+                                                print("label is %s and ref is %s" % (oLabel, opts.oLabelref))
+						if (opts.oLabelref in oLabel) or (opts.oLabelref==''):
+							output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
+							if not os.path.exists(os.path.join(opts.basename, oLabel)):
+								os.makedirs(os.path.join(opts.basename, oLabel))
+							DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks).run()
 				else:
 					# Background
 					oLabel = "non_selected_regions"
 					output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
 					if not os.path.exists(os.path.join(opts.basename, oLabel)):
 						os.makedirs(os.path.join(opts.basename, oLabel))
-					DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension).run()
+					DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks).run()
 
 			else:
 				if (ImgExtension == ".jpg") | (ImgExtension == ".dcm") :
 					print("Input image to be tiled is jpg or dcm and not svs - will be treated as such")
 					output = os.path.join(opts.basename, opts.basenameJPG)
-					DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension).run()
+					DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks).run()
 
 
 				else:
@@ -717,7 +773,7 @@ if __name__ == '__main__':
 					continue
 		else:
 			output = os.path.join(opts.basename, opts.basenameJPG)
-			DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension).run()
+			DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks).run()
 	'''
 	dz_queue.join()
 	for i in range(opts.max_number_processes):

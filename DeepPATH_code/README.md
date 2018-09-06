@@ -130,10 +130,12 @@ Optional parameters when regions have been selected with Aperio:
 * `-x` is the path to the xml files. The rootname of the xml file must match exactly the one of the svs images. All the xml files sharing the same label should be in the same folder (named after this label, for example xml_<label>). If there are ROIs with different labels, they should be saved in separate folders and tiles independently in separate output folders (also named after the label, for example <###>pxTiles_<label>)
 * `-m` 1 or 0 if you want to tile the region inside the ROI, or outside
 * `-R` minimum percentage of tile covered by ROI. If below the percentage, tile is not kept.
+* `-l` To be used with xml file - Only do the tiling for the labels which name contains the characters in this option (string)
+* `-S` Set it to true if you want to save ALL masks for ALL tiles (will be saved in same directory with <mask> suffix!!)
 
-Note:
+Notes:
 * This code can also be used to tile input jpg images: the full path to input images will end in <*jpg">, and you need to set the option `-x` to the `'.jpg'` string value and `-R` to the magnification at which the images were acquired (`20.0` for example)
-
+* known bug: the library used fails to deal with images compressed as JPG 2000. These would lead to empty directories
 
 Output:
 * Each slide will have its own folder and inside, one sub-folder per magnification. Inside each magnification folder, tiles are named according to their position within the slide: ```<x>_<y>.jpeg```.
