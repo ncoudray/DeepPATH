@@ -747,7 +747,7 @@ if __name__ == '__main__':
 				if opts.mask_type==1:
 					xml_labels, xml_valid = xml_read_labels(xmldir)
 					for oLabel in xml_labels:
-						print("label is %s and ref is %s" % (oLabel, opts.oLabelref))
+                                        	print("label is %s and ref is %s" % (oLabel, opts.oLabelref))
 						if (opts.oLabelref in oLabel) or (opts.oLabelref==''):
 							output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
 							if not os.path.exists(os.path.join(opts.basename, oLabel)):
