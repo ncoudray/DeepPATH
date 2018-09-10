@@ -320,6 +320,7 @@ class DeepZoomImageTiler(object):
  
                         else:
                             PercentMasked = 1.0
+                            TileMask = []
 
                         if not os.path.exists(tilename):
                             self._queue.put((self._associated, level, (col, row),
