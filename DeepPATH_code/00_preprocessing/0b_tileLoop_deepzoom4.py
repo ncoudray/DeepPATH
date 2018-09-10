@@ -377,7 +377,7 @@ class DeepZoomImageTiler(object):
         # Number of centers at the highest resolution
         cols, rows = self._dz.level_tiles[-1]
 
-        NewFact = max(ImgMaxSizeX_orig, ImgMaxSizeY_orig) / 20000.0
+        NewFact = max(ImgMaxSizeX_orig, ImgMaxSizeY_orig) / min(max(ImgMaxSizeX_orig, ImgMaxSizeY_orig),15000.0)
         # Img_Fact = 
         # read_region(location, level, size)
         # dz.get_tile_coordinates(14,(0,2))
