@@ -197,7 +197,7 @@ module load numpy/intel/1.13.1
    - `18` temp
    - `19` Slides are tiled in separate sub-folders. It will use  the sub-folders' names as labels
 
-* `--TMB`: addional option 
+* `--TMB`: additional option 
    - for options 8: path to json file with mutational loads
    - for options 9: path to json file with mutant for metastatic
    - for option 17: text file, second column is label for non-normal tissues
