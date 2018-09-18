@@ -600,7 +600,7 @@ def main():
 
 
 	# save data
-	print("******* FP / TP for average probabilitys")
+	print("******* FP / TP for average probability")
 	print(fpr)
 	print(tpr)
 	for i in range(n_classes):
@@ -747,7 +747,7 @@ def main():
 
 
 	# save data
-	print("******* FP / TP for average probabilitys")
+	print("******* FP / TP for average probability")
 	print(fpr)
 	print(tpr)
 	for i in range(n_classes):
