@@ -2,8 +2,6 @@ For details and citations about this work, please check:
 
 Nicolas Coudray, Paolo Santiago Ocampo, Theodore Sakellaropoulos, Navneet Narula, Matija Snuderl, David Fenyö, Andre L. Moreira, Narges Razavian, Aristotelis Tsirigos. "Classification and mutation prediction from non–small cell lung cancer histopathology images using deep learning". Nature Medicine, 2018; DOI: 10.1038/s41591-018-0177-5
 
-https://www.nature.com/articles/s41591-018-0177-5
-
 This procedure is based on the inception v3 architecture from google. See [Inception v3](https://github.com/tensorflow/models/blob/f87a58cd96d45de73c9a8330a06b2ab56749a7fa/research/inception/README.md) for information about it and the following paper:
 
 Christian Szegedy, Vincent Vanhoucke, Sergey Ioffe, Jonathon Shlens, Zbigniew Wojna. "Rethinking the Inception Architecture for Computer Vision"
