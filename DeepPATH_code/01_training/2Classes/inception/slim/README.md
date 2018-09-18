@@ -9,8 +9,7 @@ keeping a model's architecture transparent and its hyperparameters explicit.
 ## Teaser
 
 As a demonstration of the simplicity of using TF-Slim, compare the simplicity of
-the code necessary for defining the entire [VGG]
-(http://www.robots.ox.ac.uk/~vgg/research/very_deep/) network using TF-Slim to
+the code necessary for defining the entire [VGG](http://www.robots.ox.ac.uk/~vgg/research/very_deep/) network using TF-Slim to
 the lengthy and verbose nature of defining just the first three layers (out of
 16) using native tensorflow:
 
@@ -244,12 +243,9 @@ number. More concretely, the scopes in the example above would be 'conv3_1',
 
 ### Scopes
 
-In addition to the types of scope mechanisms in TensorFlow ([name_scope]
-(https://www.tensorflow.org/api_docs/python/framework.html#name_scope),
-[variable_scope]
-(https://www.tensorflow.org/api_docs/python/state_ops.html#variable_scope),
-TF-Slim adds a new scoping mechanism called "argument scope" or [arg_scope]
-(scopes.py). This new scope allows a user to specify one or more operations and
+In addition to the types of scope mechanisms in TensorFlow ([name_scope](https://www.tensorflow.org/api_docs/python/framework.html#name_scope),
+[variable_scope](https://www.tensorflow.org/api_docs/python/state_ops.html#variable_scope),
+TF-Slim adds a new scoping mechanism called "argument scope" or [arg_scope](./scopes.py). This new scope allows a user to specify one or more operations and
 a set of arguments which will be passed to each of the operations defined in the
 `arg_scope`. This functionality is best illustrated by example. Consider the
 following code snippet:
@@ -264,7 +260,7 @@ It should be clear that these three Convolution layers share many of the same
 hyperparameters. Two have the same padding, all three have the same weight_decay
 and standard deviation of its weights. Not only do the duplicated values make
 the code more difficult to read, it also adds the addition burder to the writer
-of needing to doublecheck that all of the values are identical in each step. One
+of needing to double-check that all of the values are identical in each step. One
 solution would be to specify default values using variables:
 
 ```python
@@ -362,7 +358,7 @@ classes. For regression problems, this is often the sum-of-squares differences
 between the predicted and true values.
 
 Certain models, such as multi-task learning models, require the use of multiple
-loss functions simultaneously. In other words, the loss function ultimatey being
+loss functions simultaneously. In other words, the loss function ultimately being
 minimized is the sum of various other loss functions. For example, consider a
 model that predicts both the type of scene in an image as well as the depth from
 the camera of each pixel. This model's loss function would be the sum of the
@@ -494,12 +490,9 @@ with tf.Session() as sess:
   ...
 ```
 
-See [Restoring Variables]
-(https://www.tensorflow.org/versions/r0.7/how_tos/variables/index.html#restoring-variables)
-and [Choosing which Variables to Save and Restore]
-(https://www.tensorflow.org/versions/r0.7/how_tos/variables/index.html#choosing-which-variables-to-save-and-restore)
-sections of the [Variables]
-(https://www.tensorflow.org/versions/r0.7/how_tos/variables/index.html) page for
+See [Restoring Variables](https://www.tensorflow.org/versions/r0.7/how_tos/variables/index.html#restoring-variables)
+and [Choosing which Variables to Save and Restore](https://www.tensorflow.org/versions/r0.7/how_tos/variables/index.html#choosing-which-variables-to-save-and-restore)
+sections of the [Variables](https://www.tensorflow.org/versions/r0.7/how_tos/variables/index.html) page for
 more details.
 
 ### Using slim.variables to Track which Variables need to be Restored
