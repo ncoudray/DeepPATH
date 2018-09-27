@@ -15,6 +15,7 @@
                 The output folder from which the script is run should be empty
 
 '''
+
 import json
 from glob import glob
 import os
@@ -22,6 +23,7 @@ from argparse import ArgumentParser
 import random
 import numpy as np
 from shutil import copyfile
+
 
 def extract_stage(metadata):
     stage = metadata['cases'][0]['diagnoses'][0]['tumor_stage']
@@ -116,9 +118,11 @@ def sort_mutation_metastatic(metadata, load_dic, **kwargs):
 def sort_setonly(metadata, load_dic, **kwargs):
     return 'All'
 
+
 def sort_location(metadata, load_dic, **kwargs):
     sample_type = extract_sample_type(metadata)
     return sample_type.replace(" ", "_")
+
 
 def sort_melanoma_POD(metadata, load_dic, **kwargs):
     Response = metadata['Response to Treatment (Best Response)']
@@ -127,12 +131,14 @@ def sort_melanoma_POD(metadata, load_dic, **kwargs):
     else:
         return 'Response'
 
+
 def sort_melanoma_Toxicity(metadata, load_dic, **kwargs):
     return metadata['Toxicity Observed']
 
 
 def sort_text(metadata, load_dic, **kwargs):
     return metadata
+
 
 def copy_svs_lymph_melanoma(metadata, load_dic, **kwargs):
     sample_type = extract_sample_type(metadata)
@@ -148,7 +154,6 @@ def copy_svs_lymph_melanoma(metadata, load_dic, **kwargs):
     return False
 
 
-
 def copy_svs_skin_primtumor(metadata, load_dic, **kwargs):
     sample_type = extract_sample_type(metadata)
     if "Primary" in sample_type:
@@ -162,17 +167,28 @@ def copy_svs_skin_primtumor(metadata, load_dic, **kwargs):
             return False
     return False
 
+
 def sort_normal_txt(metadata, load_dic, **kwargs):
-    sample_type = extract_sample_type(metadata)
-    if "Normal" in sample_type:
-        return sample_type.replace(" ", "_")
-    else:
-        submitter_id = metadata["cases"][0]["submitter_id"]
-        try:
+    # sample_type = extract_sample_type(metadata)
+    # if "Normal" in sample_type:
+    #     return sample_type.replace(" ", "_")
+    # else:
+    #     submitter_id = metadata["cases"][0]["submitter_id"]
+    #     try:
+    #         return load_dic[submitter_id].replace(" ", "_")
+    #     except:
+    #         return None
+    #         #return False
+    submitter_id = metadata["cases"][0]["submitter_id"]
+    if submitter_id in load_dic.keys():
+        sample_type = extract_sample_type(metadata)
+        if "Normal" in sample_type:
+            return sample_type.replace(" ", "_")
+        else:
             return load_dic[submitter_id].replace(" ", "_")
-        except: 
-            return None
-            #return False
+    else:
+        return None
+
 
 def sort_melanoma_POD_Rec(metadata, load_dic, **kwargs):
     Response = metadata['Response to Treatment (Best Response)']
@@ -185,34 +201,35 @@ def sort_melanoma_POD_Rec(metadata, load_dic, **kwargs):
     else:
         return None
 
+
 def sort_subfolders(metadata, load_dic, **kwargs):
     return 'All'
 
 
 sort_options = [
-        sort_cancer_stage_separately,
-        sort_cancer_stage,
-        sort_type,
-        sort_cancer_type,
-        sort_cancer_healthy_pairs,
-        sort_cancer_healthy,
-        sort_random,
-        sort_mutational_burden,
-        sort_mutation_metastatic,
-        sort_setonly,
-        sort_location,
-        sort_melanoma_POD,
-        sort_melanoma_Toxicity,
-        sort_text,
-	copy_svs_lymph_melanoma,
-	copy_svs_skin_primtumor,
-        sort_normal_txt,
-	sort_melanoma_POD_Rec,
-	sort_subfolders
+    sort_cancer_stage_separately,
+    sort_cancer_stage,
+    sort_type,
+    sort_cancer_type,
+    sort_cancer_healthy_pairs,
+    sort_cancer_healthy,
+    sort_random,
+    sort_mutational_burden,
+    sort_mutation_metastatic,
+    sort_setonly,
+    sort_location,
+    sort_melanoma_POD,
+    sort_melanoma_Toxicity,
+    sort_text,
+    copy_svs_lymph_melanoma,
+    copy_svs_skin_primtumor,
+    sort_normal_txt,
+    sort_melanoma_POD_Rec,
+    sort_subfolders
 ]
 
 if __name__ == '__main__':
-# python 0d_SortTiles_stage.py '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/512pxTiled' '/ifs/home/coudrn01/NN/Lung/RawImages/metadata.cart.2017-03-02T00_36_30.276824.json' 20 5 3 15 15
+    # python 0d_SortTiles_stage.py '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/512pxTiled' '/ifs/home/coudrn01/NN/Lung/RawImages/metadata.cart.2017-03-02T00_36_30.276824.json' 20 5 3 15 15
 
     descr = """
     Example: python /ifs/home/coudrn01/NN/Lung/0d_SortTiles.py --SourceFolder='/ifs/data/abl/deepomics/pancreas/images_TCGA/512pxTiled_b' --JsonFile='/ifs/data/abl/deepomics/pancreas/images_TCGA/Raw/metadata.cart.2017-09-08T14_46_02.589953.json' --Magnification=20 --MagDiffAllowed=5 --SortingOption=3 --PercentTest=100 --PercentValid=0 --PatientID=12 --nSplit 0
@@ -247,20 +264,31 @@ if __name__ == '__main__':
     """
     ## Define Arguments
     parser = ArgumentParser(description=descr)
-    
+
     parser.add_argument("--SourceFolder", help="path to tiled images", dest='SourceFolder')
     parser.add_argument("--JsonFile", help="path to metadata json file", dest='JsonFile')
     parser.add_argument("--Magnification", help="magnification to use", type=float, dest='Magnification')
-    parser.add_argument("--MagDiffAllowed", help="difference allowed on Magnification", type=float, dest='MagDiffAllowed')
+    parser.add_argument("--MagDiffAllowed", help="difference allowed on Magnification", type=float,
+                        dest='MagDiffAllowed')
     parser.add_argument("--SortingOption", help="see option at the epilog", type=int, dest='SortingOption')
-    parser.add_argument("--PercentValid", help="percentage of images for validation (between 0 and 100)", type=float, dest='PercentValid')
-    parser.add_argument("--PercentTest", help="percentage of images for testing (between 0 and 100)", type=float, dest='PercentTest')
-    parser.add_argument("--PatientID", help="Patient ID is supposed to be the first PatientID characters (integer expected) of the folder in which the pyramidal jpgs are. Slides from same patient will be in same train/test/valid set. This option is ignored if set to 0 or -1 ", type=int, dest='PatientID')
+    parser.add_argument("--PercentValid", help="percentage of images for validation (between 0 and 100)", type=float,
+                        dest='PercentValid')
+    parser.add_argument("--PercentTest", help="percentage of images for testing (between 0 and 100)", type=float,
+                        dest='PercentTest')
+    parser.add_argument("--PatientID",
+                        help="Patient ID is supposed to be the first PatientID characters (integer expected) of the folder in which the pyramidal jpgs are. Slides from same patient will be in same train/test/valid set. This option is ignored if set to 0 or -1 ",
+                        type=int, dest='PatientID')
     parser.add_argument("--TMB", help="path to json file with mutational loads; or to BRAF mutations", dest='TMB')
     parser.add_argument("--nSplit", help="integer n: Split into train/test in n different ways", dest='nSplit')
-    parser.add_argument("--outFilenameStats", help="Check if the tile exists in an out_filename_Stats.txt file and copy it only if it True, or is the expLabel option had the highest probability", dest='outFilenameStats')
-    parser.add_argument("--expLabel", help="Index of the expected label within the outFilenameStats file (if only True/False is needed, leave this option empty).", dest='expLabel')
-    parser.add_argument("--threshold", help="threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability).", dest='threshold')
+    parser.add_argument("--outFilenameStats",
+                        help="Check if the tile exists in an out_filename_Stats.txt file and copy it only if it True, or is the expLabel option had the highest probability",
+                        dest='outFilenameStats')
+    parser.add_argument("--expLabel",
+                        help="Index of the expected label within the outFilenameStats file (if only True/False is needed, leave this option empty).",
+                        dest='expLabel')
+    parser.add_argument("--threshold",
+                        help="threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability).",
+                        dest='threshold')
 
     ## Parse Arguments
     args = parser.parse_args()
@@ -275,8 +303,8 @@ if __name__ == '__main__':
 
     if args.nSplit is None:
         args.nSplit = 0
-    elif int(args.nSplit) > 0 :
-        args.PercentValid = 100/int(args.nSplit)
+    elif int(args.nSplit) > 0:
+        args.PercentValid = 100 / int(args.nSplit)
         args.PercentTest = 0
 
     if args.outFilenameStats is None:
@@ -296,14 +324,14 @@ if __name__ == '__main__':
                         ExpectedProb = line.split('[')[-1]
                         ExpectedProb = ExpectedProb.split(']')[0]
                         ExpectedProb = ExpectedProb.split()
-                        ExpectedProb=np.array(ExpectedProb)
-                        ExpectedProb=np.asfarray(ExpectedProb,float)
+                        ExpectedProb = np.array(ExpectedProb)
+                        ExpectedProb = np.asfarray(ExpectedProb, float)
                         print(ExpectedProb)
-                        print("labels exp/true:%d, %d" % (int(args.expLabel) ,ExpectedProb.argmax() ))
+                        print("labels exp/true:%d, %d" % (int(args.expLabel), ExpectedProb.argmax()))
                         if args.threshold is None:
-                            outFilenameStats_dict[basename] = str(int(args.expLabel) ==ExpectedProb.argmax())
+                            outFilenameStats_dict[basename] = str(int(args.expLabel) == ExpectedProb.argmax())
                         else:
-                            outFilenameStats_dict[basename] = str(ExpectedProb[args.expLabel]>= float(args.threshold))
+                            outFilenameStats_dict[basename] = str(ExpectedProb[args.expLabel] >= float(args.threshold))
                 print(outFilenameStats_dict)
         else:
             print("outFilenameStats NOT found")
@@ -315,7 +343,7 @@ if __name__ == '__main__':
         imgFolders = glob(os.path.join(SourceFolder, "*.svs"))
         random.shuffle(imgFolders)  # randomize order of images
     elif args.SortingOption in [19]:
-        imgFolders = glob(os.path.join(SourceFolder,"*", "*_files"))
+        imgFolders = glob(os.path.join(SourceFolder, "*", "*_files"))
         random.shuffle(imgFolders)  # randomize order of images
         AllNewDirs = [name for name in os.listdir(SourceFolder) if os.path.isdir(name)]
     else:
@@ -371,8 +399,8 @@ if __name__ == '__main__':
                     continue
             IsCopy = sort_function(image_meta, load_dic={})
             if IsCopy:
-                copyfile(cFolderName, os.path.join(os.getcwd(), imgRootName + '.svs' ) )
-                
+                copyfile(cFolderName, os.path.join(os.getcwd(), imgRootName + '.svs'))
+
         quit()
 
     PercentValid = args.PercentValid / 100.
@@ -404,9 +432,7 @@ if __name__ == '__main__':
                     tmp_PID = line.split()[0]
                     mut_load[tmp_PID] = line.split()[1]
         else:
-            raise ValueError("For SortingOption = 9 you must specify the --TMB option")
-
-
+            raise ValueError("For SortingOption = 17 you must specify the --TMB option")
 
     ## Main Loop
     print("******************")
@@ -433,7 +459,7 @@ if __name__ == '__main__':
     for cFolderName in imgFolders:
 
         NbSlides += 1
-        #if NbSlides > 10:
+        # if NbSlides > 10:
         #    raise ValueError("small test debug")
         #    exit()
         #    raise SystemExit
@@ -539,7 +565,6 @@ if __name__ == '__main__':
                     nbr_valid[SubDir].append(0)
                 ttv_split[SubDir][0] = "test"
 
-
         NbTiles = 0
         if len(AllTiles) == 0:
             continue
@@ -547,7 +572,7 @@ if __name__ == '__main__':
             NbTiles += 1
             TileName = os.path.basename(TilePath)
             print(TileName)
-            if len(outFilenameStats_dict)>0:
+            if len(outFilenameStats_dict) > 0:
                 # process only if this tile was classified  as "True" by the classifier
                 ThisKey = imgRootName + "_" + TileName.split(".")[0]
                 print(ThisKey)
@@ -561,8 +586,8 @@ if __name__ == '__main__':
             print(PercentSlidesCateg.get(SubDir + "_test"))
             print(PercentSlidesCateg.get(SubDir + "_valid"))
             print(PercentTest, PercentValid)
-            print(PercentSlidesCateg.get(SubDir + "_test")<PercentTest)
-            print(PercentSlidesCateg.get(SubDir + "_valid")<PercentValid)
+            print(PercentSlidesCateg.get(SubDir + "_test") < PercentTest)
+            print(PercentSlidesCateg.get(SubDir + "_valid") < PercentValid)
 
             # rename the images with the root name, and put them in train/test/valid
             if (PercentSlidesCateg.get(SubDir + "_test") <= PercentTest) and (PercentTest > 0):
@@ -574,7 +599,6 @@ if __name__ == '__main__':
             # If that patient had an another slide/scan already sorted, assign the same set to this set of images
             print(ttv)
             print(imgRootName[:args.PatientID])
-
 
             if int(args.nSplit) > 0:
                 for nSet in range(int(args.nSplit)):
@@ -597,7 +621,8 @@ if __name__ == '__main__':
 
                 for nSet in range(int(args.nSplit)):
                     SetDir = "set_" + str(nSet)
-                    NewImageDir = os.path.join(SetDir, SubDir, "_".join((ttv_split[SubDir][nSet], imgRootName, TileName)))  # all train initially
+                    NewImageDir = os.path.join(SetDir, SubDir, "_".join(
+                        (ttv_split[SubDir][nSet], imgRootName, TileName)))  # all train initially
                     os.symlink(TilePath, NewImageDir)
 
             else:
@@ -622,19 +647,29 @@ if __name__ == '__main__':
             NbrTilesCateg[SubDir + "_test"] = NbrTilesCateg.get(SubDir + "_test") + NbTiles
             NbrImagesCateg[SubDir + "_test"] = NbrImagesCateg[SubDir + "_test"] + 1
         elif ttv == "valid":
-            NbrTilesCateg[SubDir + "_valid"] =  NbrTilesCateg.get(SubDir + "_valid") + NbTiles
+            NbrTilesCateg[SubDir + "_valid"] = NbrTilesCateg.get(SubDir + "_valid") + NbTiles
             NbrImagesCateg[SubDir + "_valid"] = NbrImagesCateg[SubDir + "_valid"] + 1
 
-        PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(NbrTilesCateg.get(SubDir))
-        PercentTilesCateg[SubDir + "_test"] = float(NbrTilesCateg.get(SubDir + "_test")) / float(NbrTilesCateg.get(SubDir))
-        PercentTilesCateg[SubDir + "_valid"] = float(NbrTilesCateg.get(SubDir + "_valid")) / float(NbrTilesCateg.get(SubDir))
-        PercentSlidesCateg[SubDir + "_train"] = float(NbrImagesCateg.get(SubDir + "_train")) / float(NbrImagesCateg.get(SubDir))
-        PercentSlidesCateg[SubDir + "_test"] = float(NbrImagesCateg.get(SubDir + "_test")) / float(NbrImagesCateg.get(SubDir))
-        PercentSlidesCateg[SubDir + "_valid"] = float(NbrImagesCateg.get(SubDir + "_valid")) / float(NbrImagesCateg.get(SubDir))
+        PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(
+            NbrTilesCateg.get(SubDir))
+        PercentTilesCateg[SubDir + "_test"] = float(NbrTilesCateg.get(SubDir + "_test")) / float(
+            NbrTilesCateg.get(SubDir))
+        PercentTilesCateg[SubDir + "_valid"] = float(NbrTilesCateg.get(SubDir + "_valid")) / float(
+            NbrTilesCateg.get(SubDir))
+        PercentSlidesCateg[SubDir + "_train"] = float(NbrImagesCateg.get(SubDir + "_train")) / float(
+            NbrImagesCateg.get(SubDir))
+        PercentSlidesCateg[SubDir + "_test"] = float(NbrImagesCateg.get(SubDir + "_test")) / float(
+            NbrImagesCateg.get(SubDir))
+        PercentSlidesCateg[SubDir + "_valid"] = float(NbrImagesCateg.get(SubDir + "_valid")) / float(
+            NbrImagesCateg.get(SubDir))
 
-        print("Done. %d tiles linked to %s " % ( NbTiles, SubDir ) )
-        print("Train / Test / Validation tiles sets for %s = %f %%  / %f %% / %f %%" % (SubDir, PercentTilesCateg.get(SubDir + "_train"), PercentTilesCateg.get(SubDir + "_test"), PercentTilesCateg.get(SubDir + "_valid") ) )
-        print("Train / Test / Validation slides sets for %s = %f %%  / %f %% / %f %%" % (SubDir, PercentSlidesCateg.get(SubDir + "_train"), PercentSlidesCateg.get(SubDir + "_test"), PercentSlidesCateg.get(SubDir + "_valid") ) )
+        print("Done. %d tiles linked to %s " % (NbTiles, SubDir))
+        print("Train / Test / Validation tiles sets for %s = %f %%  / %f %% / %f %%" % (
+        SubDir, PercentTilesCateg.get(SubDir + "_train"), PercentTilesCateg.get(SubDir + "_test"),
+        PercentTilesCateg.get(SubDir + "_valid")))
+        print("Train / Test / Validation slides sets for %s = %f %%  / %f %% / %f %%" % (
+        SubDir, PercentSlidesCateg.get(SubDir + "_train"), PercentSlidesCateg.get(SubDir + "_test"),
+        PercentSlidesCateg.get(SubDir + "_valid")))
 
     for k, v in sorted(NbrTilesCateg.items()):
         print(k, v)
@@ -651,7 +686,6 @@ if __name__ == '__main__':
     for k, v in sorted(NbrImagesCateg.iteritems()):
         print(k, v)
     '''
-
 
     '''
     # Partition the dataset into train / test / valid
