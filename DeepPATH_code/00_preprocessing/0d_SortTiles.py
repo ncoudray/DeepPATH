@@ -355,7 +355,7 @@ if __name__ == '__main__':
         with open(JsonFile) as fid:
             jdata = json.loads(fid.read())
         try:
-            jdata = dict((jd['file_name'].rstrip('.svs'), jd) for jd in jdata)
+            jdata = dict((jd['file_name'].replace('.svs', ''), jd) for jd in jdata)
         except:
             jdata = dict((jd['Patient ID'], jd) for jd in jdata)
     elif args.SortingOption in [10, 19]:
@@ -467,7 +467,7 @@ if __name__ == '__main__':
 
         print("**************** starting %s" % cFolderName)
         imgRootName = os.path.basename(cFolderName)
-        imgRootName = imgRootName.rstrip('_files')
+        imgRootName = imgRootName.replace('_files', '')
 
         if args.SortingOption == 10:
             SubDir = os.path.basename(os.path.normpath(SourceFolder))
