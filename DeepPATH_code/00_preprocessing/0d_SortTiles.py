@@ -665,11 +665,15 @@ if __name__ == '__main__':
 
         print("Done. %d tiles linked to %s " % (NbTiles, SubDir))
         print("Train / Test / Validation tiles sets for %s = %f %%  / %f %% / %f %%" % (
-        SubDir, PercentTilesCateg.get(SubDir + "_train"), PercentTilesCateg.get(SubDir + "_test"),
-        PercentTilesCateg.get(SubDir + "_valid")))
+            SubDir, PercentTilesCateg.get(SubDir + "_train"), PercentTilesCateg.get(SubDir + "_test"),
+            PercentTilesCateg.get(SubDir + "_valid")))
         print("Train / Test / Validation slides sets for %s = %f %%  / %f %% / %f %%" % (
-        SubDir, PercentSlidesCateg.get(SubDir + "_train"), PercentSlidesCateg.get(SubDir + "_test"),
-        PercentSlidesCateg.get(SubDir + "_valid")))
+            SubDir, PercentSlidesCateg.get(SubDir + "_train"), PercentSlidesCateg.get(SubDir + "_test"),
+            PercentSlidesCateg.get(SubDir + "_valid")))
+
+    for k, v in sorted(Classes.items()):
+        print('list of images in class %s :' % k)
+        print(v)
 
     for k, v in sorted(NbrTilesCateg.items()):
         print(k, v)
