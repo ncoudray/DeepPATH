@@ -740,7 +740,7 @@ if __name__ == '__main__':
 			try:
 				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks).run()
 			except:
-				print("Failed to process file %s" % filename)
+				print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 
 		elif opts.xmlfile != '':
 			xmldir = os.path.join(opts.xmlfile, opts.basenameJPG + '.xml')
@@ -758,7 +758,7 @@ if __name__ == '__main__':
 							try:
 								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks).run()
 							except:
-								print("Failed to process file %s" % filename)
+								print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 				else:
 					# Background
 					oLabel = "non_selected_regions"
@@ -768,7 +768,7 @@ if __name__ == '__main__':
 					try:
 						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks).run()
 					except:
-						print("Failed to process file %s" % filename)
+						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 
 			else:
 				if (ImgExtension == ".jpg") | (ImgExtension == ".dcm") :
@@ -777,7 +777,7 @@ if __name__ == '__main__':
 					try:
 						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks).run()
 					except:
-						print("Failed to process file %s" % filename)
+						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 
 
 				else:
@@ -788,7 +788,7 @@ if __name__ == '__main__':
 			try:
 				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks).run()
 			except:
-				print("Failed to process file %s" % filename)
+				print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 	'''
 	dz_queue.join()
 	for i in range(opts.max_number_processes):
