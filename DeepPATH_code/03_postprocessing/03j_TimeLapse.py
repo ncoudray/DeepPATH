@@ -150,7 +150,7 @@ if __name__ == '__main__':
       '--classIndx',
       type=int,
       default='0',
-      help='class which probability should be ploted (0 if the probability of the expected class).'
+      help='class which probability should be plotted (0 if the probability of the expected class).'
   )
   args = parser.parse_args()
   main(args.tiles_stats, args.output_dir, args.xy, args.classIndx)
