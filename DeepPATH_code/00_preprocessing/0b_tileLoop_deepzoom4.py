@@ -479,7 +479,7 @@ class DeepZoomStaticTiler(object):
         if with_viewer:
             # Check extra dependency before doing a bunch of work
             import jinja2
-        print("line226 - %s " % (slidepath) )
+        #print("line226 - %s " % (slidepath) )
         self._slide = open_slide(slidepath)
         self._basename = basename
         self._basenameJPG = basenameJPG
@@ -708,6 +708,7 @@ if __name__ == '__main__':
 		p.start()
 		procs.append(p)
 	'''
+	files = sorted(files)
 	for imgNb in range(len(files)):
 		filename = files[imgNb]
 		#print(filename)
@@ -785,6 +786,9 @@ if __name__ == '__main__':
 					continue
 		else:
 			output = os.path.join(opts.basename, opts.basenameJPG)
+			if os.path.exists(output + "_files"):
+				print("Image %s already tiled" % opts.basenameJPG)
+				continue
 			try:
 				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks).run()
 			except:

@@ -524,7 +524,7 @@ def main():
 	confidence_up_avg = dict()
 	confidence_low_PcS = dict()
 	confidence_up_PcS = dict()
-	'''
+	
 	print("DEBUG:")
 	print(len(y_ref_PerTile))
 	print(y_ref_PerTile)
@@ -532,9 +532,9 @@ def main():
 	print(y_score_Avg_PerTile)
 	print(len(y_score_PcS_PerTile))
 	print(y_score_PcS_PerTile)
-	'''
+	
 	for i in range(n_classes):
-		#print(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i], y_score_PcS_PerTile[:, i])
+		print(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i], y_score_PcS_PerTile[:, i])
 		fpr[i], tpr[i], thresholds[i] = roc_curve(y_ref_PerTile[:, i], y_score_Avg_PerTile[:, i])
 		roc_auc[i] = auc(fpr[i], tpr[i])
 		fpr_PcSel[i], tpr_PcSel[i], _ = roc_curve(y_ref_PerTile[:, i], y_score_PcS_PerTile[:, i])

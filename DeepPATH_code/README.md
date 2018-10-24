@@ -820,7 +820,7 @@ An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 
 data_dir contains the images in TFRecord format, with 1 TFRecord file per slide.
 
 In the eval_dir, it will generate the following files:
-*  out_filename_Stats.txt: a text file with output information: <tilename> <True/False classification> [<output probilities>] <corrected output probability for the true label> labels: <true label number>
+*  out_filename_Stats.txt: a text file with output information: <tilename> <True/False classification> [<output probabilities (with 1st one being the inception's background class>] <corrected output probability for the true label - adjusted to ignore the background class> labels: <true label number>. The order of the labels depends on the names of the folders where the images were saved before the conversion to TFRecord (alphabetical order).
 *  node2048/: a subfolder where each file correspond to a tile such as the filenames are ```test_<svs name>_<tile ID x>_<tile ID y>.net2048``` and the first line of the file contains: ``` <True / False> \tab [<Background prob> <Prob class 1> <Prob class 2>]  <TP prob>```, and the next 2048 lines correspond to the output of the last-but-one layer
 
 
