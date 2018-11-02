@@ -1,5 +1,6 @@
 The Inception network re-trained from scratch following the protocol and code in 
-https://github.com/tensorflow/models/tree/master/inception.
+https://github.com/tensorflow/models/tree/master/research/inception. 
+The notes below are coming from that github page.
 
 
 # Re-training from scratch:
