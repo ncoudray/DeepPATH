@@ -404,8 +404,8 @@ class DeepZoomImageTiler(object):
                     isLabelOK = True
             else:
                 labeltag = labelID.getElementsByTagName('Attribute')[0]
-                #if (Attribute_Name==labeltag.attributes['Value'].value):
-                if (Attribute_Name==labeltag.attributes['Name'].value):
+                if (Attribute_Name==labeltag.attributes['Value'].value):
+                #if (Attribute_Name==labeltag.attributes['Name'].value):
                     isLabelOK = True
                 else:
                     isLabelOK = False
@@ -606,8 +606,8 @@ def xml_read_labels(xmldir):
         labeltag = xmlcontent.getElementsByTagName('Attribute')
         xml_labels = []
         for xmllabel in labeltag:
-            xml_labels.append(xmllabel.attributes['Name'].value)
-            #xml_labels.append(xmllabel.attributes['Value'].value)
+            #xml_labels.append(xmllabel.attributes['Name'].value)
+            xml_labels.append(xmllabel.attributes['Value'].value)
         if xml_labels==[]:
             xml_labels = ['']
         print(xml_labels)
