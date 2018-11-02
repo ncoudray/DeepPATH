@@ -388,7 +388,10 @@ if __name__ == '__main__':
             print(cFolderName)
 
             imgRootName = os.path.basename(cFolderName)
-            imgRootName = imgRootName.rstrip('.svs')
+            #imgRootName = imgRootName.rstrip('.svs')
+            if imgRootName.endswith('.svs'):
+                imgRootName = imgRootName[:-4]
+
             try:
                 image_meta = jdata[imgRootName]
             except KeyError:
@@ -569,7 +572,6 @@ if __name__ == '__main__':
         if len(AllTiles) == 0:
             continue
         for TilePath in AllTiles:
-            NbTiles += 1
             TileName = os.path.basename(TilePath)
             print(TileName)
             if len(outFilenameStats_dict) > 0:
@@ -581,7 +583,7 @@ if __name__ == '__main__':
                         continue
                 else:
                     continue
-
+            NbTiles += 1
             print("current percent in test, valid and ID")
             print(PercentSlidesCateg.get(SubDir + "_test"))
             print(PercentSlidesCateg.get(SubDir + "_valid"))
