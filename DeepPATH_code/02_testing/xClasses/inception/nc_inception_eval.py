@@ -247,7 +247,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                 output_tmp.close()
 
         # save last-but one layer
-          if True:
+          if False:
             print("net2048")
             print(net2048)
             net2048_path = os.path.join(FLAGS.eval_dir, 'net2048')
