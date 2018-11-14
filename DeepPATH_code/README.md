@@ -183,6 +183,20 @@ For Prince, the header of the script may be:
 module load numpy/intel/1.13.1
 ```
 
+For BigPurple, the header of the script should be:
+```shell
+#!/bin/bash
+#SBATCH --partition=cpu_medium
+#SBATCH --job-name=DiagTile
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_train1_%A_%a.out
+#SBATCH --error=rq_train1_%A_%a.err
+#SBATCH --mem=20GB
+
+module load python/gpu/3.6.5
+```
+
 *  `--SourceFolder`: output of ``` 00_preprocessing/0b_tileLoop_deepzoom.py```, that is the main folder where the svs images were tiled
 *  `--JsonFile`: file uploaded with the svs images and containing all the information regarding each slide (i.e, metadata.cart.2017-03-02T00_36_30.276824.json)
 *  `--Magnification`: magnification at which the tiles should be considerted (example: 20)
@@ -217,8 +231,8 @@ module load numpy/intel/1.13.1
 * `PatientID`: Number of digits used to code the patient ID (must be the first digits of the original image names)
 * `nSplit`: interger n: Split into train/test in n different ways.  If split is > 0, then the data will be split in train/test only in "# split" non-overlapping ways (each way will have 100/(#split) % of test images). `PercentTest` and `PercentValid` will be ignored. If nSplit=0, then there will be one output split done according to `PercentValid` and `PercentTest`
 * (optional) `outFilenameStats`: if an "out_filename_Stats.txt file" is given, check if the tile exists in it an only copy the tile if its value is "true".
-* (optional) `expLabel`: Index of the label to sort on within the outFilenameStats file (if only True/False is needed, leave this option empty) - tiles will only be included if there labels is the one predicted (dominant) in the  outFilenameStats file.
-* (optional) `threshold`: threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability)
+* (optional) `expLabel`: Index of the label to sort on within the outFilenameStats file (if only True/False is needed, leave this option empty) - tiles will only be included if there labels is the one predicted (dominant) in the  outFilenameStats file. (should be a string, separated by commas if more than 1 label desired)
+* (optional) `threshold`: threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability); (should be a string, separated by commas if more than 1 label desired)
 
 The output will be generated in the current directory where the program is launched (so start it from a new empty folder). Images will not be copied but a symbolic link will be created toward the <tiled images path>. The links will be renamed ```<type>_<slide_root_name>_<x>_<y>.jpeg``` with <type> being 'train_', 'test_' or 'valid_' followed by the svs name and the tile ID. 
 
@@ -231,7 +245,7 @@ Notes:
 
 Check code in subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at classifying 2 or 3 different classes.
 
-For the whole training and validation sets, the following code can be to convert JPEG to TFRecord:
+For the whole training set, the following code can be to convert JPEG to TFRecord:
 ```shell
 #!/bin/tcsh
 #$ -pe openmpi 4
@@ -265,28 +279,33 @@ module load bazel/gnu/0.4.3
 
 ```
 
+For BigPurple, the header can be:
+```shell
+#!/bin/bash
+#SBATCH --partition=cpu_medium
+#SBATCH --job-name=Tf107
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=40
+#SBATCH --output=rq_tf107_%A_%a.out
+#SBATCH --error=rq_tf107_%A_%a.err
+#SBATCH --mem=320GB
+
+module load python/gpu/3.6.5
+
+```
 
 The jpeg must not be directly inside 'jpeg_label_directory' but in subfolders with names corresponding to the labels (for example as `jpeg_label_directory/TCGA-LUAD/...jpeg` and `jpeg_label_directory/TCGA-LUSC/...jpeg`). The name of those tiles are : `<type>_name_x_y.jpeg` with type being "test", "train" or "valid", name the TCGA name of the slide, x and y the tile coordinates.
 
 
-The same was done for the test set with this slightly modified script:
+The same was done for the test and valid set with this slightly modified script:
 ```shell
-#!/bin/tcsh
-#$ -pe openmpi 1
-#$ -A TensorFlow
-#$ -N rqsub_TFR_test
-#$ -cwd
-#$ -S /bin/tcsh
-#$ -q gpu0.q 
+python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_test' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test'
 
-module load cuda/8.0
-module load python/3.5.3
-
-python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test'
+python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_valid' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='valid'
 
 ```
 
-The difference is that for the train and validation sets, the tiles are randomly assigned to the TFRecord files. For the test set, it will created 1 TFRecord file per Slide (solution prefered) - though if `one_FT_per_Tile` is `True`, there will be 1 TFRecord file per Tile created.
+The difference is that for the train set, the tiles are randomly assigned to the TFRecord files. For the test and validation set, it will created 1 TFRecord file per Slide (solution prefered) - though if `one_FT_per_Tile` is `True`, there will be 1 TFRecord file per Tile created.
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
@@ -337,7 +356,7 @@ expected processing time for this step: a few seconds to a few minutes. Check th
 
 # 1 - Training
 ## 1.1 - Training from scratch
-### 1.1.b Training (new version)
+### 1.1.a Build the model
 
 Code in the subfolders of 01_training/xClasses - can be used for any type of training.
 
@@ -399,16 +418,22 @@ module load bazel/0.15.2
 
 ```
 
+### 1.1.b Train the model
 
 
-Run it for all the training images:
+Once the model is built, run it for all the training images (same header for the submission script):
+
 ```shell
-bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --ClassNumber=3 --mode='0_softmax'
+bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --ClassNumber=3 --mode='0_softmax' 
 ```
+
 Notes:
 * The ```mode``` option must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
 * In bigpurple, you can use 4 or 8 GPUs (if available) to make it faster. You will need, in the header, to set ```gres=gpu:4``` or ```gres=gpu:8``` and in the parameters of imagenet_train, set ```num_gpus``` to 4 or 8.
- 
+* Other options available:
+- ```num_epochs_per_decay```: Epochs after which learning rate decays
+- ```NbrOfImages```: number of images in the training dataset (used for decay: NbrOfImages/batch_size gives the number of iterations for 1 epoch)
+- ```max_steps```: number of batches to run
 
 ## 1.2 - Transfer learning
 
@@ -474,7 +499,7 @@ Adjust the input parameters as required. For mode, this can also be '1_sigmoid'.
 
 
 ## 1.3 Validation
-### 1.3.a. Validation's Accuracy
+### 1.3.a. Validation's Accuracy (not used anymore - go 1.3.b)
 Thi script should be run on the validation test set *at the same time* as the training but on a different node (memory issues occur otherwise).
 
 

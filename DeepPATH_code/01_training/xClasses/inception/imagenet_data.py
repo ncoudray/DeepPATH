@@ -28,7 +28,8 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_integer('ClassNumber', 5,
                            """Number of classes.""")
 
-
+tf.app.flags.DEFINE_integer('NbrOfImages', 400000,
+                           """Number of images per epoch.""")
 
 class ImagenetData(Dataset):
   """ImageNet data set."""
@@ -47,7 +48,7 @@ class ImagenetData(Dataset):
     # Bounding box data consists of 615299 bounding boxes for 544546 images.
     if self.subset == 'train':
 #      return 1281167
-      return 688634
+      return FLAGS.NbrOfImages
     if self.subset == 'validation':
       #return 50000
       return 149835

@@ -284,10 +284,10 @@ if __name__ == '__main__':
                         help="Check if the tile exists in an out_filename_Stats.txt file and copy it only if it True, or is the expLabel option had the highest probability",
                         dest='outFilenameStats')
     parser.add_argument("--expLabel",
-                        help="Index of the expected label within the outFilenameStats file (if only True/False is needed, leave this option empty).",
+                        help="Index of the expected label within the outFilenameStats file (if only True/False is needed, leave this option empty). comma separated string expected",
                         dest='expLabel')
     parser.add_argument("--threshold",
-                        help="threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability).",
+                        help="threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability). comma separated string expected",
                         dest='threshold')
 
     ## Parse Arguments
@@ -329,9 +329,22 @@ if __name__ == '__main__':
                         print(ExpectedProb)
                         print("labels exp/true:%d, %d" % (int(args.expLabel), ExpectedProb.argmax()))
                         if args.threshold is None:
-                            outFilenameStats_dict[basename] = str(int(args.expLabel) == ExpectedProb.argmax())
+                            #outFilenameStats_dict[basename] = str(int(args.expLabel) == ExpectedProb.argmax())
+                            tmp = args.expLabel
+                            outFilenameStats_dict[basename] = str(str(ExpectedProb.argmax()) in tmp.split(','))
                         else:
-                            outFilenameStats_dict[basename] = str(ExpectedProb[args.expLabel] >= float(args.threshold))
+                            tmpT = args.threshold
+                            tmpL = args.expLabel
+                            tmpR = 'False'
+                            tmpT = tmpT.split(',')
+                            tmpL = tmpL.split(',')
+                            for nL in range(len(tmpL)):
+                                print(ExpectedProb[ int(tmpL[nL]) ], float(tmpT[nL]))
+                                if ExpectedProb[ int(tmpL[nL]) ] >= float(tmpT[nL]):
+                                    tmpR = 'True'
+                            outFilenameStats_dict[basename] = tmpR
+                            #outFilenameStats_dict[basename] = str(ExpectedProb[int(args.expLabel)] >= float(args.threshold))
+
                 print(outFilenameStats_dict)
         else:
             print("outFilenameStats NOT found")
