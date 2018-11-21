@@ -34,14 +34,14 @@ Advised folder organization (directories that may need to be created in plain, t
 | directories                                     	| Comments           |
 | ------------------------------------------------------|--------------------------|
 | `images`                                  		| 				|
-| `images/Raw/  `                           		| 				|
+| `images/Raw/`                           		| 				|
 | `images/Raw/*svs`                         		| original svs images 		|
-| `images/Raw/*json `                       		| json file from TCGA database 	|
-| `images/<##>pxTiles_<##>Bkg`				| output folder for tiles. Replace ## tile size and background threshold used to run the tiling process` | 
+| `images/Raw/*json`                       		| json file from TCGA database 	|
+| `images/<##>pxTiles_<##>Bkg`				| output folder for tiles. Replace ## tile size and background threshold used to run the tiling process | 
 | **`images/<##>pxTiles_<##>Bkg/<slide name>_files/20.0/<X index>_<Y index>.jpeg`**	| Each svs image will have a folder. Inside, there will be as many sub-folders as magnification available and the tiles jpeg images inside | 
 | **`images/<##>pxTiles_<##>Bkg/<slide name>_files/10.0/<X index>_<Y index>.jpeg`**	|	|
-| `images/01_Cancer_Tumor/				| output folder for sorted tiled	|
-| **`images/01_Cancer_Tumor/Solid_Normal_Tissue/<t/v/t set>_<slide name>_<X index>_<Y index>.jpg`**	| folders with class names will be generated. Symbolic links to the tiled jpeg will be created and renamed.` 	|
+| `images/01_Cancer_Tumor/`				| output folder for sorted tiled	|
+| **`images/01_Cancer_Tumor/Solid_Normal_Tissue/<t/v/t set>_<slide name>_<X index>_<Y index>.jpg`**	| folders with class names will be generated. Symbolic links to the tiled jpeg will be created and renamed. 	|
 | **`images/01_Cancer_Tumor/Tumor/<t/v/t set>_<slide name>_<X index>_<Y index>.jpg`**		|	|
 | `images/TFRecord_TrainValid/`				| create folder for TFRecord |
 | `images/TFRecord_Test/`					|				|
@@ -94,9 +94,9 @@ Example of qsub script to submit this script on Phoenix cluster (python 2.7 used
 
 python /path_to/0b_tileLoop_deepzoom4.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
 ```
-Note: /path_to/0b_tileLoop_deepzoom4.py is the latest code version updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). Unlike 0b_tileLoop_deepzoom3.py, the label is now expected to be registered in the 'Name' field of the xml's Attributes (and not in the 'Value' field).
+Note: `/path_to/0b_tileLoop_deepzoom4.py` is the latest code version updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). Unlike `0b_tileLoop_deepzoom3.py`, the label is now expected to be registered in the 'Name' field of the xml's Attributes (and not in the 'Value' field).
 
-Also 0b_tileLoop_deepzoom4.py shoudl now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and "-x" would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg".
+Also `0b_tileLoop_deepzoom4.py` shoudl now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and `-x` would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg".
 
 
 On Prince, you may want to try this header instead (and adjust option ```-j``` to ```28```):
@@ -200,7 +200,7 @@ module load python/gpu/3.6.5
 *  `--SourceFolder`: output of ``` 00_preprocessing/0b_tileLoop_deepzoom.py```, that is the main folder where the svs images were tiled
 *  `--JsonFile`: file uploaded with the svs images and containing all the information regarding each slide (i.e, metadata.cart.2017-03-02T00_36_30.276824.json)
 *  `--Magnification`: magnification at which the tiles should be considerted (example: 20)
-*  `--MagDiffAllowed`: If the requested magnification does not exist for a given slide, take the nearest existing magnification but only if it is at +/- the amount allowed here(example: 5)
+*  `--MagDiffAllowed`: If the requested magnification does not exist for a given slide, take the nearest existing magnification but only if it is at +/- the amount allowed here (example: 5)
 *  `--SortingOption` In the current directory, create one sub-folder per class, and fill each sub-folder with train_, test_ and valid_ test files. Images will be sorted into classes depending on the sorting option:
    - `1` sort according to cancer stage (i, ii, iii or iv) for each cancer separately (classification can be done separately for each cancer)
    - `2` sort according to cancer stage (i, ii, iii or iv) for each cancer  (classification can be done on everything at once)
@@ -209,8 +209,8 @@ module load python/gpu/3.6.5
    - `5` Sort according to type of cancer / Normal Tissue (2 variables per type)
    - `6` Sort according to cancer / Normal Tissue (2 variables)
    - `7` Random labels (3 labels. Can be used as a false positive control)
-   - `8` Sort according to mutational load (High/Low). Must specify --TMB option.
-   - `9` Sort according to BRAF mutations for metastatic only. Must specify --TMB option (BRAF mutant for each file).
+   - `8` Sort according to mutational load (High/Low). Must specify `--TMB` option.
+   - `9` Sort according to BRAF mutations for metastatic only. Must specify `--TMB` option (BRAF mutant for each file).
    - `10` Do not sort. Just create symbolic links to all images in a single label folder and assign images to train/test/valid sets.
    - `11` Sample location (Normal, metastatic, etc...)
    - `12` temp
@@ -229,7 +229,7 @@ module load python/gpu/3.6.5
 *  `--PercentTest`: percentage of images for validation (example: 15); 
 *  `--PercentValid` Percentage of images for testing (example: 15). All the other tiles will be used for training by default.
 * `PatientID`: Number of digits used to code the patient ID (must be the first digits of the original image names)
-* `nSplit`: interger n: Split into train/test in n different ways.  If split is > 0, then the data will be split in train/test only in "# split" non-overlapping ways (each way will have 100/(#split) % of test images). `PercentTest` and `PercentValid` will be ignored. If nSplit=0, then there will be one output split done according to `PercentValid` and `PercentTest`
+* `nSplit`: integer n: Split into train/test in n different ways.  If split is > 0, then the data will be split in train/test only in "# split" non-overlapping ways (each way will have 100/(#split) % of test images). `PercentTest` and `PercentValid` will be ignored. If nSplit=0, then there will be one output split done according to `PercentValid` and `PercentTest`
 * (optional) `outFilenameStats`: if an "out_filename_Stats.txt file" is given, check if the tile exists in it an only copy the tile if its value is "true".
 * (optional) `expLabel`: Index of the label to sort on within the outFilenameStats file (if only True/False is needed, leave this option empty) - tiles will only be included if there labels is the one predicted (dominant) in the  outFilenameStats file. (should be a string, separated by commas if more than 1 label desired)
 * (optional) `threshold`: threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability); (should be a string, separated by commas if more than 1 label desired)
@@ -243,7 +243,7 @@ Notes:
 * This code was adapted from [awslabs' deeplearning-benchmark code](https://github.com/awslabs/deeplearning-benchmark/blob/master/tensorflow/inception/inception/data/build_image_data.py)
 
 
-Check code in subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at classifying 2 or 3 different classes.
+Check code in subfolder `00_preprocessing/TFRecord_2or3_Classes/` if it aimed at classifying 2 or 3 different classes.
 
 For the whole training set, the following code can be to convert JPEG to TFRecord:
 ```shell
@@ -294,7 +294,7 @@ module load python/gpu/3.6.5
 
 ```
 
-The jpeg must not be directly inside 'jpeg_label_directory' but in subfolders with names corresponding to the labels (for example as `jpeg_label_directory/TCGA-LUAD/...jpeg` and `jpeg_label_directory/TCGA-LUSC/...jpeg`). The name of those tiles are : `<type>_name_x_y.jpeg` with type being "test", "train" or "valid", name the TCGA name of the slide, x and y the tile coordinates.
+The jpeg must not be directly inside 'jpeg_label_directory' but in subfolders with names corresponding to the labels (for example as `jpeg_label_directory/TCGA-LUAD/...jpeg` and `jpeg_label_directory/TCGA-LUSC/...jpeg`). The name of those tiles are: `<type>_name_x_y.jpeg` with type being "test", "train" or "valid", name the TCGA name of the slide, x and y the tile coordinates.
 
 
 The same was done for the test and valid set with this slightly modified script:
@@ -309,13 +309,13 @@ The difference is that for the train set, the tiles are randomly assigned to the
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
-expected processing time for this step: a few seconds to a few minutes. Once done, check inside the resulting directory that the images have been properly linked.
+Expected processing time for this step: a few seconds to a few minutes. Once done, check inside the resulting directory that the images have been properly linked.
 
 
 ## 0.3b Convert the JPEG tiles into TFRecord format for a multi-ouput prediction (example mutations)
 
 
-Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at multi-output classsification with 10 possibly concurent sclasses:
+Check `subfolder 00_preprocessing/TFRecord_2or3_Classes/` if it aimed at multi-output classsification with 10 possibly concurrent sclasses:
 
 For the training and validation sets:
 ```shell
@@ -330,7 +330,7 @@ For the training and validation sets:
 python build_image_data_multiClass.py --directory='jpeg_main_directory' --output_directory='outputfolder' --train_shards=1024 --validation_shards=128 --num_threads=4  --labels_names=label_names.txt --labels=labels_files.txt  --PatientID=12
 ```
 * ``` label_names.txt``` is a text file with the 10 possible labels, 1 per line
-* ```labels_files.txt``` is a text file listing the mutations present ifor each patient. 1 patient per line, first column is patient ID (TCGA-38-4632 for example), second is mutation (TP53 for example)
+* ```labels_files.txt``` is a text file listing the mutations present for each patient. 1 patient per line, first column is patient ID (TCGA-38-4632 for example), second is mutation (TP53 for example)
 * ```--PatientID``` The file names are expected to start with the patient ID. This value represent the number of digits used for the PatientID
 * ```jpeg_main_directory```: in this case the directory must be the unique subfolder where the jpg images are. They must all be within one single folder (not one folder per class). 
 
@@ -351,14 +351,14 @@ python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_
 ```
 
 
-expected processing time for this step: a few seconds to a few minutes. Check the output log files and the resulting directory (check that the sizes of the created TFRecord files make sense)
+Expected processing time for this step: a few seconds to a few minutes. Check the output log files and the resulting directory (check that the sizes of the created TFRecord files make sense)
 
 
 # 1 - Training
 ## 1.1 - Training from scratch
 ### 1.1.a Build the model
 
-Code in the subfolders of 01_training/xClasses - can be used for any type of training.
+Code in the subfolders of `01_training/xClasses` - can be used for any type of training.
 
 Build the model from the proper directory, that means from ```cd 01_training/xClasses```:
 
@@ -466,14 +466,14 @@ download the checkpoints of the network trained by google on the
 curl -O http://download.tensorflow.org/models/image/imagenet/inception-v3-2016-03-01.tar.gz
 ```
 
-This will create a directory called inception-v3 which contains the following files:
+This will create a directory called `inception-v3` which contains the following files:
 ```shell
 > ls inception-v3
 README.txt
 checkpoint
 model.ckpt-157585
 ```
-```
+
 
 Run it for all the training images:
 ```shell
@@ -503,7 +503,7 @@ Adjust the input parameters as required. For mode, this can also be '1_sigmoid'.
 Thi script should be run on the validation test set *at the same time* as the training but on a different node (memory issues occur otherwise).
 
 
-Code is in 02_testing/xClasses/. 
+Code is in `02_testing/xClasses/`. 
 
 
 run the job:
@@ -795,15 +795,15 @@ This is inception v3 developped by google.  Full documentation on (re)-training 
 
 
 Main modifications when adjusting the code:
-* in slim/inception_model.py: default ```num_classes``` in ```def inception_v3```
-* in inception_train.py: default ```max_steps``` in  ```tf.app.flags.DEFINE_integer``` definition
-* in imagenet_data.py: 
+* in `slim/inception_model.py`: default ```num_classes``` in ```def inception_v3```
+* in `inception_train.py`: default ```max_steps``` in  ```tf.app.flags.DEFINE_integer``` definition
+* in `imagenet_data.py`: 
     * default number of classes in  ```def num_classes(self):```
     * size of the train and validation subsets in ```def num_examples_per_epoch(self)```
 * Other changes for multi-output classification: 
-    * - in slim/inception_model.py:
+    * - in `slim/inception_model.py`:
         * line 329 changed from ```end_points['predictions'] = tf.nn.softmax(logits, name='predictions')``` to ```end_points['predictions'] = tf.nn.sigmoid(logits, name='predictions')```
-    * in slim/losses.py:
+    * in `slim/losses.py`:
         * in ```def cross_entropy_loss``` (line 142 and next ones): ```tf.contrib.nn.deprecated_flipped_softmax_cross_entropy_with_logits``` replaced by  ```tf.contrib.nn.deprecated_flipped_sigmoid_cross_entropy_with_logits```
     * in ```image_processing.py``` (line 378):
         * ```'image/class/label': tf.FixedLenFeature([1], dtype=tf.int64, default_value=-1)``` changed to ```'image/class/label': tf.FixedLenFeature([FLAGS.nbr_of_classes+1], dtype=tf.int64, default_value=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])```
@@ -846,7 +846,7 @@ data_dir contains the images in TFRecord format, with 1 TFRecord file per slide.
 
 In the eval_dir, it will generate the following files:
 *  out_filename_Stats.txt: a text file with output information: <tilename> <True/False classification> [<output probabilities (with 1st one being the inception's background class>] <corrected output probability for the true label - adjusted to ignore the background class> labels: <true label number>. The order of the labels depends on the names of the folders where the images were saved before the conversion to TFRecord (alphabetical order).
-*  node2048/: a subfolder where each file correspond to a tile such as the filenames are ```test_<svs name>_<tile ID x>_<tile ID y>.net2048``` and the first line of the file contains: ``` <True / False> \tab [<Background prob> <Prob class 1> <Prob class 2>]  <TP prob>```, and the next 2048 lines correspond to the output of the last-but-one layer
+*  `node2048/`: a subfolder where each file correspond to a tile such as the filenames are ```test_<svs name>_<tile ID x>_<tile ID y>.net2048``` and the first line of the file contains: ``` <True / False> \tab [<Background prob> <Prob class 1> <Prob class 2>]  <TP prob>```, and the next 2048 lines correspond to the output of the last-but-one layer
 
 
 expected processing time for this step: on a gpu, about 1000 tiles per minute.
@@ -855,7 +855,7 @@ expected processing time for this step: on a gpu, about 1000 tiles per minute.
 # 3 - Analyze the outcome
 
 ## Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
-code in 03_postprocessing/0f_HeatMap_nClasses.py:
+code in `03_postprocessing/0f_HeatMap_nClasses.py`:
 
 on the Phoenix cluster, the header for the following commands could be:
 ```shell
