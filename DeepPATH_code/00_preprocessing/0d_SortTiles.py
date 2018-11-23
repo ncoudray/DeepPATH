@@ -327,7 +327,7 @@ if __name__ == '__main__':
                         ExpectedProb = np.array(ExpectedProb)
                         ExpectedProb = np.asfarray(ExpectedProb, float)
                         print(ExpectedProb)
-                        print("labels exp/true:%d, %d" % (int(args.expLabel), ExpectedProb.argmax()))
+                        print("labels exp/true:%s, %d" % (args.expLabel, ExpectedProb.argmax()))
                         if args.threshold is None:
                             #outFilenameStats_dict[basename] = str(int(args.expLabel) == ExpectedProb.argmax())
                             tmp = args.expLabel
@@ -586,7 +586,7 @@ if __name__ == '__main__':
             continue
         for TilePath in AllTiles:
             TileName = os.path.basename(TilePath)
-            print(TileName)
+            print("TileName is %s" % TileName)
             if len(outFilenameStats_dict) > 0:
                 # process only if this tile was classified  as "True" by the classifier
                 ThisKey = imgRootName + "_" + TileName.split(".")[0]
@@ -664,6 +664,8 @@ if __name__ == '__main__':
         elif ttv == "valid":
             NbrTilesCateg[SubDir + "_valid"] = NbrTilesCateg.get(SubDir + "_valid") + NbTiles
             NbrImagesCateg[SubDir + "_valid"] = NbrImagesCateg[SubDir + "_valid"] + 1
+        else:
+            continue
 
         PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(
             NbrTilesCateg.get(SubDir))
