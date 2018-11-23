@@ -585,7 +585,6 @@ if __name__ == '__main__':
         if len(AllTiles) == 0:
             continue
         for TilePath in AllTiles:
-            ttv = 'None'
             TileName = os.path.basename(TilePath)
             print("TileName is %s" % TileName)
             if len(outFilenameStats_dict) > 0:
