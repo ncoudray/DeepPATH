@@ -326,8 +326,8 @@ if __name__ == '__main__':
                         ExpectedProb = ExpectedProb.split()
                         ExpectedProb = np.array(ExpectedProb)
                         ExpectedProb = np.asfarray(ExpectedProb, float)
-                        print(ExpectedProb)
-                        print("labels exp/true:%s, %d" % (args.expLabel, ExpectedProb.argmax()))
+                        # print(ExpectedProb)
+                        # print("labels exp/true:%s, %d" % (args.expLabel, ExpectedProb.argmax()))
                         if args.threshold is None:
                             #outFilenameStats_dict[basename] = str(int(args.expLabel) == ExpectedProb.argmax())
                             tmp = args.expLabel
@@ -339,13 +339,13 @@ if __name__ == '__main__':
                             tmpT = tmpT.split(',')
                             tmpL = tmpL.split(',')
                             for nL in range(len(tmpL)):
-                                print(ExpectedProb[ int(tmpL[nL]) ], float(tmpT[nL]))
+                                # print(ExpectedProb[ int(tmpL[nL]) ], float(tmpT[nL]))
                                 if ExpectedProb[ int(tmpL[nL]) ] >= float(tmpT[nL]):
                                     tmpR = 'True'
                             outFilenameStats_dict[basename] = tmpR
                             #outFilenameStats_dict[basename] = str(ExpectedProb[int(args.expLabel)] >= float(args.threshold))
 
-                print(outFilenameStats_dict)
+                # print(outFilenameStats_dict)
         else:
             print("outFilenameStats NOT found")
             exit()
@@ -381,8 +381,8 @@ if __name__ == '__main__':
                 tmp_PID = line.split()[0]
                 jdata[tmp_PID[:args.PatientID]] = line.split()[1]
 
-    print("jdata:")
-    print(jdata)
+    # print("jdata:")
+    # print(jdata)
     Magnification = args.Magnification
     MagDiffAllowed = args.MagDiffAllowed
 
@@ -525,7 +525,7 @@ if __name__ == '__main__':
                 continue
             if not os.path.exists(SubDir):
                 os.makedirs(SubDir)
-        print("SubDir is still %s" % SubDir)
+        # print("SubDir is still %s" % SubDir)
         try:
             Classes[SubDir].append(imgRootName)
         except KeyError:
@@ -553,11 +553,11 @@ if __name__ == '__main__':
         AllTiles = glob(SourceImageDir)
 
         if SubDir in NbrTilesCateg.keys():
-            print("Already in dictionary:")
-            print(SubDir)
+            print("%s Already in dictionary" % SubDir)
+            # print(SubDir)
         else:
-            print("Not yet in dictionary:")
-            print(SubDir)
+            # print("Not yet in dictionary:")
+            # print(SubDir)
             NbrTilesCateg[SubDir] = 0
             NbrTilesCateg[SubDir + "_train"] = 0
             NbrTilesCateg[SubDir + "_test"] = 0
@@ -582,16 +582,17 @@ if __name__ == '__main__':
                 ttv_split[SubDir][0] = "test"
 
         NbTiles = 0
+        ttv = 'None'
         if len(AllTiles) == 0:
             continue
         for TilePath in AllTiles:
-            ttv = 'None'
+            # ttv = 'None'          
             TileName = os.path.basename(TilePath)
             print("TileName is %s" % TileName)
             if len(outFilenameStats_dict) > 0:
                 # process only if this tile was classified  as "True" by the classifier
                 ThisKey = imgRootName + "_" + TileName.split(".")[0]
-                print(ThisKey)
+                # print(ThisKey)
                 if ThisKey in outFilenameStats_dict.keys():
                     if 'False' in outFilenameStats_dict[ThisKey]:
                         continue
@@ -608,13 +609,13 @@ if __name__ == '__main__':
             # rename the images with the root name, and put them in train/test/valid
             if (PercentSlidesCateg.get(SubDir + "_test") <= PercentTest) and (PercentTest > 0):
                 ttv = "test"
-            elif PercentSlidesCateg.get(SubDir + "_valid") < PercentValid:
+            elif (PercentSlidesCateg.get(SubDir + "_valid") <= PercentValid) and (PercentValid > 0):
                 ttv = "valid"
             else:
                 ttv = "train"
             # If that patient had an another slide/scan already sorted, assign the same set to this set of images
-            print(ttv)
-            print(imgRootName[:args.PatientID])
+            # print(ttv)
+            # print(imgRootName[:args.PatientID])
 
             if int(args.nSplit) > 0:
                 for nSet in range(int(args.nSplit)):
@@ -632,8 +633,8 @@ if __name__ == '__main__':
 
                 ttv_split[SubDir][SetIndx] = "test"
                 nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
-                print(ttv_split[SubDir])
-                print(nbr_valid[SubDir])
+                # print(ttv_split[SubDir])
+                # print(nbr_valid[SubDir])
 
                 for nSet in range(int(args.nSplit)):
                     SetDir = "set_" + str(nSet)
@@ -648,14 +649,13 @@ if __name__ == '__main__':
                         ttv = Patient_set[Patient]
                     else:
                         Patient_set[Patient] = ttv
-                print(ttv)
+                # print(ttv)
 
                 NewImageDir = os.path.join(SubDir, "_".join((ttv, imgRootName, TileName)))  # all train initially
-                os.symlink(TilePath, NewImageDir)
+                if not os.path.lexists(NewImageDir):
+                    os.symlink(TilePath, NewImageDir)
         # update stats 
 
-        NbrTilesCateg[SubDir] = NbrTilesCateg.get(SubDir) + NbTiles
-        NbrImagesCateg[SubDir] = NbrImagesCateg.get(SubDir) + 1
         if ttv == "train":
             NbrTilesCateg[SubDir + "_train"] = NbrTilesCateg.get(SubDir + "_train") + NbTiles
             NbrImagesCateg[SubDir + "_train"] = NbrImagesCateg[SubDir + "_train"] + 1
@@ -667,6 +667,8 @@ if __name__ == '__main__':
             NbrImagesCateg[SubDir + "_valid"] = NbrImagesCateg[SubDir + "_valid"] + 1
         else:
             continue
+        NbrTilesCateg[SubDir] = NbrTilesCateg.get(SubDir) + NbTiles
+        NbrImagesCateg[SubDir] = NbrImagesCateg.get(SubDir) + 1
 
         PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(
             NbrTilesCateg.get(SubDir))
