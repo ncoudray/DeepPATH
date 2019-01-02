@@ -656,6 +656,8 @@ if __name__ == '__main__':
 	parser.add_option('-S', '--SaveMasks', metavar='NAME', dest='SaveMasks',
 		default=False,
 		help='set to yes if you want to save ALL masks for ALL tiles (will be saved in same directory with <mask> suffix)')
+	parser.add_option('-t', '--tmp_dcm', metavar='NAME', dest='tmp_dcm',
+		help='base name of output folder to save intermediate dcm images converted to jpg (we assume the patient ID is the folder name in which the dcm images are originally saved)')
 
 
 
@@ -722,22 +724,31 @@ if __name__ == '__main__':
 
 		if ("dcm" in ImgExtension) :
 			print("convert %s dcm to jpg" % filename)
+			if opts.tmp_dcm is None:
+				parser.error('Missing output folder for dcm>jpg intermediate files')
+			elif not os.path.isdir(opts.tmp_dcm):
+				parser.error('Missing output folder for dcm>jpg intermediate files')
+
 			if filename[-3:] == 'jpg':
                             continue
 			ImageFile=dicom.read_file(filename)
 			im1 = ImageFile.pixel_array
 			maxVal = float(im1.max())
+			minVal = float(im1.min())
 			height = im1.shape[0]
 			width = im1.shape[1]
 			image = np.zeros((height,width,3), 'uint8')
-			image[...,0] = (im1[:,:].astype(float)  / maxVal * 255.0).astype(int)
-			image[...,1] = (im1[:,:].astype(float)  / maxVal * 255.0).astype(int)
-			image[...,2] = (im1[:,:].astype(float)  / maxVal * 255.0).astype(int)
-			filename = os.path.join(os.path.dirname(slidepath), opts.basenameJPG + ".jpg")
+			image[...,0] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+			image[...,1] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+			image[...,2] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+			dcm_ID = os.path.basename(os.path.dirname(filename))
+			opts.basenameJPG = dcm_ID + "_" + opts.basenameJPG
+			filename = os.path.join(opts.tmp_dcm, opts.basenameJPG + ".jpg")
 			print(filename)
 			imsave(filename,image)
 
 			output = os.path.join(opts.basename, opts.basenameJPG)
+
 			try:
 				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks).run()
 			except:

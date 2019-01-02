@@ -96,7 +96,7 @@ python /path_to/0b_tileLoop_deepzoom4.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_
 ```
 Note: /path_to/0b_tileLoop_deepzoom4.py is the latest code version updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). Unlike 0b_tileLoop_deepzoom3.py, the label is now expected to be registered in the 'Name' field of the xml's Attributes (and not in the 'Value' field).
 
-Also 0b_tileLoop_deepzoom4.py shoudl now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and "-x" would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg".
+Also 0b_tileLoop_deepzoom4.py shoudl now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and "-x" would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg". An additional "-t" parameter is required to save the temporary converted and renamed files (from dcm to jpg, assuming the folder name is of each dcm set represents the patient ID)
 
 
 On Prince, you may want to try this header instead (and adjust option ```-j``` to ```28```):
