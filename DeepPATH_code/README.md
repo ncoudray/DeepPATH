@@ -331,7 +331,7 @@ For the training and validation sets:
 python build_image_data_multiClass.py --directory='jpeg_main_directory' --output_directory='outputfolder' --train_shards=1024 --validation_shards=128 --num_threads=4  --labels_names=label_names.txt --labels=labels_files.txt  --PatientID=12
 ```
 * ``` label_names.txt``` is a text file with the 10 possible labels, 1 per line
-* ```labels_files.txt``` is a text file listing the mutations present ifor each patient. 1 patient per line, first column is patient ID (TCGA-38-4632 for example), second is mutation (TP53 for example)
+* ```labels_files.txt``` is a text file listing the mutations present for each patient. 1 patient per line, first column is patient ID (TCGA-38-4632 for example), second is mutation (TP53 for example). If a patient has several mutations, there would be as many lines as mutations for that patient. If a patient has no mutation, you can specify WT in the second column (and make sure WT in not present in the label_names file)
 * ```--PatientID``` The file names are expected to start with the patient ID. This value represent the number of digits used for the PatientID
 * ```jpeg_main_directory```: in this case the directory must be the unique subfolder where the jpg images are. They must all be within one single folder (not one folder per class). 
 
@@ -353,6 +353,11 @@ python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_
 
 
 expected processing time for this step: a few seconds to a few minutes. Check the output log files and the resulting directory (check that the sizes of the created TFRecord files make sense)
+
+#### Note on mutation file:
+There are different ways of dealing with mutations. The sigmoid approach was used to identify several mutations than can occur at the same time. In this particular case, the label is associated to each tile during the conversion fro jpeg to TFRecord (otherwise, when using the softmax approach, jpg are classified in different folders and the folder name is used as the label). Thaty's why the label files need to be submitted in the parameters above. 
+
+When working with the TCGA dataset from the GDC Data portal, the mutations can be found by looking for `Data Type == "Masked Somatic Mutations"`. The `Data Category` is "Simple Nucleotide Variation". Filtering based on that, 4 files per cancer type/project will be found (one for each mutation caller). We used mutect for our paper. A gzipped file can be downloaded and inside that there is a (gzipped also) maf file (a maf file is just a tab-separated file with specific columns).The fist column should be the Hugo Symbol and there should also be a column Tumor_Sample_Barcode with the patient/sample id. Silent mutations can also be filtered out if needed.
 
 
 # 1 - Training
