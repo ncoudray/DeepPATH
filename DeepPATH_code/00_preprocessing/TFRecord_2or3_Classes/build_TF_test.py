@@ -43,6 +43,9 @@ tf.app.flags.DEFINE_integer('validation_shards', 128,
 tf.app.flags.DEFINE_integer('num_threads', 8,
                             'Number of threads to preprocess the images.')
 
+tf.app.flags.DEFINE_integer('PatientID', -1,
+                            'Aggregate TFRecord using first digit of basenane as set by PatientID.')
+
 tf.app.flags.DEFINE_boolean('one_FT_per_Tile', False,
                             '1 TFrecord per tile if True, otherwise, 1 per slide.')
 
@@ -180,7 +183,7 @@ def _process_image(filename, coder):
 
   return image_data, height, width
 
-def _get_slide_name(filename):
+def _get_slide_name(filename, name):
   """
   Extract root name of the file, remove "test_" and "indexes
 
@@ -188,7 +191,11 @@ def _get_slide_name(filename):
   if FLAGS.one_FT_per_Tile == True:
     return  os.path.basename(filename)
   else:
-    return  '_'.join(os.path.basename(filename).split('_')[0:-2]) 
+    if FLAGS.PatientID > 0:
+      # print("basename is %s" % (os.path.basename(filename)[:FLAGS.PatientID+len(name)+1]) )
+      return  os.path.basename(filename)[:FLAGS.PatientID+len(name)+1]
+    else:
+      return  '_'.join(os.path.basename(filename).split('_')[0:-2]) 
 
 
 
@@ -217,7 +224,7 @@ def _process_image_files_batch_test(coder, thread_index, ranges, name, filenames
     text = texts[i]
     image_buffer, height, width = _process_image(filename, coder)
 
-    next_file_root = _get_slide_name(filename)
+    next_file_root = _get_slide_name(filename, name)
     if rootname == next_file_root:
       # New tile of same slide
       tile_counter += 1

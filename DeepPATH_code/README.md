@@ -310,6 +310,8 @@ The difference is that for the train set, the tiles are randomly assigned to the
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
+Also, by default, it creates 1 TFRecord for all files having the same basename (ignore the last two fields assumed to be the X,Y coordinates of the tile). If you want some other kind of aggregates (useful for dcm), you will use the  `PatientID` arguments to specify the number of characters in the filename that should be used as the basename. 
+
 expected processing time for this step: a few seconds to a few minutes. Once done, check inside the resulting directory that the images have been properly linked.
 
 
