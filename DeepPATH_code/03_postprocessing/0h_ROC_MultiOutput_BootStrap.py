@@ -103,9 +103,17 @@ def main():
 		# list sub-directories
 		data_dir = FLAGS.jpgClass_path
 		unique_labels = []
-		for item in os.listdir(data_dir):
-			if os.path.isdir(os.path.join(data_dir, item)):
- 				unique_labels.append(os.path.join(item))
+		# for item in os.listdir(data_dir):
+		# 	if os.path.isdir(os.path.join(data_dir, item)):
+ 		# 		unique_labels.append(os.path.join(item))
+		unique_labels = []
+		with open(FLAGS.labels_names, "r") as f:
+			for line in f:
+				line = line.replace('\r','\n')
+				line = line.split('\n')
+				for eachline in line:
+					if len(eachline)>0:
+						unique_labels.append(eachline)
 		unique_labels.sort()		
 		for text in unique_labels:
 			typeIm = 'train_*.jpeg'
@@ -312,11 +320,11 @@ def main():
 					XY[filename] = True
 
 				if FLAGS.PatientID > 0:
-					#thisID = os.path.basename(basename)[5:17]
-					thisID = os.path.basename(basename)[5:5+FLAGS.PatientID]
-					if thisID in jpg_dict:
-						print("ID %s in jpg_dict" % thisID)
-						continue
+					basename = basename[:len(basename.split('_')[0]) + FLAGS.PatientID)]
+				#	thisID = os.path.basename(basename)[5:5+FLAGS.PatientID]
+				#	if thisID in jpg_dict:
+				#		print("ID %s in jpg_dict" % thisID)
+				#		continue
 				#print("basename")
 				#print(basename)
 				#print("filename")
