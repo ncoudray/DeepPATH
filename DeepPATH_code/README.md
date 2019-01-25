@@ -144,6 +144,7 @@ Optional parameters when regions have been selected with Aperio:
 * `-R` minimum percentage of tile covered by ROI. If below the percentage, tile is not kept.
 * `-l` To be used with xml file - Only do the tiling for the labels which name contains the characters in this option (string)
 * `-S` Set it to true if you want to save ALL masks for ALL tiles (will be saved in same directory with <mask> suffix!!)
+* `-M` set to -1 by default to tile the image at all magnifications. Set it to the value of the desired magnification to tile only at that magnification and save space
 
 Notes:
 * This code can also be used to tile input jpg images: the full path to input images will end in <*jpg">, and you need to set the option `-x` to the `'.jpg'` string value and `-R` to the magnification at which the images were acquired (`20.0` for example)
