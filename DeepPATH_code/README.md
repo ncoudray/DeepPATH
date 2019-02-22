@@ -107,7 +107,7 @@ On Prince, you may want to try this header instead (and adjust option ```-j``` t
 #SBATCH --job-name=rq_tile
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=28
-#SBATCH --mem=125GB
+#SBATCH --mem=50GB
 #SBATCH --time=47:00:00
 #SBATCH --output=rq_00tile_%A_%a.out
 #SBATCH --error=rq_00tile_%A_%a.err
@@ -121,11 +121,11 @@ On bigpurple:
 #!/bin/bash
 #SBATCH --partition=cpu_medium
 #SBATCH --job-name=EmTile
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=40
+#SBATCH --ntasks=40
+#SBATCH --cpus-per-task=1
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
-#SBATCH --mem=128GB
+#SBATCH --mem=50GB
 
 module load python/gpu/3.6.5
 ```
@@ -188,9 +188,9 @@ module load numpy/intel/1.13.1
 For BigPurple, the header of the script should be:
 ```shell
 #!/bin/bash
-#SBATCH --partition=cpu_medium
+#SBATCH --partition=cpu_short
 #SBATCH --job-name=DiagTile
-#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
@@ -286,11 +286,11 @@ For BigPurple, the header can be:
 #!/bin/bash
 #SBATCH --partition=cpu_medium
 #SBATCH --job-name=Tf107
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=40
+#SBATCH --ntasks=12
+#SBATCH --cpus-per-task=1
 #SBATCH --output=rq_tf107_%A_%a.out
 #SBATCH --error=rq_tf107_%A_%a.err
-#SBATCH --mem=320GB
+#SBATCH --mem=5GB
 
 module load python/gpu/3.6.5
 
@@ -414,13 +414,11 @@ On the bigpurple cluster (Note: you may have to adjust the partition and mem lin
 #!/bin/bash
 #SBATCH --partition=gpu4_long
 #SBATCH --job-name=Em_tr01
-#SBATCH --nodes=1
 #SBATCH --ntasks=40
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
-#SBATCH --mem=200G
+#SBATCH --mem=100G
 #SBATCH --gres=gpu:4
-## #SBATCH --nodelist=gn-0003
 
 module load python/gpu/3.6.5
 module load bazel/0.15.2
@@ -556,7 +554,6 @@ On bigpurple, the head can be (adjust partition and mem as needed):
 #!/bin/bash
 #SBATCH --partition=gpu4_long
 #SBATCH --job-name=Em0valid
-#SBATCH --nodes=1
 #SBATCH --ntasks=40
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
@@ -623,13 +620,11 @@ The following script shows an example on how to run it for all of the checkpoint
 #!/bin/bash
 #SBATCH --partition=gpu4_long
 #SBATCH --job-name=Em0valid
-#SBATCH --nodes=1
 #SBATCH --ntasks=40
 #SBATCH --output=rq_train1_%A_%a.out
 #SBATCH --error=rq_train1_%A_%a.err
 #SBATCH --mem=100G
 #SBATCH --gres=gpu:4
-## #SBATCH --nodelist=gn-0005
 ### nodelist is optional - only if you want a specific node
 
 export CHECKPOINT_PATH='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/training/01_All/results_00'
@@ -648,6 +643,7 @@ export CUR_CHECKPOINT=$OUTPUT_DIR/tmp_checkpoints
 # check if next checkpoint available
 declare -i count=5000 
 declare -i step=5000
+declare -i NbClasses=2
 
 while true; do
 	echo $count
@@ -665,7 +661,7 @@ while true; do
 			echo 'all_model_checkpoint_paths: "'$CUR_CHECKPOINT'/model.ckpt-'$count'"' >> $CUR_CHECKPOINT/checkpoint
 
 			# Test
-			python /gpfs/scratch/coudrn01/NN_test/code/DeepPATH/DeepPATH_code/02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT --eval_dir=$OUTPUT_DIR --data_dir=$DATA_DIR  --batch_size 30  --run_once --ImageSet_basename='valid_' --ClassNumber 2 --mode='0_softmax'  --TVmode='test'
+			python /gpfs/scratch/coudrn01/NN_test/code/DeepPATH/DeepPATH_code/02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT --eval_dir=$OUTPUT_DIR --data_dir=$DATA_DIR  --batch_size 80  --run_once --ImageSet_basename='valid_' --ClassNumber $NbClasses --mode='0_softmax'  --TVmode='test'
 			# wait
 
 			mv $OUTPUT_DIR/out* $TEST_OUTPUT/.
@@ -698,9 +694,9 @@ ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_macro*  | sed -e 's/k\/out2_roc_dat
 # summarize all AUC per slide (average probability) for micro average: 
 ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_micro*  | sed -e 's/k\/out2_roc_data_AvPb_micro_/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_micro.txt
 
-ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c2*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_2.txt
+ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c2*  | sed -e 's/k\/out2_roc_data_AvPb_c2/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_2.txt
 
-ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c3*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_3.txt
+ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c3*  | sed -e 's/k\/out2_roc_data_AvPb_c3/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_3.txt
 
 ```
 
