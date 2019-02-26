@@ -407,13 +407,15 @@ class DeepZoomImageTiler(object):
             if (Attribute_Name==[]) | (Attribute_Name==''):
                     isLabelOK = True
             else:
-                labeltag = labelID.getElementsByTagName('Attribute')[0]
-                if (Attribute_Name==labeltag.attributes['Value'].value):
-                #if (Attribute_Name==labeltag.attributes['Name'].value):
-                    isLabelOK = True
-                else:
-                    isLabelOK = False
-
+                try:
+                    labeltag = labelID.getElementsByTagName('Attribute')[0]
+                    if (Attribute_Name==labeltag.attributes['Value'].value):
+                    #if (Attribute_Name==labeltag.attributes['Name'].value):
+                        isLabelOK = True
+                    else:
+                        isLabelOK = False
+                except:
+                	isLabelOK = False
             if Attribute_Name == "non_selected_regions":
                 isLabelOK = True
 
