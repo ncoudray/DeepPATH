@@ -125,6 +125,7 @@ def get_inference_from_file(test_filename, cTileRootName, stats_dict):
 					probDiff.append(class_all[nC] - thresholds[nC])
 				print(probDiff)
 				oClass = probDiff.index(max(probDiff)) + 1
+				current_score = class_all[oClass - 1]
 				#if class_1 > thresholds[0]:
 				#	oClass = 1
 				#elif class_2 > thresholds[1]:

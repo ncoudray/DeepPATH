@@ -320,7 +320,7 @@ def main():
 					XY[filename] = True
 
 				if FLAGS.PatientID > 0:
-					basename = basename[:(len(basename.split('_')[0]) + FLAGS.PatientID)]
+					basename = basename[:(len(basename.split('_')[0]) + FLAGS.PatientID)+1]
 				#	thisID = os.path.basename(basename)[5:5+FLAGS.PatientID]
 				#	if thisID in jpg_dict:
 				#		print("ID %s in jpg_dict" % thisID)
