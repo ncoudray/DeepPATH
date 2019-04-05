@@ -389,17 +389,22 @@ def main():
 			rTile = int(rTile / FLAGS.resample_factor)
 			cTile = int(cTile / FLAGS.resample_factor)
 			#print(rTile, cTile)
-			im2s = scipy.misc.imresize(im2, (cTile, rTile))
-			rTile = im2s.shape[1]
-			cTile = im2s.shape[0]
+			if rTile<=0:
+				im2s = im2
+			elif cTile<=0:
+				im2s = im2
+			else:
+				im2s = scipy.misc.imresize(im2, (cTile, rTile))
+				rTile = im2s.shape[1]
+				cTile = im2s.shape[0]
 
-			#ixTile = int(ixTile / FLAGS.resample_factor)
-			#iyTile = int(iyTile / FLAGS.resample_factor)
-			xTile = int(xTile / FLAGS.resample_factor)
-			yTile = int(yTile / FLAGS.resample_factor)
-			req_xLength = xTile + rTile
-			req_yLength = yTile + cTile
-			print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
+				#ixTile = int(ixTile / FLAGS.resample_factor)
+				#iyTile = int(iyTile / FLAGS.resample_factor)
+				xTile = int(xTile / FLAGS.resample_factor)
+				yTile = int(yTile / FLAGS.resample_factor)
+				req_xLength = xTile + rTile
+				req_yLength = yTile + cTile
+				print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
 		else:
 			im2s = im2
 		#print(ixTile, iyTile, rTile, cTile, req_xLength, req_yLength, xTile, yTile)

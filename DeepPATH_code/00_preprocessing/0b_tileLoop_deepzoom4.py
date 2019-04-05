@@ -86,7 +86,7 @@ class TileWorker(Process):
                     avgBkg = np.average(bw)
                     bw = gray.point(lambda x: 0 if x<220 else 1, '1')
                     # check if the image is mostly background
-                    if avgBkg <= (self._Bkg / 100):
+                    if avgBkg <= (self._Bkg / 100.0):
                         print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
                         if PercentMasked >= (self._ROIpc / 100.0):
