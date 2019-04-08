@@ -120,12 +120,12 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
 
 
         # for each file, save results in a ext file summarizing things
-        print("iteration #%d" % step)
-        print("out_filenames")
-        print(out_filenames)
-        print(len(out_filenames))
-        print("max_percent")
-        print(max_percent)
+        # print("iteration #%d" % step)
+        # print("out_filenames")
+        # print(out_filenames)
+        # print(len(out_filenames))
+        # print("max_percent")
+        # print(max_percent)
 
         # save overall stats
         #data_path = os.path.join(FLAGS.eval_dir, 'data')
@@ -166,10 +166,10 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
               if top_1[kk] == True:
                 count_top_1 += 1
                 tmp = max_Prob
-                print("True found; score is %f" % (max_Prob))
+                # print("True found; score is %f" % (max_Prob))
               else:
-                print(logits[kk])
-                print(labels[kk])
+                # print(logits[kk])
+                # print(labels[kk])
                 try:
                   tmp = class_x[labels[kk]]
                 except:
@@ -184,7 +184,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                 else:
                   tmp = -1
                 '''
-                print("False found; score is %f" % (tmp))
+                # print("False found; score is %f" % (tmp))
               #myfile.write(str(tmp) + "\t\n")
               #myfile.write("labels: \t")
               #myfile.write(str(labels[kk]) + "\t")
@@ -209,12 +209,12 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                 lab0 = False
                 continue
               total_sample_count += 1
-              print(inLog2, inLab)
-              print(round(inLog2), round(inLab2))
+              # print(inLog2, inLab)
+              # print(round(inLog2), round(inLab2))
               if round(inLog2)==round(inLab2):
                 top_1 += 1
           count_top_1 += np.sum(top_1)
-          print("tmp", count_top_1 / total_sample_count)
+          # print("tmp", count_top_1 / total_sample_count)
           for kk in range(len(out_filenames)):
             imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
             imageName = imageName + '.dat'
@@ -248,8 +248,8 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
 
         # save last-but one layer
           if False:
-            print("net2048")
-            print(net2048)
+            # print("net2048")
+            # print(net2048)
             net2048_path = os.path.join(FLAGS.eval_dir, 'net2048')
             if os.path.isdir(net2048_path):	
               pass
@@ -259,9 +259,9 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
             for kk in range(len(out_filenames)):
               imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
               imageName = imageName + '.net2048'
-              print("net2048 length + values:")
-              print(len(net2048[kk]))
-              print(net2048[kk])
+              # print("net2048 length + values:")
+              # print(len(net2048[kk]))
+              # print(net2048[kk])
               with open(os.path.join(net2048_path, imageName), "w") as myfile:
                for nn in range(len(net2048[kk])):
                  myfile.write(str(net2048[kk][nn]))

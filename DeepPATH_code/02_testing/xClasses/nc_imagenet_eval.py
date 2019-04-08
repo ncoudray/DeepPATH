@@ -61,14 +61,17 @@ def main(unused_argv=None):
       FLAGS.data_dir = next_slide
       dataset = ImagenetData(subset=FLAGS.subset)
       assert dataset.data_files()
-      precision_at_1, current_score = nc_inception_eval.evaluate(dataset)
-      mydict[next_slide] = {}
-      mydict[next_slide]['NbrTiles']  = FLAGS.num_examples
-      mydict[next_slide][labelname+'_Selected'] = precision_at_1
-      mydict[next_slide][labelname+'_Score'] = current_score
-      mydict[next_slide]['Read_Class'] = labelname
-      print(FLAGS.num_examples)
-      count_slides += 1.0
+      try:
+        precision_at_1, current_score = nc_inception_eval.evaluate(dataset)
+        mydict[next_slide] = {}
+        mydict[next_slide]['NbrTiles']  = FLAGS.num_examples
+        mydict[next_slide][labelname+'_Selected'] = precision_at_1
+        mydict[next_slide][labelname+'_Score'] = current_score
+        mydict[next_slide]['Read_Class'] = labelname
+        print(FLAGS.num_examples)
+        count_slides += 1.0
+      except:
+      	print("%s FAILED to be processed properly" %next_slide)
     output = open(os.path.join(FLAGS.eval_dir, 'out_All_Stats.txt'), 'ab+')
     pickle.dump(mydict, output)
     output.close()

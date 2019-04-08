@@ -509,8 +509,8 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
           dtypes=[tf.string])
 
     # Create multiple readers to populate the queue of examples.
-    print("num_readers")
-    print(num_readers)
+    #print("num_readers")
+    # print(num_readers)
     if num_readers > 1:
       enqueue_ops = []
       for _ in range(num_readers):
