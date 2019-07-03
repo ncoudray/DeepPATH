@@ -63,7 +63,9 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
     top_5_op: Top 5 op.
     summary_op: Summary op.
   """
-  tf.initialize_all_variables()
+  #tf.initialize_all_variables()
+  # modify for new tensorflow releases
+  tf.global_variables_initializer()
   with tf.Session() as sess:
     ckpt = tf.train.get_checkpoint_state(FLAGS.checkpoint_dir)
     if ckpt and ckpt.model_checkpoint_path:

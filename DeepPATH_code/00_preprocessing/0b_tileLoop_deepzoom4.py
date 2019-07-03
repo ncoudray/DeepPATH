@@ -39,6 +39,7 @@ from scipy.misc import imresize
 
 from xml.dom import minidom
 from PIL import Image, ImageDraw
+Image.MAX_IMAGE_PIXELS = None
 
 
 VIEWER_SLIDE_NAME = 'slide'
@@ -161,7 +162,7 @@ class DeepZoomImageTiler(object):
         except:
             print(self._basename + " - No Obj information found")
             print(self._ImgExtension)
-            if ("jpg" in self._ImgExtension) | ("dcm" in self._ImgExtension):
+            if ("jpg" in self._ImgExtension) | ("dcm" in self._ImgExtension) | ("tif" in self._ImgExtension):
                 #Objective = self._ROIpc
                 Objective = 1.
                 Magnification = Objective
@@ -231,6 +232,7 @@ class DeepZoomImageTiler(object):
             print("current directory: %s" % self._basename)
 
             #return
+            #print(self._dz.level_count)
 
             for level in range(self._dz.level_count-1,-1,-1):
                 ThisMag = Available[0]/pow(2,self._dz.level_count-(level+1))
@@ -306,6 +308,12 @@ class DeepZoomImageTiler(object):
                             endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
                             startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
                             endIndX_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact))
+                            print(Ddimension, Dlocation, Dlevel, Dsize, self._dz.level_count , level, col, row)
+
+                            #startIndY_current_level_conv = (int((Dlocation[1]) / Img_Fact))
+                            #endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
+                            #startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
+                            #endIndX_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact))
                             TileMask = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv]
                             PercentMasked = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv].mean() 
 
@@ -409,8 +417,8 @@ class DeepZoomImageTiler(object):
             else:
                 try:
                     labeltag = labelID.getElementsByTagName('Attribute')[0]
-                    if (Attribute_Name==labeltag.attributes['Value'].value):
-                    #if (Attribute_Name==labeltag.attributes['Name'].value):
+                    #if (Attribute_Name==labeltag.attributes['Value'].value):
+                    if (Attribute_Name==labeltag.attributes['Name'].value):
                         isLabelOK = True
                     else:
                         isLabelOK = False
@@ -530,7 +538,9 @@ class DeepZoomStaticTiler(object):
         else:
             image = ImageSlide(self._slide.associated_images[associated])
             basename = os.path.join(self._basename, self._slugify(associated))
+        print("enter DeepZoomGenerator")
         dz = DeepZoomGenerator(image, self._tile_size, self._overlap,limit_bounds=self._limit_bounds)
+        print("enter DeepZoomImageTiler")
         tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks, self._Mag)
         tiler.run()
         self._dzi_data[self._url_for(associated)] = tiler.get_dzi()
@@ -613,8 +623,8 @@ def xml_read_labels(xmldir):
         labeltag = xmlcontent.getElementsByTagName('Attribute')
         xml_labels = []
         for xmllabel in labeltag:
-            #xml_labels.append(xmllabel.attributes['Name'].value)
-            xml_labels.append(xmllabel.attributes['Value'].value)
+            xml_labels.append(xmllabel.attributes['Name'].value)
+            #xml_labels.append(xmllabel.attributes['Value'].value)
         if xml_labels==[]:
             xml_labels = ['']
         print(xml_labels)
@@ -763,6 +773,14 @@ if __name__ == '__main__':
 				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag).run()
 			except:
 				print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
+
+		#elif ("jpg" in ImgExtension) :
+		#	output = os.path.join(opts.basename, opts.basenameJPG)
+		#	if os.path.exists(output + "_files"):
+		#		print("Image %s already tiled" % opts.basenameJPG)
+		#		continue
+
+		#	DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag).run()
 
 		elif opts.xmlfile != '':
 			xmldir = os.path.join(opts.xmlfile, opts.basenameJPG + '.xml')

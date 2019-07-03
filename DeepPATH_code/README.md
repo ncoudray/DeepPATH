@@ -116,15 +116,15 @@ module load openslide-python/intel/1.1.1
 module load pillow/python3.5/intel/4.2.1 
 ```
 
-On bigpurple:
+Example on bigpurple (should work with CPU nodes as well):
 ```shell
 #!/bin/bash
-#SBATCH --partition=cpu_medium
-#SBATCH --job-name=EmTile
+#SBATCH --partition=gpu4_medium
+#SBATCH --job-name=Tile
 #SBATCH --ntasks=40
 #SBATCH --cpus-per-task=1
-#SBATCH --output=rq_train1_%A_%a.out
-#SBATCH --error=rq_train1_%A_%a.err
+#SBATCH --output=rq_tile_%A_%a.out
+#SBATCH --error=rq_tile_%A_%a.err
 #SBATCH --mem=50GB
 
 module load python/gpu/3.6.5
@@ -178,8 +178,8 @@ For Prince, the header of the script may be:
 #SBATCH --job-name=sort
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --output=rq_train_%A_%a.out
-#SBATCH --error=rq_train_%A_%a.err
+#SBATCH --output=rq_sort_%A_%a.out
+#SBATCH --error=rq_sort_%A_%a.err
 #SBATCH --mem=2G
 
 module load numpy/intel/1.13.1
@@ -189,12 +189,13 @@ For BigPurple, the header of the script should be:
 ```shell
 #!/bin/bash
 #SBATCH --partition=cpu_short
-#SBATCH --job-name=DiagTile
+#SBATCH --job-name=Sort
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --output=rq_train1_%A_%a.out
-#SBATCH --error=rq_train1_%A_%a.err
+#SBATCH --output=rq_sort_%A_%a.out
+#SBATCH --error=rq_sort_%A_%a.err
 #SBATCH --mem=20GB
+#SBATCH --time=01:00:00
 
 module load python/gpu/3.6.5
 ```
@@ -281,16 +282,17 @@ module load bazel/gnu/0.4.3
 
 ```
 
-For BigPurple, the header can be:
+For BigPurple, the header can be (should work on CPU nodes too)
 ```shell
 #!/bin/bash
-#SBATCH --partition=cpu_medium
-#SBATCH --job-name=Tf107
-#SBATCH --ntasks=12
+#SBATCH --partition=gpu4_medium
+#SBATCH --job-name=TFR
+#SBATCH --ntasks=4
 #SBATCH --cpus-per-task=1
-#SBATCH --output=rq_tf107_%A_%a.out
-#SBATCH --error=rq_tf107_%A_%a.err
-#SBATCH --mem=5GB
+#SBATCH --output=rq_TFR_%A_%a.out
+#SBATCH --error=rq_TFR_%A_%a.err
+#SBATCH --mem=100GB
+#SBATCH --gres=gpu:1
 
 module load python/gpu/3.6.5
 
@@ -408,16 +410,16 @@ module load bazel/gnu/0.4.3
 ```
 
 
-On the bigpurple cluster (Note: you may have to adjust the partition and mem lines depending on your needs!! nodelist is optional but allows you to select which node exactly):
+On the bigpurple cluster (Note: you may have to adjust the partition and mem lines depending on your needs!! nodelist is optional but allows you to select which node exactly. Also, large batch sizes can be used [up to 320 tested]):
 
 ```shell
 #!/bin/bash
 #SBATCH --partition=gpu4_long
-#SBATCH --job-name=Em_tr01
-#SBATCH --ntasks=40
-#SBATCH --output=rq_train1_%A_%a.out
-#SBATCH --error=rq_train1_%A_%a.err
-#SBATCH --mem=100G
+#SBATCH --job-name=Train
+#SBATCH --ntasks=8
+#SBATCH --output=rq_train_%A_%a.out
+#SBATCH --error=rq_train_%A_%a.err
+#SBATCH --mem=50G
 #SBATCH --gres=gpu:4
 
 module load python/gpu/3.6.5
@@ -554,11 +556,11 @@ On bigpurple, the head can be (adjust partition and mem as needed):
 #!/bin/bash
 #SBATCH --partition=gpu4_long
 #SBATCH --job-name=Em0valid
-#SBATCH --ntasks=40
-#SBATCH --output=rq_train1_%A_%a.out
-#SBATCH --error=rq_train1_%A_%a.err
+#SBATCH --ntasks=4
+#SBATCH --output=rq_valid_%A_%a.out
+#SBATCH --error=rq_valid_%A_%a.err
 #SBATCH --mem=100G
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:2
 
 module load python/gpu/3.6.5
 ``` 
@@ -619,12 +621,12 @@ The following script shows an example on how to run it for all of the checkpoint
 ```shell
 #!/bin/bash
 #SBATCH --partition=gpu4_long
-#SBATCH --job-name=Em0valid
-#SBATCH --ntasks=40
-#SBATCH --output=rq_train1_%A_%a.out
-#SBATCH --error=rq_train1_%A_%a.err
-#SBATCH --mem=100G
-#SBATCH --gres=gpu:4
+#SBATCH --job-name=Valid
+#SBATCH --ntasks=4
+#SBATCH --output=rq_valid_%A_%a.out
+#SBATCH --error=rq_valid_%A_%a.err
+#SBATCH --mem=50G
+#SBATCH --gres=gpu:2
 ### nodelist is optional - only if you want a specific node
 
 export CHECKPOINT_PATH='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/training/01_All/results_00'
