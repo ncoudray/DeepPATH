@@ -919,7 +919,7 @@ options:
 * ```labels_names```: text file with the names of the labels, 1 per line
 * ``` ref_file``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
 *  ``` ref_label``` number of the label in the ref_file to use for filter
-* ```ref_thresh``` threshold to use for ref_label. Use "-1" to use True/False labels instead.
+* ```ref_thresh``` threshold to use for ref_label. Use "-1" to use True/False labels instead in the out_filenamestats file. Use "-2" to use label only if they have the max probability
 * ```--MultiThresh 0.5```. There are two ways to aggregate the values per slide. One is computing the percentage of tiles "selected", that is, above a threshold. By default, for two classes, a tile is selected for a given class if the probability is above 0.5. That threshold can be changed with this option.
 
 

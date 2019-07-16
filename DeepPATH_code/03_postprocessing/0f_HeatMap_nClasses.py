@@ -374,7 +374,7 @@ def main():
 		# extract coordinates of the tile
 		ixTile = int(os.path.basename(test_filename).split('_')[-2])
 		iyTile = int(os.path.basename(test_filename).split('_')[-1].split('.')[0])
-		# check how bif the "re-combined" slide should be (invert col/row because of the swapaxes required)
+		# check how big the "re-combined" slide should be (invert col/row because of the swapaxes required)
 		rTile = im2.shape[1]
 		cTile = im2.shape[0]
 					
