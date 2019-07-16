@@ -281,12 +281,12 @@ if __name__ == '__main__':
       default='',
       help='process only images with this basename.'
   )
-  parser.add_argument(
-      '--filter_tile',
-      type=str,
-      default='',
-      help='if map is a mutation, apply cmap of mutations only if tiles are LUAD (give here the out_filename_Stats.txt).'
-  )
+  #parser.add_argument(
+  #    '--filter_tile',
+  #    type=str,
+  #    default='',
+  #    help='if map is a mutation, apply cmap of mutations only if tiles are LUAD (give here the out_filename_Stats.txt).'
+  #)
   parser.add_argument(
       '--Classes',
       type=str,
