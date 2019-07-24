@@ -280,7 +280,8 @@ def _eval_once(saver, summary_writer, summary_op, max_percent_op, all_filenames,
           for kk in range(len(out_filenames)):
               myfile.write(out_filenames[kk].decode('UTF-8') + "\t")
               myfile.write(str(labels[kk]) + "\t")
-              myfile.write(" ".join(str(max_percent[kk]).splitlines()) + "\t")        
+              myfile.write(" ".join(str(max_percent[kk]).splitlines()) + "\t") 
+              myfile.write('\n')       
 
 
 
