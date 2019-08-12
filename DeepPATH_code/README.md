@@ -80,7 +80,7 @@ Finally, the jpg images are converted into TFRecords. For the train and validati
 
 ## 0.1 Tile the svs slide images
 
-Example of qsub script to submit this script on Phoenix cluster (python 2.7 used):
+Example of script to submit this script on a SGE cluster (python 2.7 used):
 
 ```shell
 #!/bin/tcsh
@@ -100,7 +100,7 @@ Notes:
 * Also 0b_tileLoop_deepzoom4.py should now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and "-x" would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg". An additional "-t" parameter is required to save the temporary converted and renamed files (from dcm to jpg, assuming the folder name is of each dcm set represents the patient ID)
 
 
-On Prince, you may want to try this header instead (and adjust option ```-j``` to ```28```):
+On a slurm cluster (Prince), you may want to try this header instead (and adjust option ```-j``` to ```28```):
 
 ```shell
 #!/bin/bash
@@ -309,7 +309,9 @@ python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='
 
 ```
 
-The difference is that for the train set, the tiles are randomly assigned to the TFRecord files. For the test and validation set, it will created 1 TFRecord file per Slide (solution prefered) - though if `one_FT_per_Tile` is `True`, there will be 1 TFRecord file per Tile created.
+The difference is that for the train set, the tiles are randomly assigned to the TFRecord files. For the test and validation set, it will created 1 TFRecord file per Slide (solution prefered) - though if `one_FT_per_Tile` is `True`, there will be 1 TFRecord file per Tile created. 
+
+For the trainin, the option `MaxNbImages` can be used to threshold the maximum number of images in each dataset. Tiles will be randomly selected if the number of tiles available is higher (may be useful to downsampl and balance datasets).
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 
@@ -441,8 +443,10 @@ Notes:
 * In bigpurple, you can use 4 or 8 GPUs (if available) to make it faster. You will need, in the header, to set ```gres=gpu:4``` or ```gres=gpu:8``` and in the parameters of imagenet_train, set ```num_gpus``` to 4 or 8.
 * Other options available:
 - ```num_epochs_per_decay```: Epochs after which learning rate decays
+- ```learning_rate_decay_factor```: factor of the rate decay
 - ```NbrOfImages```: number of images in the training dataset (used for decay: NbrOfImages/batch_size gives the number of iterations for 1 epoch)
 - ```max_steps```: number of batches to run
+- ```save_step_for_chekcpoint```: frequency at which the checkpoints should be saved (default: 5,000)
 
 ## 1.2 - Transfer learning
 
@@ -861,7 +865,7 @@ expected processing time for this step: on a gpu, about 1000 tiles per minute.
 
 # 3 - Analyze the outcome
 
-## Generate heat-maps per slides (all test slides in a given folder; code not optimized and slow):
+## Generate heat-maps per slides overlaid on original slide (all test slides in a given folder; code not optimized and slow):
 code in 03_postprocessing/0f_HeatMap_nClasses.py:
 
 on the Phoenix cluster, the header for the following commands could be:
@@ -889,6 +893,28 @@ python 0f_HeatMap_nClasses.py  --image_file 'directory_to_jpeg_classes' --tiles_
 
 colors are:
 black for class 1, red for class 2, blue for class 3, orange for class 4, green for class 5, purple otherwise
+
+## Generate heat-maps with no overlay (fast)
+
+In the output CMap, each tile will be replaced by a single pixel which color is proportional to the probability associated to it in the out_filename_Stats.txt file.
+Each class is associated to one of the RGB channels of the image, and the number of classes that can be display on a single heatmap is therefore limited to 3. Use the `Classes` option (string with digits separated by coma) to select which class should be associated to which channel. In the example below, class 3 is associated to channel R, class 1 to channel G and class 2 to chennel B. 
+
+
+```shell
+#!/bin/bash
+#SBATCH --partition=fn_long
+#SBATCH --job-name=CMap
+#SBATCH --ntasks=1
+#SBATCH --output=rq_heatmap_0_%A_%a.out
+#SBATCH --error=rq_heatmap_0_%A_%a.err
+#SBATCH --mem=50G
+
+module load python/gpu/3.6.5
+
+
+python 03_postprocessing/0g_HeatMap_MultiChannels.py --tiles_overlap=0 --tiles_size=512 --output_dir='CMap_output' --tiles_stats='test_125000k/out_filename_Stats.txt' --Classes='3,1,2' --slide_filter=''
+```
+
 
 
 ## Code for ROC curves:
