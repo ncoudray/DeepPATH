@@ -80,9 +80,9 @@ import threading
 import numpy as np
 import tensorflow as tf
 
-tf.app.flags.DEFINE_string('directory', '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/tmp_4_2Types/',
+tf.app.flags.DEFINE_string('directory', '/path_to_sorted_jpg_images/',
                            'Training data directory')
-tf.app.flags.DEFINE_string('output_directory', '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/tmp_4_2Types/',
+tf.app.flags.DEFINE_string('output_directory', '/path_to_output_directory/',
                            'Output data directory')
 
 tf.app.flags.DEFINE_integer('train_shards', 1024,
@@ -96,6 +96,9 @@ tf.app.flags.DEFINE_integer('test_shards', 200,
 
 tf.app.flags.DEFINE_integer('num_threads', 8,
                             'Number of threads to preprocess the images.')
+
+tf.app.flags.DEFINE_integer('MaxNbImages', -1,
+                            'Maximum number of images in each class - Will be taken randomly if >0, otherwise, all images are taken (may help in unbalanced datasets: undersample oneof the datasets)')
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
@@ -405,9 +408,35 @@ def _find_image_files(name, data_dir):
       jpeg_file_path = os.path.join(data_dir, text, typeIm)
       matching_files = tf.gfile.Glob(jpeg_file_path)
 #    print(matching_files)
-    labels.extend([label_index] * len(matching_files))
-    texts.extend([text] * len(matching_files))
-    filenames.extend(matching_files)
+    if FLAGS.MaxNbImages > 0:
+      tmp_label = [label_index] * len(matching_files)
+      tmp_text = [text] * len(matching_files)
+      tmp_filename = matching_files
+      print("length filename:%d  " % len(tmp_filename))
+      shuffled_index = list(range(len(tmp_filename)))
+      random.seed(12345)
+      random.shuffle(shuffled_index)
+
+      tmp_label = [tmp_label[i] for i in shuffled_index]
+      tmp_text = [tmp_text[i] for i in shuffled_index]
+      tmp_filename = [tmp_filename[i] for i in shuffled_index]
+      print("length filename:%d  " % len(tmp_filename))
+
+      tmp_label = tmp_label[:min(FLAGS.MaxNbImages, len(tmp_filename))]
+      tmp_text = tmp_text[:min(FLAGS.MaxNbImages, len(tmp_filename))]
+      tmp_filename = tmp_filename[:min(FLAGS.MaxNbImages, len(tmp_filename))]
+
+      print("length filename:%d  " % len(tmp_filename))
+
+      labels.extend(tmp_label)
+      texts.extend(tmp_text)
+      filenames.extend(tmp_filename)
+      print("length filename (no tmp):%d  " % len(filenames))
+
+    else:
+      labels.extend([label_index] * len(matching_files))
+      texts.extend([text] * len(matching_files))
+      filenames.extend(matching_files)
 
     if not label_index % 100:
       print('Finished finding files in %d of %d classes.' % (

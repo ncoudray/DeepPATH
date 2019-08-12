@@ -30,9 +30,9 @@ import threading
 import numpy as np
 import tensorflow as tf
 
-tf.app.flags.DEFINE_string('directory', '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/tmp_4_2Types/',
+tf.app.flags.DEFINE_string('directory', '/path_to_jpg_sorted_by_class/',
                            'Training data directory')
-tf.app.flags.DEFINE_string('output_directory', '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/tmp_4_2Types/',
+tf.app.flags.DEFINE_string('output_directory', '/path_to_output_directory/',
                            'Output data directory')
 
 tf.app.flags.DEFINE_integer('train_shards', 1024,

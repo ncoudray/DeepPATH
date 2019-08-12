@@ -34,7 +34,7 @@ from inception.slim import slim
 FLAGS = tf.app.flags.FLAGS
 
 #tf.app.flags.DEFINE_string('train_dir', '/tmp/imagenet_train',
-tf.app.flags.DEFINE_string('train_dir', '/ifs/home/coudrn01/NN/TensorFlowTest/8a_3Classes/inception//results/8a_scratch',
+tf.app.flags.DEFINE_string('train_dir', '/ifs/home/coudrn01/NN/TensorFlowTest/6a_Inception_TensorFlow/models/inception/results/0_scratch',
                            """Directory where to write event logs """
                            """and checkpoint.""")
 tf.app.flags.DEFINE_integer('max_steps', 500000,
@@ -57,9 +57,8 @@ tf.app.flags.DEFINE_string('pretrained_model_checkpoint_path', '',
                            """If specified, restore this pretrained model """
                            """before beginning any training.""")
 
-tf.app.flags.DEFINE_integer('save_step_for_chekcpoint', 5000,
-                           """Save checkpoints every n steps """)
-
+tf.app.flags.DEFINE_integer('nbr_of_classes', 10,
+                            """Number of possible classes.""")
 
 # **IMPORTANT**
 # Please note that this learning rate schedule is heavily dependent on the
@@ -324,20 +323,13 @@ def train(dataset):
     sess.run(init)
 
     if FLAGS.pretrained_model_checkpoint_path:
-      try:
-        assert tf.gfile.Exists(FLAGS.pretrained_model_checkpoint_path)
-        variables_to_restore = tf.get_collection(
-            slim.variables.VARIABLES_TO_RESTORE)
-        restorer = tf.train.Saver(variables_to_restore)
-        restorer.restore(sess, FLAGS.pretrained_model_checkpoint_path)
-        print('%s: Pre-trained model restored from %s' %
-              (datetime.now(), FLAGS.pretrained_model_checkpoint_path))
-      except:
-        #restorer = tf.train.import_meta_graph(FLAGS.pretrained_model_checkpoint_path + '.meta')
-        variables_to_restore = tf.get_collection(
-            slim.variables.VARIABLES_TO_RESTORE)
-        restorer = tf.train.Saver(variables_to_restore)
-        restorer.restore(sess, FLAGS.pretrained_model_checkpoint_path)
+      assert tf.gfile.Exists(FLAGS.pretrained_model_checkpoint_path)
+      variables_to_restore = tf.get_collection(
+          slim.variables.VARIABLES_TO_RESTORE)
+      restorer = tf.train.Saver(variables_to_restore)
+      restorer.restore(sess, FLAGS.pretrained_model_checkpoint_path)
+      print('%s: Pre-trained model restored from %s' %
+            (datetime.now(), FLAGS.pretrained_model_checkpoint_path))
 
     # Start the queue runners.
     tf.train.start_queue_runners(sess=sess)
@@ -359,15 +351,12 @@ def train(dataset):
                       'sec/batch)')
         print(format_str % (datetime.now(), step, loss_value,
                             examples_per_sec, duration))
-        with open(os.path.join(FLAGS.train_dir, 'training_loss.txt'), "a") as myfile:
-          myfile.write(format_str % (datetime.now(), step, loss_value,
-                            examples_per_sec, duration))
-          myfile.write("\n")
+
       if step % 100 == 0:
         summary_str = sess.run(summary_op)
         summary_writer.add_summary(summary_str, step)
 
       # Save the model checkpoint periodically.
-      if step % FLAGS.save_step_for_chekcpoint == 0 or (step + 1) == FLAGS.max_steps:
+      if step % 5000 == 0 or (step + 1) == FLAGS.max_steps:
         checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
         saver.save(sess, checkpoint_path, global_step=step)
