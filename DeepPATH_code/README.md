@@ -10,9 +10,14 @@ Christian Szegedy, Vincent Vanhoucke, Sergey Ioffe, Jonathon Shlens, Zbigniew Wo
 http://arxiv.org/abs/1512.00567
 
 
+**Below is an overall description of our toolchain and is evolving as we move on with our projects. If you're more interested in the details of the process published in the paper above, see the description in the "example_TCGA_Lung" foder.**
+
+
+
+
 Preliminary comments:
 * For the path, it is advised to always put the full path name and not the relative paths.
-* For all the steps below, always submit the jobs via a qsub script (if on Phoenix) and always check the output and error log files are fine. 
+* For all the steps below, always submit the jobs via a script (if on BigPurple) and always check the output and error log files are fine. 
  
 
 The overall process is:
