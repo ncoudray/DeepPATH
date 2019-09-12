@@ -379,10 +379,12 @@ if __name__ == '__main__':
             jdata = {}
             for line in f:
                 tmp_PID = line.split()[0]
+                if args.PatientID<1:
+                	args.PatientID = len(tmp_PID)
                 jdata[tmp_PID[:args.PatientID]] = line.split()[1]
 
-    # print("jdata:")
-    # print(jdata)
+    print("jdata:")
+    print(jdata)
     Magnification = args.Magnification
     MagDiffAllowed = args.MagDiffAllowed
 
@@ -391,7 +393,7 @@ if __name__ == '__main__':
         sort_function = sort_options[SortingOption]
     except IndexError:
         raise ValueError("Unknown sort option")
-    print("sort_function is %s" % sort_function)
+    # print("sort_function is %s" % sort_function)
 
     # Special case: svs images - copy and exit program
     if args.SortingOption in [15, 16]:
@@ -471,7 +473,7 @@ if __name__ == '__main__':
         ttv_split[0] = "test"
     '''
     print("imgFolders")
-    print(imgFolders)
+    print(imgFolders[0:min(10,len(imgFolders))])
     for cFolderName in imgFolders:
 
         NbSlides += 1
