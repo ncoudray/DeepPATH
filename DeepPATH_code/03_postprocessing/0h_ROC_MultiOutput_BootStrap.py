@@ -126,8 +126,13 @@ def main():
 				ExpectedProb = line.split('[')[-1]
 				ExpectedProb = ExpectedProb.split(']')[0]
 				ref_file_data[basenameXY] = {}
+				LabelVec = []
+				for nL in range(len(ExpectedProb.split()) - 1):
+					LabelVec.append((float(ExpectedProb.split()[nL + 1])) / (1.0 - float(ExpectedProb.split()[0])))
 				#ref_file_data[basenameXY]['value'] = float(ExpectedProb.split()[FLAGS.ref_label])
-				ref_file_data[basenameXY]['value'] = (float(ExpectedProb.split()[FLAGS.ref_label])) / (1.0 - float(ExpectedProb.split()[0]))
+				# ref_file_data[basenameXY]['value'] = (float(ExpectedProb.split()[FLAGS.ref_label])) / (1.0 - float(ExpectedProb.split()[0]))
+				ref_file_data[basenameXY]['value'] = LabelVec[FLAGS.ref_label - 1]
+				ref_file_data[basenameXY]['isMax'] = max(LabelVec)==(ref_file_data[basenameXY]['value'])
 				if 'True' in line:
 					ref_file_data[basenameXY]['selected'] = True
 				else:
@@ -179,6 +184,9 @@ def main():
 					if FLAGS.ref_thresh == -1:
 						# check if tile selected or not
 						analyze = ref_file_data[basenameXY]['selected']
+					elif FLAGS.ref_thresh == -2:
+							# check if tile prob is max probability
+						analyze = ref_file_data[basenameXY]['isMax']
 					elif ref_file_data[basenameXY]['value'] >= FLAGS.ref_thresh :
 						analyze = True
 						print("basenameXY %s identified with prob %f analyzed" % (basenameXY, ref_file_data[basenameXY]['value']) )
