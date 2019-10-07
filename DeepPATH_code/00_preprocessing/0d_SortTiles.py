@@ -377,11 +377,14 @@ if __name__ == '__main__':
     else:
         with open(JsonFile, "rU") as f:
             jdata = {}
+            nameLength = 10000
             for line in f:
                 tmp_PID = line.split()[0]
-                if args.PatientID<1:
-                	args.PatientID = len(tmp_PID)
-                jdata[tmp_PID[:args.PatientID]] = line.split()[1]
+                # if args.PatientID<1:
+                #	args.PatientID = len(tmp_PID)
+                # jdata[tmp_PID[:args.PatientID]] = line.split()[1]
+                nameLength = min(nameLength, len(tmp_PID)) 
+                jdata[tmp_PID] = line.split()[1]
 
     print("jdata:")
     print(jdata)
@@ -499,10 +502,14 @@ if __name__ == '__main__':
                 image_meta = jdata[imgRootName]
             except KeyError:
                 try:
-                    image_meta = jdata[imgRootName[:args.PatientID]]
+                	#image_meta = jdata[imgRootName[:args.PatientID]]
+                    image_meta = jdata[imgRootName[:args.nameLength]]
                 except KeyError:
-                    print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
-                    continue
+                    try:
+                	    image_meta = jdata[imgRootName[:args.PatientID]]
+                	except KeyError:
+                        print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
+                        continue
             SubDir = sort_function(image_meta, load_dic=mut_load)
         print("SubDir is %s" % SubDir)
 
