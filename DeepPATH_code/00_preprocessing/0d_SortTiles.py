@@ -503,7 +503,7 @@ if __name__ == '__main__':
             except KeyError:
                 try:
                 	#image_meta = jdata[imgRootName[:args.PatientID]]
-                    image_meta = jdata[imgRootName[:args.nameLength]]
+                    image_meta = jdata[imgRootName[:nameLength]]
                 except KeyError:
                     try:
                 	    image_meta = jdata[imgRootName[:args.PatientID]]
