@@ -88,7 +88,7 @@ class TileWorker(Process):
                     bw = gray.point(lambda x: 0 if x<220 else 1, '1')
                     # check if the image is mostly background
                     if avgBkg <= (self._Bkg / 100.0):
-                        print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
+                        # print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
                         if PercentMasked >= (self._ROIpc / 100.0):
 			#if PercentMasked > 0.05:
@@ -308,7 +308,7 @@ class DeepZoomImageTiler(object):
                             endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
                             startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
                             endIndX_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact))
-                            print(Ddimension, Dlocation, Dlevel, Dsize, self._dz.level_count , level, col, row)
+                            # print(Ddimension, Dlocation, Dlevel, Dsize, self._dz.level_count , level, col, row)
 
                             #startIndY_current_level_conv = (int((Dlocation[1]) / Img_Fact))
                             #endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
@@ -317,17 +317,18 @@ class DeepZoomImageTiler(object):
                             TileMask = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv]
                             PercentMasked = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv].mean() 
 
-                            print(Ddimension, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
+                            # print(Ddimension, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
 
 
                             if self._mask_type == 0:
                                 # keep ROI outside of the mask
                                 PercentMasked = 1.0 - PercentMasked
+                                # print("Invert Mask percentage")
 
-                            if PercentMasked > 0:
-                                print("PercentMasked_p %.3f" % (PercentMasked))
-                            else:
-                                print("PercentMasked_0 %.3f" % (PercentMasked))
+                            # if PercentMasked > 0:
+                            #     print("PercentMasked_p %.3f" % (PercentMasked))
+                            # else:
+                            #     print("PercentMasked_0 %.3f" % (PercentMasked))
 
  
                         else:
@@ -410,15 +411,17 @@ class DeepZoomImageTiler(object):
 
         xy = {}
         xy_neg = {}
+        NbRg = 0
         labelIDs = xmlcontent.getElementsByTagName('Annotation')
+        print("%d labels" % len(labelIDs) )
         for labelID in labelIDs:
             if (Attribute_Name==[]) | (Attribute_Name==''):
                     isLabelOK = True
             else:
                 try:
                     labeltag = labelID.getElementsByTagName('Attribute')[0]
-                    #if (Attribute_Name==labeltag.attributes['Value'].value):
-                    if (Attribute_Name==labeltag.attributes['Name'].value):
+                    if (Attribute_Name==labeltag.attributes['Value'].value):
+                    # if (Attribute_Name==labeltag.attributes['Name'].value):
                         isLabelOK = True
                     else:
                         isLabelOK = False
@@ -434,8 +437,10 @@ class DeepZoomImageTiler(object):
                 regionlist = labelID.getElementsByTagName('Region')
                 for region in regionlist:
                     vertices = region.getElementsByTagName('Vertex')
-                    regionID = region.attributes['Id'].value
+                    NbRg += 1
+                    regionID = region.attributes['Id'].value + str(NbRg)
                     NegativeROA = region.attributes['NegativeROA'].value
+                    print("%d vertices" % len(vertices))
                     if len(vertices) > 0:
                         #print( len(vertices) )
                         if NegativeROA=="0":
@@ -462,12 +467,12 @@ class DeepZoomImageTiler(object):
 
                         #xy_a = np.array(xy[regionID])
 
-        #print("xy:")
+        print("%d xy" % len(xy))
         #print(xy)
-        #print("xy_neg:")
+        print("%d xy_neg"  % len(xy_neg))
         #print(xy_neg)
-        print("Img_Fact:")
-        print(NewFact)
+        # print("Img_Fact:")
+        # print(NewFact)
         # img = Image.new('L', (int(cols*Img_Fact), int(rows*Img_Fact)), 0)
         img = Image.new('L', (int(ImgMaxSizeX_orig/NewFact), int(ImgMaxSizeY_orig/NewFact)), 0)
         for regionID in xy.keys():
@@ -479,7 +484,10 @@ class DeepZoomImageTiler(object):
         #img = img.resize((cols,rows), Image.ANTIALIAS)
         mask = np.array(img)
         #print(mask.shape)
-        scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
+        if Attribute_Name == "non_selected_regions":
+        	scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
+        else:
+            scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
         #print(mask)
         return mask / 255.0, xml_valid, NewFact
         # Img_Fact
@@ -623,8 +631,8 @@ def xml_read_labels(xmldir):
         labeltag = xmlcontent.getElementsByTagName('Attribute')
         xml_labels = []
         for xmllabel in labeltag:
-            xml_labels.append(xmllabel.attributes['Name'].value)
-            #xml_labels.append(xmllabel.attributes['Value'].value)
+            #xml_labels.append(xmllabel.attributes['Name'].value)
+            xml_labels.append(xmllabel.attributes['Value'].value)
         if xml_labels==[]:
             xml_labels = ['']
         print(xml_labels)
