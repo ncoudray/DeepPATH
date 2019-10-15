@@ -389,7 +389,7 @@ if __name__ == '__main__':
                 # jdata[tmp_PID[:args.PatientID]] = line.split()[1]
                 nameLength = min(nameLength, len(tmp_PID)) 
                 jdata[tmp_PID] = line.split()[1]
-    print("nameLength is " + str(nameLength))
+            print("nameLength is " + str(nameLength))
     print("jdata:")
     print(jdata)
     Magnification = args.Magnification
