@@ -234,13 +234,14 @@ module load python/gpu/3.6.5
    - for options 8: path to json file with mutational loads
    - for options 9: path to json file with mutant for metastatic
    - for option 17: text file, second column is label for non-normal tissues
-*  `--PercentTest`: percentage of images for validation (example: 15); 
-*  `--PercentValid` Percentage of images for testing (example: 15). All the other tiles will be used for training by default.
+*  `--PercentTest`: percentage of data (tiles/slides or patients depending on `Balance` option) for validation (example: 15); 
+*  `--PercentValid` Percentage of data for testing (example: 15). All the other tiles will be used for training by default.
 * `PatientID`: Number of digits used to code the patient ID (must be the first digits of the original image names)
 * `nSplit`: interger n: Split into train/test in n different ways.  If split is > 0, then the data will be split in train/test only in "# split" non-overlapping ways (each way will have 100/(#split) % of test images). `PercentTest` and `PercentValid` will be ignored. If nSplit=0, then there will be one output split done according to `PercentValid` and `PercentTest`
 * (optional) `outFilenameStats`: if an "out_filename_Stats.txt file" is given, check if the tile exists in it an only copy the tile if its value is "true".
 * (optional) `expLabel`: Index of the label to sort on within the outFilenameStats file (if only True/False is needed, leave this option empty) - tiles will only be included if there labels is the one predicted (dominant) in the  outFilenameStats file. (should be a string, separated by commas if more than 1 label desired)
 * (optional) `threshold`: threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability); (should be a string, separated by commas if more than 1 label desired)
+* (optinal) `Balance`: balance the percentage of tiles in each datasets by: 0-tiles (default); 1-slides; 2-patients (must give PatientID)
 
 The output will be generated in the current directory where the program is launched (so start it from a new empty folder). Images will not be copied but a symbolic link will be created toward the <tiled images path>. The links will be renamed ```<type>_<slide_root_name>_<x>_<y>.jpeg``` with <type> being 'train_', 'test_' or 'valid_' followed by the svs name and the tile ID. 
 

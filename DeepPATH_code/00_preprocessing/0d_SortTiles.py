@@ -280,6 +280,7 @@ if __name__ == '__main__':
                         type=int, dest='PatientID')
     parser.add_argument("--TMB", help="path to json file with mutational loads; or to BRAF mutations", dest='TMB')
     parser.add_argument("--nSplit", help="integer n: Split into train/test in n different ways", dest='nSplit')
+    parser.add_argument("--Balance", help="balance datasets by: 0- tiles (default); 1-slides; 2-patients (must give PatientID)", type=int, dest='Balance')
     parser.add_argument("--outFilenameStats",
                         help="Check if the tile exists in an out_filename_Stats.txt file and copy it only if it True, or is the expLabel option had the highest probability",
                         dest='outFilenameStats')
@@ -300,6 +301,9 @@ if __name__ == '__main__':
     if args.PatientID is None:
         print("PatientID ignored")
         args.PatientID = 0
+
+    if args.Balance is None:
+    	args.Balance = 0
 
     if args.nSplit is None:
         args.nSplit = 0
@@ -385,7 +389,7 @@ if __name__ == '__main__':
                 # jdata[tmp_PID[:args.PatientID]] = line.split()[1]
                 nameLength = min(nameLength, len(tmp_PID)) 
                 jdata[tmp_PID] = line.split()[1]
-
+    print("nameLength is " + str(nameLength))
     print("jdata:")
     print(jdata)
     Magnification = args.Magnification
@@ -462,6 +466,8 @@ if __name__ == '__main__':
     PercentTilesCateg = {}
     NbrImagesCateg = {}
     PercentSlidesCateg = {}
+    NbrPatientsCateg = {}
+    PercentPatientsCateg = {}
     Patient_set = {}
     NbSlides = 0
     ttv_split = {}
@@ -507,7 +513,7 @@ if __name__ == '__main__':
                 except KeyError:
                     try:
                 	    image_meta = jdata[imgRootName[:args.PatientID]]
-                	except KeyError:
+                    except KeyError:
                         print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
                         continue
             SubDir = sort_function(image_meta, load_dic=mut_load)
@@ -581,6 +587,13 @@ if __name__ == '__main__':
             PercentSlidesCateg[SubDir + "_train"] = 0
             PercentSlidesCateg[SubDir + "_test"] = 0
             PercentSlidesCateg[SubDir + "_valid"] = 0
+            NbrPatientsCateg[SubDir] = 0
+            NbrPatientsCateg[SubDir + "_train"] = 0
+            NbrPatientsCateg[SubDir + "_test"] = 0
+            NbrPatientsCateg[SubDir + "_valid"] = 0            
+            PercentPatientsCateg[SubDir + "_train"] = 0
+            PercentPatientsCateg[SubDir + "_test"] = 0
+            PercentPatientsCateg[SubDir + "_valid"] = 0
 
             if int(args.nSplit) > 0:
                 ttv_split[SubDir] = []
@@ -608,20 +621,49 @@ if __name__ == '__main__':
                 else:
                     continue
             NbTiles += 1
-            print("current percent in test, valid and ID")
-            print(PercentSlidesCateg.get(SubDir + "_test"))
-            print(PercentSlidesCateg.get(SubDir + "_valid"))
-            print(PercentTest, PercentValid)
-            print(PercentSlidesCateg.get(SubDir + "_test") < PercentTest)
-            print(PercentSlidesCateg.get(SubDir + "_valid") < PercentValid)
+            if args.Balance == 1:
+                # print("current percent in test, valid and ID (bal slide):" +  str(PercentSlidesCateg.get(SubDir + "_test"))+ "; " +str(PercentSlidesCateg.get(SubDir + "_valid")))
+                # print(PercentTest, PercentValid)
+                # print(PercentSlidesCateg.get(SubDir + "_test") < PercentTest)
+                # print(PercentSlidesCateg.get(SubDir + "_valid") < PercentValid)
 
-            # rename the images with the root name, and put them in train/test/valid
-            if (PercentSlidesCateg.get(SubDir + "_test") <= PercentTest) and (PercentTest > 0):
-                ttv = "test"
-            elif (PercentSlidesCateg.get(SubDir + "_valid") <= PercentValid) and (PercentValid > 0):
-                ttv = "valid"
-            else:
-                ttv = "train"
+                # rename the images with the root name, and put them in train/test/valid
+                if (PercentSlidesCateg.get(SubDir + "_test") <= PercentTest) and (PercentTest > 0):
+                    ttv = "test"
+                elif (PercentSlidesCateg.get(SubDir + "_valid") <= PercentValid) and (PercentValid > 0):
+                    ttv = "valid"
+                else:
+                    ttv = "train"
+            elif args.Balance == 2:
+                # print("current percent in test, valid and ID (bal patient):" +  str(PercentPatientsCateg.get(SubDir + "_test"))+ "; " +str(PercentPatientsCateg.get(SubDir + "_valid")))
+                # print(PercentPatientsCateg.get(SubDir + "_test"))
+                # print(PercentPatientsCateg.get(SubDir + "_valid"))
+                # print(PercentTest, PercentValid)
+                # print(PercentPatientsCateg.get(SubDir + "_test") < PercentTest)
+                # print(PercentPatientsCateg.get(SubDir + "_valid") < PercentValid)
+
+                # rename the images with the root name, and put them in train/test/valid
+                if (PercentPatientsCateg.get(SubDir + "_test") <= PercentTest) and (PercentTest > 0):
+                    ttv = "test"
+                elif (PercentPatientsCateg.get(SubDir + "_valid") <= PercentValid) and (PercentValid > 0):
+                    ttv = "valid"
+                else:
+                    ttv = "train"
+            else :
+                # print("current percent in test, valid and ID (bal tile):" +  str(PercentTilesCateg.get(SubDir + "_test"))+ "; " +str(PercentTilesCateg.get(SubDir + "_valid")))
+                # print(PercentTilesCateg.get(SubDir + "_test"))
+                # print(PercentTilesCateg.get(SubDir + "_valid"))
+                # print(PercentTest, PercentValid)
+                # print(PercentTilesCateg.get(SubDir + "_test") < PercentTest)
+                # print(PercentTilesCateg.get(SubDir + "_valid") < PercentValid)
+
+                # rename the images with the root name, and put them in train/test/valid
+                if (PercentTilesCateg.get(SubDir + "_test") <= PercentTest) and (PercentTest > 0):
+                    ttv = "test"
+                elif (PercentTilesCateg.get(SubDir + "_valid") <= PercentValid) and (PercentValid > 0):
+                    ttv = "valid"
+                else:
+                    ttv = "train"
             # If that patient had an another slide/scan already sorted, assign the same set to this set of images
             # print(ttv)
             # print(imgRootName[:args.PatientID])
@@ -634,14 +676,40 @@ if __name__ == '__main__':
                     Patient = imgRootName[:args.PatientID]
                     if Patient in Patient_set:
                         SetIndx = Patient_set[Patient]
+                        tileNewPatient = False
                     else:
                         SetIndx = nbr_valid[SubDir].index(min(nbr_valid[SubDir]))
                         Patient_set[Patient] = SetIndx
+                        tileNewPatient = True
                 else:
-                    SetIndx = nbr_valid[SubDir].index(min(nbr_valid[SubDir]))
+                    try:
+                        Patient = imgRootName[:nameLength]
+                    except:
+                        Patient = imgRootName[:nameLength]
+                    if Patient in Patient_set:
+                        SetIndx = Patient_set[Patient]
+                        tileNewPatient = False
+                    else:
+                        SetIndx = nbr_valid[SubDir].index(min(nbr_valid[SubDir]))
+                        Patient_set[Patient] = SetIndx
+                        tileNewPatient = True
+                    #SetIndx = nbr_valid[SubDir].index(min(nbr_valid[SubDir]))
+                    # tileNewPatient = True
 
                 ttv_split[SubDir][SetIndx] = "test"
-                nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
+                if NbTiles == 1:
+                    NewPatient = tileNewPatient
+
+                if args.Balance == 1:
+                    if NbTiles == 1:
+                        nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
+                elif args.Balance == 2:
+                    if NewPatient:
+                        if NbTiles == 1:
+                            nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
+                else:
+                    nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
+
                 # print(ttv_split[SubDir])
                 # print(nbr_valid[SubDir])
 
@@ -656,8 +724,12 @@ if __name__ == '__main__':
                     Patient = imgRootName[:args.PatientID]
                     if Patient in Patient_set:
                         ttv = Patient_set[Patient]
+                        if NbTiles == 1:
+                        	NewPatient = False
                     else:
                         Patient_set[Patient] = ttv
+                        if NbTiles == 1:
+                        	NewPatient = True
                 # print(ttv)
 
                 NewImageDir = os.path.join(SubDir, "_".join((ttv, imgRootName, TileName)))  # all train initially
@@ -666,18 +738,27 @@ if __name__ == '__main__':
         # update stats 
 
         if ttv == "train":
+            if NewPatient: 
+                NbrPatientsCateg[SubDir + "_train"] = NbrPatientsCateg[SubDir + "_train"] + 1
             NbrTilesCateg[SubDir + "_train"] = NbrTilesCateg.get(SubDir + "_train") + NbTiles
             NbrImagesCateg[SubDir + "_train"] = NbrImagesCateg[SubDir + "_train"] + 1
         elif ttv == "test":
+            if NewPatient: 
+                NbrPatientsCateg[SubDir + "_test"] = NbrPatientsCateg[SubDir + "_test"] + 1
             NbrTilesCateg[SubDir + "_test"] = NbrTilesCateg.get(SubDir + "_test") + NbTiles
             NbrImagesCateg[SubDir + "_test"] = NbrImagesCateg[SubDir + "_test"] + 1
         elif ttv == "valid":
+            if NewPatient: 
+                NbrPatientsCateg[SubDir + "_valid"] = NbrPatientsCateg[SubDir + "_valid"] + 1
             NbrTilesCateg[SubDir + "_valid"] = NbrTilesCateg.get(SubDir + "_valid") + NbTiles
             NbrImagesCateg[SubDir + "_valid"] = NbrImagesCateg[SubDir + "_valid"] + 1
         else:
             continue
         NbrTilesCateg[SubDir] = NbrTilesCateg.get(SubDir) + NbTiles
         NbrImagesCateg[SubDir] = NbrImagesCateg.get(SubDir) + 1
+        if NewPatient: 
+            NbrPatientsCateg[SubDir] = NbrPatientsCateg.get(SubDir) + 1
+
 
         PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(
             NbrTilesCateg.get(SubDir))
@@ -691,6 +772,12 @@ if __name__ == '__main__':
             NbrImagesCateg.get(SubDir))
         PercentSlidesCateg[SubDir + "_valid"] = float(NbrImagesCateg.get(SubDir + "_valid")) / float(
             NbrImagesCateg.get(SubDir))
+        PercentPatientsCateg[SubDir + "_train"] = float(NbrPatientsCateg.get(SubDir + "_train")) / float(
+            NbrPatientsCateg.get(SubDir))
+        PercentPatientsCateg[SubDir + "_test"] = float(NbrPatientsCateg.get(SubDir + "_test")) / float(
+            NbrPatientsCateg.get(SubDir))
+        PercentPatientsCateg[SubDir + "_valid"] = float(NbrPatientsCateg.get(SubDir + "_valid")) / float(
+            NbrPatientsCateg.get(SubDir))
 
         print("Done. %d tiles linked to %s " % (NbTiles, SubDir))
         print("Train / Test / Validation tiles sets for %s = %f %%  / %f %% / %f %%" % (
@@ -699,6 +786,10 @@ if __name__ == '__main__':
         print("Train / Test / Validation slides sets for %s = %f %%  / %f %% / %f %%" % (
             SubDir, PercentSlidesCateg.get(SubDir + "_train"), PercentSlidesCateg.get(SubDir + "_test"),
             PercentSlidesCateg.get(SubDir + "_valid")))
+        if args.PatientID > 0:
+            print("Train / Test / Validation patients sets for %s = %f %%  / %f %% / %f %%" % (
+                SubDir, PercentPatientsCateg.get(SubDir + "_train"), PercentPatientsCateg.get(SubDir + "_test"),
+                PercentPatientsCateg.get(SubDir + "_valid")))
 
     for k, v in sorted(Classes.items()):
         print('list of images in class %s :' % k)
@@ -710,6 +801,9 @@ if __name__ == '__main__':
         print(k, v)
     for k, v in sorted(NbrImagesCateg.items()):
         print(k, v)
+    if args.PatientID > 0:
+        for k, v in sorted(NbrPatientsCateg.items()):
+            print(k, v)
 
     '''
     for k, v in sorted(NbrTilesCateg.iteritems()):
