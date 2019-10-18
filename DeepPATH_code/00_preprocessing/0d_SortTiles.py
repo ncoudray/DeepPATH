@@ -368,6 +368,7 @@ if __name__ == '__main__':
         random.shuffle(imgFolders)  # randomize order of images
 
     JsonFile = args.JsonFile
+    nameLength = -1
     if '.json' in JsonFile:
         with open(JsonFile) as fid:
             jdata = json.loads(fid.read())
