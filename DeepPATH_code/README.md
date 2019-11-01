@@ -145,7 +145,7 @@ Mandatory parameters:
 *  The final mandatory parameter is the path to all svs images.
 Optional parameters when regions have been selected with Aperio:
 * `-x` is the path to the xml files. The rootname of the xml file must match exactly the one of the svs images. All the xml files sharing the same label should be in the same folder (named after this label, for example xml_<label>). If there are ROIs with different labels, they should be saved in separate folders and tiles independently in separate output folders (also named after the label, for example <###>pxTiles_<label>)
-* `-m` 1 or 0 if you want to tile the region inside the ROI, or outside
+* `-m` 1 or 0 if you want to tile the region inside the ROI, or outside (only tested with masks defined in xml files). If `-l=''`, then if will be everything outside all the ROIs, whatever their label. If `-l` is associated with a particular label, it will the inverse mask for that particular label. 
 * `-R` minimum percentage of tile covered by ROI. If below the percentage, tile is not kept.
 * `-l` To be used with xml file - Only do the tiling for the labels which name contains the characters in this option (string)
 * `-S` Set it to true if you want to save ALL masks for ALL tiles (will be saved in same directory with <mask> suffix!!)

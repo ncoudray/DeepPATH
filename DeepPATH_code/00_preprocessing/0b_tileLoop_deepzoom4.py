@@ -487,7 +487,10 @@ class DeepZoomImageTiler(object):
         if Attribute_Name == "non_selected_regions":
         	scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
         else:
-            scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
+           if self._mask_type==0:
+               scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + "_inv.jpeg")) 
+           else:
+               scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
         #print(mask)
         return mask / 255.0, xml_valid, NewFact
         # Img_Fact
@@ -539,8 +542,9 @@ class DeepZoomStaticTiler(object):
         """Run a single image from self._slide."""
         if associated is None:
             image = self._slide
+            print("")
             if self._with_viewer:
-                basename = os.path.join(self._basename, VIEWER_SLIDE_NAME)
+                 basename = os.path.join(self._basename, VIEWER_SLIDE_NAME)
             else:
                 basename = self._basename
         else:
@@ -795,28 +799,60 @@ if __name__ == '__main__':
 			print("xml:")
 			print(xmldir)
 			if os.path.isfile(xmldir):
-				if opts.mask_type==1:
+				if (opts.mask_type==1) or (opts.oLabelref!=''):
+					# either mask inside ROI, or mask outside but a reference label exist
 					xml_labels, xml_valid = xml_read_labels(xmldir)
+					if (opts.mask_type==1):
+						# No inverse mask
+						Nbr_ROIs_ForNegLabel = 1
+					elif (opts.oLabelref!=''):
+						# Inverse mask and a label reference exist
+						Nbr_ROIs_ForNegLabel = 0
+
 					for oLabel in xml_labels:
 						print("label is %s and ref is %s" % (oLabel, opts.oLabelref))
 						if (opts.oLabelref in oLabel) or (opts.oLabelref==''):
-							output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
-							if not os.path.exists(os.path.join(opts.basename, oLabel)):
-								os.makedirs(os.path.join(opts.basename, oLabel))
-							try:
+							# is a label is identified 
+							if (opts.mask_type==0):
+								# Inverse mask and label exist in the image
+								Nbr_ROIs_ForNegLabel += 1
+								# there is a label, and map is to be inverted
+								output = os.path.join(opts.basename, oLabel+'_inv', opts.basenameJPG)
+								if not os.path.exists(os.path.join(opts.basename, oLabel+'_inv')):
+									os.makedirs(os.path.join(opts.basename, oLabel+'_inv'))
+							else:
+								Nbr_ROIs_ForNegLabel += 1
+								output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
+								if not os.path.exists(os.path.join(opts.basename, oLabel)):
+									os.makedirs(os.path.join(opts.basename, oLabel))
+							if 1:
+							#try:
 								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag).run()
-							except:
-								print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
+							#except:
+							#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
+						if Nbr_ROIs_ForNegLabel==0:
+							print("label is %s is not in that image; invert everything" % (opts.oLabelref))
+							# a label ref was given, and inverse mask is required but no ROI with this label in that map --> take everything
+							oLabel = opts.oLabelref
+							output = os.path.join(opts.basename, opts.oLabelref+'_inv', opts.basenameJPG)
+							if not os.path.exists(os.path.join(opts.basename, oLabel+'_inv')):
+								os.makedirs(os.path.join(opts.basename, oLabel+'_inv'))
+							if 1:
+							#try:
+								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag).run()
+							#except:
+							#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
+
 				else:
 					# Background
 					oLabel = "non_selected_regions"
 					output = os.path.join(opts.basename, oLabel, opts.basenameJPG)
 					if not os.path.exists(os.path.join(opts.basename, oLabel)):
 						os.makedirs(os.path.join(opts.basename, oLabel))
-					try:
+					if 1:#try:
 						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag).run()
-					except:
-						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
+					#except:
+					#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 
 			else:
 				if (ImgExtension == ".jpg") | (ImgExtension == ".dcm") :
