@@ -311,9 +311,11 @@ The same was done for the test and valid set with this slightly modified script:
 ```shell
 python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_test' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test'
 
-python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_valid' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='valid'
+python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_valid' build_TF_test --one_FT_per_Tile=False --ImageSet_basename='valid'
 
 ```
+
+Known bug: On many systems, it is better to always use `--num_threads=1`. Corrupted TFRecords can be generated when multi-threading is used.
 
 The difference is that for the train set, the tiles are randomly assigned to the TFRecord files. For the test and validation set, it will created 1 TFRecord file per Slide (solution prefered) - though if `one_FT_per_Tile` is `True`, there will be 1 TFRecord file per Tile created. 
 
