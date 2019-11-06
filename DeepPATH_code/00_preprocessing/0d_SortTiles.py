@@ -390,7 +390,7 @@ if __name__ == '__main__':
                 # jdata[tmp_PID[:args.PatientID]] = line.split()[1]
                 nameLength = min(nameLength, len(tmp_PID)) 
                 jdata[tmp_PID] = line.split()[1]
-            print("nameLength is " + str(nameLength))
+            print("minimum nameLength is " + str(nameLength))
     print("jdata:")
     print(jdata)
     Magnification = args.Magnification
@@ -684,7 +684,7 @@ if __name__ == '__main__':
                         tileNewPatient = True
                 else:
                     try:
-                        Patient = imgRootName[:nameLength]
+                        Patient = imgRootName
                     except:
                         Patient = imgRootName[:nameLength]
                     if Patient in Patient_set:
@@ -723,14 +723,18 @@ if __name__ == '__main__':
             else:
                 if args.PatientID > 0:
                     Patient = imgRootName[:args.PatientID]
+                else:
+                    Patient = imgRootName
+                if True:
                     if Patient in Patient_set:
                         ttv = Patient_set[Patient]
                         if NbTiles == 1:
-                        	NewPatient = False
+                            NewPatient = False
                     else:
                         Patient_set[Patient] = ttv
                         if NbTiles == 1:
-                        	NewPatient = True
+                            NewPatient = True
+
                 # print(ttv)
 
                 NewImageDir = os.path.join(SubDir, "_".join((ttv, imgRootName, TileName)))  # all train initially
@@ -760,25 +764,19 @@ if __name__ == '__main__':
         if NewPatient: 
             NbrPatientsCateg[SubDir] = NbrPatientsCateg.get(SubDir) + 1
 
+        print("New Patient: " + str(NewPatient))
+        print("NbrPatientsCateg[SubDir]: " + str(NbrPatientsCateg[SubDir]))
+        print("imgRootName: " + str(imgRootName))
 
-        PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(
-            NbrTilesCateg.get(SubDir))
-        PercentTilesCateg[SubDir + "_test"] = float(NbrTilesCateg.get(SubDir + "_test")) / float(
-            NbrTilesCateg.get(SubDir))
-        PercentTilesCateg[SubDir + "_valid"] = float(NbrTilesCateg.get(SubDir + "_valid")) / float(
-            NbrTilesCateg.get(SubDir))
-        PercentSlidesCateg[SubDir + "_train"] = float(NbrImagesCateg.get(SubDir + "_train")) / float(
-            NbrImagesCateg.get(SubDir))
-        PercentSlidesCateg[SubDir + "_test"] = float(NbrImagesCateg.get(SubDir + "_test")) / float(
-            NbrImagesCateg.get(SubDir))
-        PercentSlidesCateg[SubDir + "_valid"] = float(NbrImagesCateg.get(SubDir + "_valid")) / float(
-            NbrImagesCateg.get(SubDir))
-        PercentPatientsCateg[SubDir + "_train"] = float(NbrPatientsCateg.get(SubDir + "_train")) / float(
-            NbrPatientsCateg.get(SubDir))
-        PercentPatientsCateg[SubDir + "_test"] = float(NbrPatientsCateg.get(SubDir + "_test")) / float(
-            NbrPatientsCateg.get(SubDir))
-        PercentPatientsCateg[SubDir + "_valid"] = float(NbrPatientsCateg.get(SubDir + "_valid")) / float(
-            NbrPatientsCateg.get(SubDir))
+        PercentTilesCateg[SubDir + "_train"] = float(NbrTilesCateg.get(SubDir + "_train")) / float(NbrTilesCateg.get(SubDir))
+        PercentTilesCateg[SubDir + "_test"] = float(NbrTilesCateg.get(SubDir + "_test")) / float(NbrTilesCateg.get(SubDir))
+        PercentTilesCateg[SubDir + "_valid"] = float(NbrTilesCateg.get(SubDir + "_valid")) / float(NbrTilesCateg.get(SubDir))
+        PercentSlidesCateg[SubDir + "_train"] = float(NbrImagesCateg.get(SubDir + "_train")) / float(NbrImagesCateg.get(SubDir))
+        PercentSlidesCateg[SubDir + "_test"] = float(NbrImagesCateg.get(SubDir + "_test")) / float(NbrImagesCateg.get(SubDir))
+        PercentSlidesCateg[SubDir + "_valid"] = float(NbrImagesCateg.get(SubDir + "_valid")) / float(NbrImagesCateg.get(SubDir))
+        PercentPatientsCateg[SubDir + "_train"] = float(NbrPatientsCateg.get(SubDir + "_train")) / float(NbrPatientsCateg.get(SubDir))
+        PercentPatientsCateg[SubDir + "_test"] = float(NbrPatientsCateg.get(SubDir + "_test")) / float(NbrPatientsCateg.get(SubDir))
+        PercentPatientsCateg[SubDir + "_valid"] = float(NbrPatientsCateg.get(SubDir + "_valid")) / float(NbrPatientsCateg.get(SubDir))
 
         print("Done. %d tiles linked to %s " % (NbTiles, SubDir))
         print("Train / Test / Validation tiles sets for %s = %f %%  / %f %% / %f %%" % (

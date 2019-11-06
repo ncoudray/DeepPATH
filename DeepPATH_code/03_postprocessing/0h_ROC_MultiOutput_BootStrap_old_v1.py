@@ -98,19 +98,6 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 	return confidence_lower, confidence_upper
 
 def main():
-	corr = ''
-	tile_filter_list = {}
-	if os.path.isfile(FLAGS.ListTile_filter):
-		corr = '.'.join(os.path.basename(FLAGS.ListTile_filter).split('.')[:-1])
-		with open(FLAGS.ListTile_filter, "r") as f:
-			for line in f:
-				line = line.replace('\r','\n')
-				line = line.split('\n')
-				for eachline in line:
-					if len(eachline)>0:
-						tile_filter_list['.'.join(eachline.split('.')[:-1])] = True
-	print(tile_filter_list)
-
 	unique_labels = []
 	with open(FLAGS.labels_names, "r") as f:
 		for line in f:
@@ -122,7 +109,7 @@ def main():
 
 	ref_file_data = {}
 	if os.path.isfile(FLAGS.ref_file):
-		corr = corr + 'corrected_'
+		corr = 'corrected_'
 		with open(FLAGS.ref_file) as fstat2:
 			for line in fstat2:
 				if line.find('.dat') != -1:
@@ -187,12 +174,11 @@ def main():
 				basenamePatient = basename[:(len(basename.split('_')[0]) + FLAGS.PatientID)+1]
 			else:
 				basenamePatient = basename
-			# corr = ''
+			corr = ''
 			analyze = True
 			# check if this tile need to be analyzed (depending on whether there's a filter or not)
 			if os.path.isfile(FLAGS.ref_file):
-				# Check tile within filenameStats.txt
-				# corr = 'corrected_'
+				corr = 'corrected_'
 				basenameXY = '_'.join(filename.split('_')[1:])
 				if basenameXY in ref_file_data.keys():
 					if FLAGS.ref_thresh == -1:
@@ -221,12 +207,6 @@ def main():
 							#print(analyze)
 							break
 				'''
-			if (FLAGS.ListTile_filter != ''):
-				# Check tile within a list
-				basenameXY = '_'.join(filename.split('_')[1:])
-				print("basename is:" + basenameXY)
-				if basenameXY not in tile_filter_list.keys():
-					analyze = False
 
 			if analyze == False:
 				#print("continue")
@@ -657,10 +637,10 @@ if __name__ == '__main__':
       help='Nb of characters for the patient ID.'
   )
   parser.add_argument(
-      '--ListTile_filter',
+      '--jpgClass_path',
       type=str,
       default='',
-      help='Used to compute the ROC on only a subset of tile used: ListTile_filter is the file which contains the list of tiles (<patientID>_<tileX>_<tileY>.jpeg, 1 per line that should be included in the computation of the ROC'
+      help='path where the jpg were classified into train/valid/test (main folder)'
   )
 
 
