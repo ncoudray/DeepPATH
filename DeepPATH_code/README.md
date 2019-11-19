@@ -150,6 +150,8 @@ Optional parameters when regions have been selected with Aperio:
 * `-l` To be used with xml file - Only do the tiling for the labels which name contains the characters in this option (string)
 * `-S` Set it to true if you want to save ALL masks for ALL tiles (will be saved in same directory with <mask> suffix!!)
 * `-M` set to -1 by default to tile the image at all magnifications. Set it to the value of the desired magnification to tile only at that magnification and save space
+* `-N` normalize each tile according to the method described in E. Reinhard, M. Adhikhmin, B. Gooch, and P. Shirley, “Color transfer between images”. If normalization is needed, N list the mean and std for each channel in the Lab space. For example \'57,22,-8,20,10,5\' with the first 3 numbers being the targeted means, and then the targeted stds. To check what are the Lab values for a given jpg tile, you can use the `Get_Labstats_From_jpeg.py` script. 
+
 
 Notes:
 * This code can also be used to tile input jpg images: the full path to input images will end in <*jpg">, and you need to set the option `-x` to the `'.jpg'` string value and `-R` to the magnification at which the images were acquired (`20.0` for example)
