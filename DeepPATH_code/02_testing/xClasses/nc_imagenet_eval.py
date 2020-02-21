@@ -12,7 +12,7 @@ from __future__ import print_function
 
 import pickle
 import csv
-
+import sys
 import tensorflow as tf
 
 from inception import nc_inception_eval
@@ -61,7 +61,8 @@ def main(unused_argv=None):
       FLAGS.data_dir = next_slide
       dataset = ImagenetData(subset=FLAGS.subset)
       assert dataset.data_files()
-      try:
+      #try:
+      if True:
         precision_at_1, current_score = nc_inception_eval.evaluate(dataset)
         mydict[next_slide] = {}
         mydict[next_slide]['NbrTiles']  = FLAGS.num_examples
@@ -70,8 +71,13 @@ def main(unused_argv=None):
         mydict[next_slide]['Read_Class'] = labelname
         print(FLAGS.num_examples)
         count_slides += 1.0
-      except:
-      	print("%s FAILED to be processed properly" %next_slide)
+      if False:
+      #except Exception as e:
+        print("%s FAILED to be processed properly" %next_slide)
+        print("Unexpected error:", sys.exc_info()[0])
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
     output = open(os.path.join(FLAGS.eval_dir, 'out_All_Stats.txt'), 'ab+')
     pickle.dump(mydict, output)
     output.close()

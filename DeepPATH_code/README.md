@@ -9,10 +9,66 @@ This procedure is based on the inception v3 architecture from google. See [Incep
 Christian Szegedy, Vincent Vanhoucke, Sergey Ioffe, Jonathon Shlens, Zbigniew Wojna. "Rethinking the Inception Architecture for Computer Vision"
 http://arxiv.org/abs/1512.00567
 
+## Preliminary comments
+### Overview
 
-**Below is an overall description of our toolchain and is evolving as we move on with our projects. If you're more interested in the details of the process published in the paper above, see the description in the "example_TCGA_Lung" foder.**
+**Below is an overall description of our toolchain and is evolving as we move on with our projects.**
+
+If you're more interested in the details of the process published in the paper above, see the description in the "example_TCGA_Lung" foder.**
+
+### Datasets
+
+Images can be obtained from the GDC data portal (https://portal.gdc.cancer.gov/). The easiest way is to:
+* download the client from https://gdc.cancer.gov/access-data/gdc-data-transfer-tool
+* Create and download a manifest and metadata json file from the gdc website for the whole slides images of interest
+* Download images using the manifest and the API: gdc-client.exe download -m gdc_manifest.txt
+
+### System requirement
+
+This pipeline is currently developped on the [BigPurple cluster of NYU](https://med.nyu.edu/research/scientific-cores-shared-resources/high-performance-computing-core). See [this link](http://bigpurple-ws.nyumc.org/wiki/index.php/BigPurple_HPC_Cluster) for details (GPU nodes with Tesla V100 GPUs).
+
+Major dependencies are:
+- python 3.6.5 
+- tensorflow-gpu 1.9.0
+- numpy 1.14.3
+- matplotlib 2.1.2
+- sklearn
+- scipy 1.1.0
+- openslide-python 1.1.1
+- Pillow 5.1.0
+
+### Installation guide
+
+Instructions Clone this repo to your local machine using:
+```shell
+git clone https://github.com/ncoudray/DeepPATH.git
+```
+Installation should take just a few seconds.
+
+### Licence on out code
+This license only concerns the code fully written by us. 
+
+The MIT License (MIT)
+
+Copyright (c) 2017, Nicolas Coudray, Theodoros Sakellaropoulos, and Aristotelis Tsirigos (NYU)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### Other sources
+For tiling, we modified the code from [this page](https://github.com/openslide/openslide-python/blob/master/examples/deepzoom/deepzoom_tile.py) from thge Carnegie Mellon University and  while "under the terms of version 2.1 of 
+
+For the conversion from jpg to TFREcord, the training, testing and validation of inception v3, we modified the code from [this page](https://github.com/tensorflow/models/tree/master/research/inception) "Copyright 2016 Google Inc. All Rights Reserved", under the "Licensed under the Apache License, Version 2.0"
 
 
+### Demo
+
+see the example_TCGA_lung folder and instructions below for detailed list of options, usage and order of processing.
+
+### Advice on folder organization
 
 
 Preliminary comments:

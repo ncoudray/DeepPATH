@@ -72,6 +72,7 @@ class TileWorker(Process):
         # Lab[:,:,0] = Lab[:,:,0] / 2.55
         # Lab[:,:,1] = Lab[:,:,1] - 128
         # Lab[:,:,2] = Lab[:,:,2] - 128
+        print("RGB to Lab")
         Lab = color.rgb2lab(tile)
         return Lab
 
@@ -83,6 +84,7 @@ class TileWorker(Process):
         # Lab[:,:,1] = Lab[:,:,1] + 128
         # Lab[:,:,2] = Lab[:,:,2] + 128
         # newtile = ImageCms.applyTransform(Lab, lab2rgb)
+        print("Lab to RGB")
         newtile = (color.lab2rgb(Lab) * 255).astype(np.uint8)
         return newtile
 
@@ -96,8 +98,16 @@ class TileWorker(Process):
         for i in range(3):
             TileMean[i] = np.mean(Lab[:,:,i])
             TileStd[i] = np.std(Lab[:,:,i])
-            print("mean/std chanel " + str(i) + ": " + str(TileMean[i]) + " / " + str(TileStd[i]))
-            Lab[:,:,i] = ((Lab[:,:,i] - TileMean[i]) * (newStd[i] / TileStd[i])) + newMean[i]
+            # print("mean/std chanel " + str(i) + ": " + str(TileMean[i]) + " / " + str(TileStd[i]))
+            tmp = ((Lab[:,:,i] - TileMean[i]) * (newStd[i] / TileStd[i])) + newMean[i]
+            if i == 0:
+                tmp[tmp<0] = 0 
+                tmp[tmp>100] = 100 
+                Lab[:,:,i] = tmp
+            else:
+                tmp[tmp<-128] = 128 
+                tmp[tmp>127] = 127 
+                Lab[:,:,i] = tmp
         tile = self.Lab_to_RGB(Lab)
         return tile
 
@@ -127,12 +137,14 @@ class TileWorker(Process):
                     avgBkg = np.average(bw)
                     bw = gray.point(lambda x: 0 if x<220 else 1, '1')
                     # check if the image is mostly background
+                    print("res: " + outfile + " is " + str(avgBkg))
                     if avgBkg <= (self._Bkg / 100.0):
                         # print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
                         if PercentMasked >= (self._ROIpc / 100.0):
 
                             if Normalize != '':
+                                print("normalize " + str(outfile))
                                 # arrtile = np.array(tile)
                                 tile = Image.fromarray(self.normalize_tile(tile, Normalize).astype('uint8'),'RGB')
 
@@ -833,8 +845,8 @@ if __name__ == '__main__':
 			image[...,0] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
 			image[...,1] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
 			image[...,2] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
-			dcm_ID = os.path.basename(os.path.dirname(filename))
-			opts.basenameJPG = dcm_ID + "_" + opts.basenameJPG
+			# dcm_ID = os.path.basename(os.path.dirname(filename))
+			# opts.basenameJPG = dcm_ID + "_" + opts.basenameJPG
 			filename = os.path.join(opts.tmp_dcm, opts.basenameJPG + ".jpg")
 			# print(filename)
 			imsave(filename,image)

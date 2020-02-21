@@ -1,9 +1,13 @@
-# Creation of Heat-map from tiles classified with inception v3.
+""" 
+The MIT License (MIT)
 
-""" NYU modifications:
-    Author: Nicolas Coudray
-    Date created: March/2017
-    Python Version: 3.5.3
+Copyright (c) 2018, Nicolas Coudray and Aristotelis Tsirigos (NYU)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -138,6 +142,7 @@ def main():
 	iv1 = {}
 	iv2 = {}
 	iv3 = {}
+	count_tiles = {}
 	ListSlideNames = {}
 	skip = False
 
@@ -235,6 +240,7 @@ def main():
 					iv2[cTileRootName] = []	
 					iv3[cTileRootName] = []	
 					ListSlideNames[cTileRootName] = []
+					count_tiles[cTileRootName] = [0, 0, 0]
 
 				#if skip:
 					#	continue
@@ -275,8 +281,13 @@ def main():
 							newProb = (newProb - 0.5) / (1.0 / nThresh[cChannel] - 1) + 0.5 
 						iv1[cTileRootName].append(newProb)
 						# print("old / new probability: " + str(class_all[nClasses[0]-1]) + " / " + str(newProb))
+						if class_all[nClasses[cChannel]-1] > nThresh[cChannel]:
+							count_tiles[cTileRootName][cChannel] = count_tiles[cTileRootName][cChannel] + 1
 					else:
 						iv1[cTileRootName].append(class_all[nClasses[0]-1])
+						if class_all[nClasses[0]-1] == max(class_all):
+							count_tiles[cTileRootName][0] = count_tiles[cTileRootName][0] + 1
+
 				else:
 					v1[cTileRootName].append(0)
 				idx[0][cTileRootName][0] += (iyTile,)
@@ -284,13 +295,18 @@ def main():
 			if (len(nClasses) > 1) & (cChannel == 1) :
 				if nClasses[1] > 0:
 					if nThresh != '':
-						newProb = class_all[nClasses[1]-1] / nThresh[cChannel] * 0.5
+						newProb = class_all[nClasses[cChannel]-1] / nThresh[cChannel] * 0.5
 						if newProb > 0.5:
 							newProb = (newProb - 0.5) / (1.0 / nThresh[cChannel] - 1) + 0.5 
 						iv2[cTileRootName].append(newProb)
 						# print("old / new probability: " + str(class_all[nClasses[1]-1]) + " / " + str(newProb))
+						if class_all[nClasses[cChannel]-1] > nThresh[cChannel]:
+							count_tiles[cTileRootName][cChannel] = count_tiles[cTileRootName][cChannel] + 1
 					else:
 						iv2[cTileRootName].append(class_all[nClasses[1]-1])
+						if class_all[nClasses[cChannel]-1] == max(class_all):
+							count_tiles[cTileRootName][cChannel] = count_tiles[cTileRootName][cChannel] + 1
+
 				else:
 					iv2[cTileRootName].append(0)
 				idx[1][cTileRootName][0] += (iyTile,)
@@ -303,8 +319,13 @@ def main():
 							newProb = (newProb - 0.5) / (1.0 / nThresh[cChannel] - 1) + 0.5 
 						iv3[cTileRootName].append(newProb)
 						# print("old / new probability: " + str(class_all[nClasses[2]-1]) + " / " + str(newProb))
+						if class_all[nClasses[cChannel]-1] > nThresh[cChannel]:
+							count_tiles[cTileRootName][cChannel] = count_tiles[cTileRootName][cChannel] + 1
 					else:
 						iv3[cTileRootName].append(class_all[nClasses[2]-1])
+						if class_all[nClasses[cChannel]-1] == max(class_all):
+							count_tiles[cTileRootName][cChannel] = count_tiles[cTileRootName][cChannel] + 1
+
 				else:
 					iv3[cTileRootName].append(0)
 				idx[2][cTileRootName][0] += (iyTile,)
@@ -319,7 +340,8 @@ def main():
 	# print(ListSlideNames)
 	# print(idx)
 	# print(idx[0])
-
+	file1 = open(os.path.join(FLAGS.output_dir,"distribution.txt"),"a")
+	file1.write("image\tclass " + str(nClasses[0]) + "\tclass " + str(nClasses[1]) + "\tclass " + str(nClasses[2]) + "\n") 
 	for slide in ListSlideNames.keys(): 
 		print("slide: " + slide)
 		if len(idx[0][slide][0]) > 0:
@@ -368,7 +390,8 @@ def main():
 		rgb[..., 2] = X3 * 255
 		filename = os.path.join(FLAGS.output_dir,"CMap_" + slide + ".jpg")
 		imsave(filename, rgb)
-
+		file1.write(slide + "\t" + str(count_tiles[slide][0] ) + "\t" + str(count_tiles[slide][1] ) + "\t" + str(count_tiles[slide][2] ) + "\n")
+	file1.close()
 
 
 if __name__ == '__main__':

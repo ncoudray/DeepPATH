@@ -13,7 +13,7 @@ Example: processing of Lung Cancer images from the TCGA database:
 ```shell
 python 00_preprocessing/0b_tileLoop_deepzoom4.py  -s 512 -e 0 -j 32 -B 50 -M 20 -o 512px_Tiled "downloaded_data/*/*svs"  
 ```
-
+It takes about 10sec to generaste 10k tiles when using 30 CPUs.
 
 
 * Sort the dataset into a test, train and validation cohort for a 3-way classifier (LUAD/LUSC/Normal). You need to create a new directory and run this job from that directory
@@ -23,6 +23,7 @@ mkdir r1_sorted_3Cla
 cd r1_sorted_3Cla
 python ../00_preprocessing/0d_SortTiles.py --SourceFolder='../512px_Tiled/' --Magnification=20.0  --MagDiffAllowed=0 --SortingOption=3  --PatientID=12 --nSplit 0 --JsonFile='../downloaded_data/metadata.cart.2017-03-02T00_36_30.276824.json' --PercentTest=15 --PercentValid=15
 ```
+Sorting takes about 10-15 minutes on 1 CPU for about 1.3 millions tiles.
 
 Once the process is complete, it should display how many slides and images are assigned to each dataset and each class. In this particular test run, we obtained this for the number of tiles in each dataset (first number is total):
 
@@ -72,6 +73,7 @@ python 00_preprocessing/TFRecord_2or3_Classes/build_TF_test.py --directory='r1_s
 
 python 00_preprocessing/TFRecord_2or3_Classes/build_image_data.py --directory='r1_sorted_3Cla/' --output_directory='r1_TFRecord_train' --train_shards=1024  --validation_shards=128 --num_threads=16
 ```
+It takes about 90 sec to convert 10k images using 1 CPU (test and valid). Multi-treading implemented on training set lowers it to about 10 seconds for 10k images on 32 CPUs.
 
 * Train the 3-way classifier
 
@@ -82,7 +84,6 @@ bazel build inception/imagenet_train
 
 bazel-bin/inception/imagenet_train --num_gpus=4 --batch_size=400 --train_dir='r1_results' --data_dir='r1_TFRecord_train' --ClassNumber=3 --mode='0_softmax' --NbrOfImages=923893 --save_step_for_chekcpoint=2300 --max_steps=230001
 ```
-
 
 * As the first checkpoint appear, you can start running the validation set on it. Create a "labelref_r1.txt" text file with the list of possible classes (see attached example). To run it in on loop on all existing checkpoints, the following code can be adapted:
 

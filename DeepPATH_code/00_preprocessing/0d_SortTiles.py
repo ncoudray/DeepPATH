@@ -1,7 +1,16 @@
 '''
+The MIT License (MIT)
+
+Copyright (c) 2017, Nicolas Coudray, Theodoros Sakellaropoulos, and Aristotelis Tsirigos
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
     Authors: Nicolas Coudray, Theodoros Sakellaropoulos
     Date created: March/2017
-    Python Version: 2.7 (native on the cluster)
 
         Objective:
         Starting with tiles images, select images from a given magnification and order them according the the stage of the cancer, or type of cancer, etc...
@@ -357,13 +366,16 @@ if __name__ == '__main__':
     SourceFolder = os.path.abspath(args.SourceFolder)
     if args.SortingOption in [15, 16]:
         # raw TCGA svs images
+        print("sort option 15 or 16")
         imgFolders = glob(os.path.join(SourceFolder, "*.svs"))
         random.shuffle(imgFolders)  # randomize order of images
     elif args.SortingOption in [19]:
+        print("sort option 19")
         imgFolders = glob(os.path.join(SourceFolder, "*", "*_files"))
         random.shuffle(imgFolders)  # randomize order of images
         AllNewDirs = [name for name in os.listdir(SourceFolder) if os.path.isdir(name)]
     else:
+        print("sort option other than 15, 16, 19")
         imgFolders = glob(os.path.join(SourceFolder, "*_files"))
         random.shuffle(imgFolders)  # randomize order of images
 
@@ -482,7 +494,7 @@ if __name__ == '__main__':
             nbr_valid.append(0)
         ttv_split[0] = "test"
     '''
-    print("imgFolders")
+    print("imgFolders: " + str(len(imgFolders)))
     print(imgFolders[0:min(10,len(imgFolders))])
     for cFolderName in imgFolders:
 
@@ -588,6 +600,7 @@ if __name__ == '__main__':
             PercentSlidesCateg[SubDir + "_train"] = 0
             PercentSlidesCateg[SubDir + "_test"] = 0
             PercentSlidesCateg[SubDir + "_valid"] = 0
+            NbrPatientsCateg[SubDir + "_NameList"] = {}
             NbrPatientsCateg[SubDir] = 0
             NbrPatientsCateg[SubDir + "_train"] = 0
             NbrPatientsCateg[SubDir + "_test"] = 0
@@ -606,12 +619,13 @@ if __name__ == '__main__':
 
         NbTiles = 0
         ttv = 'None'
+        print("nbr images: " + str(len(AllTiles)))
         if len(AllTiles) == 0:
             continue
         for TilePath in AllTiles:
             # ttv = 'None'          
             TileName = os.path.basename(TilePath)
-            print("TileName is %s" % TileName)
+            # print("TileName is %s" % TileName)
             if len(outFilenameStats_dict) > 0:
                 # process only if this tile was classified  as "True" by the classifier
                 ThisKey = imgRootName + "_" + TileName.split(".")[0]
@@ -726,14 +740,31 @@ if __name__ == '__main__':
                 else:
                     Patient = imgRootName
                 if True:
-                    if Patient in Patient_set:
+                    # check if patient in this particular class
+                    if Patient not in NbrPatientsCateg[SubDir + "_NameList"].keys():
+                        # it is not > check in other
+                        # Check if patient in ANY class is train/valid or test
+                        if Patient in Patient_set:
+                            ttv = Patient_set[Patient]
+                            NbrPatientsCateg[SubDir + "_NameList"][Patient] = Patient_set[Patient]
+                            # if NbTiles == 1:
+                            #   NewPatient = False
+                        else:
+                            Patient_set[Patient] = ttv
+                            NbrPatientsCateg[SubDir + "_NameList"][Patient] = ttv
+                            #if NbTiles == 1:
+                            #    NewPatient = True
+                        if NbTiles == 1:
+                        	NewPatient = True
+
+                    else:
+                        # It is in the class > not a new patient
                         ttv = Patient_set[Patient]
                         if NbTiles == 1:
                             NewPatient = False
-                    else:
-                        Patient_set[Patient] = ttv
-                        if NbTiles == 1:
-                            NewPatient = True
+
+
+
 
                 # print(ttv)
 
