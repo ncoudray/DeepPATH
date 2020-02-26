@@ -45,7 +45,7 @@ git clone https://github.com/ncoudray/DeepPATH.git
 ```
 Installation should take just a few seconds.
 
-### Licence on out code
+### Licence on our code
 This license only concerns the code fully written by us. 
 
 The MIT License (MIT)
@@ -504,15 +504,20 @@ Once the model is built, run it for all the training images (same header for the
 bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='output_directory' --data_dir='TFRecord_images_directory' --ClassNumber=3 --mode='0_softmax' 
 ```
 
-Notes:
-* The ```mode``` option must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
-* In bigpurple, you can use 4 or 8 GPUs (if available) to make it faster. You will need, in the header, to set ```gres=gpu:4``` or ```gres=gpu:8``` and in the parameters of imagenet_train, set ```num_gpus``` to 4 or 8.
+Notes on options and modifications in original inception code:
+* The ```mode``` option has been added and must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
 * Other options available:
 - ```num_epochs_per_decay```: Epochs after which learning rate decays
 - ```learning_rate_decay_factor```: factor of the rate decay
 - ```NbrOfImages```: number of images in the training dataset (used for decay: NbrOfImages/batch_size gives the number of iterations for 1 epoch)
 - ```max_steps```: number of batches to run
 - ```save_step_for_chekcpoint```: frequency at which the checkpoints should be saved (default: 5,000)
+* On bigpurple, you can use 4 or 8 GPUs (if available) to make it faster. You will need, in the header, to set ```gres=gpu:4``` or ```gres=gpu:8``` and in the parameters of imagenet_train, set ```num_gpus``` to 4 or 8.
+* other notable modifications in the code:
+- in ```image_processing.py```: ```image = tf.image.central_crop(image, central_fraction=0.875)``` commented out (winter 2019 version)
+- in ```inception_distributed_train.py```: last 100 checkpoints saved instead of last 5
+
+
 
 ## 1.2 - Transfer learning
 
