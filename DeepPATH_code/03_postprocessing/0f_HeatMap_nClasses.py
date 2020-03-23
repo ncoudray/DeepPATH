@@ -346,7 +346,7 @@ def main():
 		# remove slide number from image name:
 		cTileRootName =  '_'.join(tile.split('_')[0:-2]) 
 		extensions = ['.jpeg', '.jpg']
-		IsError = True
+		isError = True
 		old_dir_name =  dir_name 
 		dir_name = 'unknown'
 		#print(tile)
