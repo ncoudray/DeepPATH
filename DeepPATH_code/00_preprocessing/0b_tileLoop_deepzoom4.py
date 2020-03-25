@@ -185,7 +185,7 @@ class TileWorker(Process):
 class DeepZoomImageTiler(object):
     """Handles generation of tiles and metadata for a single image."""
 
-    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc, ImgExtension, SaveMasks, Mag, normalize):
+    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc, ImgExtension, SaveMasks, Mag, normalize, Fieldxml):
         self._dz = dz
         self._basename = basename
         self._basenameJPG = basenameJPG
@@ -202,6 +202,7 @@ class DeepZoomImageTiler(object):
         self._SaveMasks = SaveMasks
         self._Mag = Mag
         self._normalize = normalize
+        self._Fieldxml = Fieldxml
 
     def run(self):
         self._write_tiles()
@@ -274,7 +275,7 @@ class DeepZoomImageTiler(object):
             # print(xmldir)
             if (self._xmlfile != '') & (self._ImgExtension != 'jpg') & (self._ImgExtension != 'dcm'):
                 # print("read xml file...")
-                mask, xml_valid, Img_Fact = self.xml_read(xmldir, self._xmlLabel)
+                mask, xml_valid, Img_Fact = self.xml_read(xmldir, self._xmlLabel, self._Fieldxml)
                 if xml_valid == False:
                     print("Error: xml %s file cannot be read properly - please check format" % xmldir)
                     return
@@ -442,7 +443,7 @@ class DeepZoomImageTiler(object):
         return mask, xml_valid, Img_Fact
 
 
-    def xml_read(self, xmldir, Attribute_Name):
+    def xml_read(self, xmldir, Attribute_Name, Fieldxml):
 
         # Original size of the image
         ImgMaxSizeX_orig = float(self._dz.level_dimensions[-1][0])
@@ -479,7 +480,8 @@ class DeepZoomImageTiler(object):
             else:
                 try:
                     labeltag = labelID.getElementsByTagName('Attribute')[0]
-                    if (Attribute_Name==labeltag.attributes['Value'].value):
+                    if (Attribute_Name==labeltag.attributes[Fieldxml].value):
+                    # if (Attribute_Name==labeltag.attributes['Value'].value):
                     # if (Attribute_Name==labeltag.attributes['Name'].value):
                         isLabelOK = True
                     else:
@@ -559,7 +561,7 @@ class DeepZoomStaticTiler(object):
     """Handles generation of tiles and metadata for all images in a slide."""
 
     def __init__(self, slidepath, basename, format, tile_size, overlap,
-                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type, ROIpc, oLabel, ImgExtension, SaveMasks, Mag, normalize):
+                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type, ROIpc, oLabel, ImgExtension, SaveMasks, Mag, normalize, Fieldxml):
         if with_viewer:
             # Check extra dependency before doing a bunch of work
             import jinja2
@@ -584,6 +586,7 @@ class DeepZoomStaticTiler(object):
         self._SaveMasks = SaveMasks
         self._Mag = Mag
         self._normalize = normalize
+        self._Fieldxml = Fieldxml
 
         for _i in range(workers):
             TileWorker(self._queue, slidepath, tile_size, overlap,
@@ -612,7 +615,7 @@ class DeepZoomStaticTiler(object):
         # print("enter DeepZoomGenerator")
         dz = DeepZoomGenerator(image, self._tile_size, self._overlap,limit_bounds=self._limit_bounds)
         # print("enter DeepZoomImageTiler")
-        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks, self._Mag, self._normalize)
+        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks, self._Mag, self._normalize, self._Fieldxml)
         tiler.run()
         self._dzi_data[self._url_for(associated)] = tiler.get_dzi()
 
@@ -683,7 +686,7 @@ def ImgWorker(queue):
 		subprocess.Popen(cmd, shell=True).wait()
 		queue.task_done()
 
-def xml_read_labels(xmldir):
+def xml_read_labels(xmldir, Fieldxml):
         try:
             xmlcontent = minidom.parse(xmldir)
             xml_valid = True
@@ -694,8 +697,9 @@ def xml_read_labels(xmldir):
         labeltag = xmlcontent.getElementsByTagName('Attribute')
         xml_labels = []
         for xmllabel in labeltag:
+            xml_labels.append(xmllabel.attributes[Fieldxml].value)
             #xml_labels.append(xmllabel.attributes['Name'].value)
-            xml_labels.append(xmllabel.attributes['Value'].value)
+            # xml_labels.append(xmllabel.attributes['Value'].value)
         if xml_labels==[]:
             xml_labels = ['']
         # print(xml_labels)
@@ -733,6 +737,9 @@ if __name__ == '__main__':
 		help='Max background threshold [50]; percentager of background allowed')
 	parser.add_option('-x', '--xmlfile', metavar='NAME', dest='xmlfile',
 		help='xml file if needed')
+	parser.add_option('-F', '--Fieldxml', metavar='{Name|Value}', dest='Fieldxml',
+		default='Value',
+		help='which field of the xml file is the label saved')
 	parser.add_option('-m', '--mask_type', metavar='COUNT', dest='mask_type',
 		type='int', default=1,
 		help='if xml file is used, keep tile within the ROI (1) or outside of it (0)')
@@ -854,7 +861,7 @@ if __name__ == '__main__':
 			output = os.path.join(opts.basename, opts.basenameJPG)
 
 			try:
-				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize).run()
+				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
 			except Exception as e:
 				print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 				print(e)
@@ -865,7 +872,7 @@ if __name__ == '__main__':
 		#		print("Image %s already tiled" % opts.basenameJPG)
 		#		continue
 
-		#	DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize).run()
+		#	DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
 
 		elif opts.xmlfile != '':
 			xmldir = os.path.join(opts.xmlfile, opts.basenameJPG + '.xml')
@@ -874,7 +881,7 @@ if __name__ == '__main__':
 			if os.path.isfile(xmldir):
 				if (opts.mask_type==1) or (opts.oLabelref!=''):
 					# either mask inside ROI, or mask outside but a reference label exist
-					xml_labels, xml_valid = xml_read_labels(xmldir)
+					xml_labels, xml_valid = xml_read_labels(xmldir, opts.Fieldxml)
 					if (opts.mask_type==1):
 						# No inverse mask
 						Nbr_ROIs_ForNegLabel = 1
@@ -900,7 +907,7 @@ if __name__ == '__main__':
 									os.makedirs(os.path.join(opts.basename, oLabel))
 							if 1:
 							#try:
-								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize).run()
+								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
 							#except:
 							#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						if Nbr_ROIs_ForNegLabel==0:
@@ -912,7 +919,7 @@ if __name__ == '__main__':
 								os.makedirs(os.path.join(opts.basename, oLabel+'_inv'))
 							if 1:
 							#try:
-								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize).run()
+								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
 							#except:
 							#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 
@@ -923,7 +930,7 @@ if __name__ == '__main__':
 					if not os.path.exists(os.path.join(opts.basename, oLabel)):
 						os.makedirs(os.path.join(opts.basename, oLabel))
 					try:
-						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize).run()
+						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
 					except Exception as e:
 						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						print(e)
@@ -933,7 +940,7 @@ if __name__ == '__main__':
 					print("Input image to be tiled is jpg or dcm and not svs - will be treated as such")
 					output = os.path.join(opts.basename, opts.basenameJPG)
 					try:
-						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize).run()
+						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
 					except Exception as e:
 						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						print(e)
@@ -949,7 +956,7 @@ if __name__ == '__main__':
 				continue
 			try:
 			#if True:
-				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize).run()
+				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
 			except Exception as e:
 				print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 				print(e)
