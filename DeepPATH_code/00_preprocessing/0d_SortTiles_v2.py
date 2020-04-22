@@ -32,9 +32,7 @@ from argparse import ArgumentParser
 import random
 import numpy as np
 from shutil import copyfile
-import cv2 as cv
-import spams
-from PIL import Image
+
 
 def extract_stage(metadata):
     stage = metadata['cases'][0]['diagnoses'][0]['tumor_stage']
@@ -239,8 +237,6 @@ sort_options = [
     sort_subfolders
 ]
 
-
-
 if __name__ == '__main__':
     # python 0d_SortTiles_stage.py '/ifs/home/coudrn01/NN/Lung/Test_All512pxTiled/512pxTiled' '/ifs/home/coudrn01/NN/Lung/RawImages/metadata.cart.2017-03-02T00_36_30.276824.json' 20 5 3 15 15
 
@@ -303,9 +299,6 @@ if __name__ == '__main__':
     parser.add_argument("--threshold",
                         help="threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability). comma separated string expected",
                         dest='threshold')
-    parser.add_argument("--outputtype",
-                        help="Type of output: list source/destination in a file (File), do symlink (Symlink, default) or both (Both)",
-                        dest='outputtype')
 
     ## Parse Arguments
     args = parser.parse_args()
@@ -326,10 +319,6 @@ if __name__ == '__main__':
     elif int(args.nSplit) > 0:
         args.PercentValid = 100 / int(args.nSplit)
         args.PercentTest = 0
-
-    outputW = open('img_list.txt','w')
-    if args.outputtype is None:
-        args.outputtype = 'Symlink'
 
     if args.outFilenameStats is None:
         outFilenameStats_dict = {}
@@ -478,8 +467,8 @@ if __name__ == '__main__':
             with open(TMBFile, "rU") as f:
                 mut_load = {}
                 for line in f:
-                   tmp_PID = line.split()[0]
-                   mut_load[tmp_PID] = line.split()[1]
+                    tmp_PID = line.split()[0]
+                    mut_load[tmp_PID] = line.split()[1]
         else:
             raise ValueError("For SortingOption = 17 you must specify the --TMB option")
 
@@ -496,7 +485,6 @@ if __name__ == '__main__':
     NbSlides = 0
     ttv_split = {}
     nbr_valid = {}
-    failedimg = []
     '''
     if int(args.nSplit) > 0:
         ttv_split = []
@@ -744,12 +732,7 @@ if __name__ == '__main__':
                     SetDir = "set_" + str(nSet)
                     NewImageDir = os.path.join(SetDir, SubDir, "_".join(
                         (ttv_split[SubDir][nSet], imgRootName, TileName)))  # all train initially
-                    #os.symlink(TilePath, NewImageDir)
-                    if args.outputtype in ['Symlink', 'Both']:
-                        os.symlink(TilePath, NewImageDir)
-                    if args.outputtype in ['File', 'Both']:
-                        outputW.write(TilePath + "\t" + NewImageDir + "\n")
-
+                    os.symlink(TilePath, NewImageDir)
 
             else:
                 if args.PatientID > 0:
@@ -770,7 +753,7 @@ if __name__ == '__main__':
                             Patient_set[Patient] = ttv
                             NbrPatientsCateg[SubDir + "_NameList"][Patient] = ttv
                             #if NbTiles == 1:
-           		                 #    NewPatient = True
+                            #    NewPatient = True
                         if NbTiles == 1:
                         	NewPatient = True
 
@@ -786,13 +769,8 @@ if __name__ == '__main__':
                 # print(ttv)
 
                 NewImageDir = os.path.join(SubDir, "_".join((ttv, imgRootName, TileName)))  # all train initially
-                if not os.path.exists(NewImageDir):
-                    if args.outputtype in ['Symlink', 'Both']:
-                        os.symlink(TilePath, NewImageDir)
-                    if args.outputtype in ['File', 'Both']:
-                        outputW.write(TilePath + "\t" + NewImageDir + "\n")
-
-
+                if not os.path.lexists(NewImageDir):
+                    os.symlink(TilePath, NewImageDir)
         # update stats 
 
         if ttv == "train":
@@ -857,6 +835,50 @@ if __name__ == '__main__':
         for k, v in sorted(NbrPatientsCateg.items()):
             print(k, v)
 
-    print("failed images:")
-    print(failedimg)
-    outputW.close()
+    '''
+    for k, v in sorted(NbrTilesCateg.iteritems()):
+        print(k, v)
+    for k, v in sorted(PercentTilesCateg.iteritems()):
+        print(k, v)
+    for k, v in sorted(NbrImagesCateg.iteritems()):
+        print(k, v)
+    '''
+
+    '''
+    # Partition the dataset into train / test / valid
+    print("********* Partitioning files to train / test / valid")
+    for SubDir, Images in Classes.items():
+        print("Working in Class %s" % SubDir)
+        Nimages = len(Images)
+        Ntest = int(round(Nimages * PercentTest))
+        Nvalid = int(round(Nimages * PercentValid))
+        print("Total number of images %d" % Nimages)
+        print("Number of test images %d" % Ntest)
+        print("Number of validation images %d" % Nvalid)
+        # rename first <Nvalid> images
+        NbTilesValid = 0
+        for imgRootName in Images[:Nvalid]:
+            oldprefix = "train_" + imgRootName
+            newprefix = "valid_" + imgRootName
+            TileGlob = os.path.join(SubDir, oldprefix + "_*")
+            for TilePath in glob(TileGlob):
+                os.rename(TilePath, TilePath.replace(oldprefix, newprefix))
+                NbTilesValid += 1
+        # rename last <Ntest> images
+        NbTilesTest = 0
+        for imgRootName in Images[-Ntest:]:
+            oldprefix = "train_" + imgRootName
+            newprefix = "test_" + imgRootName
+            TileGlob = os.path.join(SubDir, oldprefix + "_*")
+            for TilePath in glob(TileGlob):
+                os.rename(TilePath, TilePath.replace(oldprefix, newprefix))
+                NbTilesTest += 1
+
+        NbTiles = len(os.listdir(SubDir))
+        NbTilesTrain = NbTiles - NbTilesTest - NbTilesValid
+        pTrain = 100.0 * NbTilesTrain / NbTiles
+        pValid = 100.0 * NbTilesValid / NbTiles
+        pTest  = 100.0 * NbTilesTest  / NbTiles
+        print("Done. %d tiles linked to %s " % (NbTiles, SubDir))
+        print("Train / Test / Validation sets for %s = %f %%  / %f %% / %f %%" % (SubDir, pTrain, pTest, pValid))
+    '''

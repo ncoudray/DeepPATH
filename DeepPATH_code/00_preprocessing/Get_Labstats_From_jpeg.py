@@ -35,6 +35,7 @@ def main(argv):
     try:
         tile = Image.open(inputfile)
         Lab = RGB_to_lab(tile)
+        print("LAB values:")
         for i in range(3):
             print("Channel " + str(i) + " has mean of " + str(np.mean(Lab[:,:,i])) + " and std of " + str(np.std(Lab[:,:,i])))
     except Exception as e:

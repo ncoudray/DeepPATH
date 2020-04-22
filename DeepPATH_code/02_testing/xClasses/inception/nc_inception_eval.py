@@ -133,7 +133,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
         #  pass
         #else:
         #  os.makedirs(data_path)
-
+        np.set_printoptions(threshold=np.inf)
         if FLAGS.mode == '0_softmax':
           for kk in range(len(out_filenames)):
             imageName = os.path.splitext(out_filenames[kk].decode('UTF-8'))[0]
