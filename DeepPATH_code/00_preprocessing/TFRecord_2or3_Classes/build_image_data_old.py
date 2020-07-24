@@ -15,45 +15,35 @@
 # limitations under the License.
 # ==============================================================================
 """Converts image data to TFRecords file format with Example protos.
-
 The image data set is expected to reside in JPEG files located in the
 following directory structure.
-
   data_dir/label_0/image0.jpeg
   data_dir/label_0/image1.jpg
   ...
   data_dir/label_1/weird-image.jpeg
   data_dir/label_1/my-image.jpeg
   ...
-
 where the sub-directory is the unique label associated with these images.
-
 This TensorFlow script converts the training and evaluation data into
 a sharded data set consisting of TFRecord files
-
   train_directory/train-00000-of-01024
   train_directory/train-00001-of-01024
   ...
   train_directory/train-01023-of-01024
-
 and
-
   validation_directory/validation-00000-of-00128
   validation_directory/validation-00001-of-00128
   ...
   validation_directory/validation-00127-of-00128
-
 where we have selected 1024 and 128 shards for each data set. Each record
 within the TFRecord file is a serialized Example proto. The Example proto
 contains the following fields:
-
   image/encoded: string containing JPEG encoded image in RGB colorspace
   image/height: integer, image height in pixels
   image/width: integer, image width in pixels
   image/colorspace: string, specifying the colorspace, always 'RGB'
   image/channels: integer, specifying the number of channels, always 3
   image/format: string, specifying the format, always 'JPEG'
-
   image/filename: string containing the basename of the image file
             e.g. 'n01440764_10026.JPEG' or 'ILSVRC2012_val_00000293.JPEG'
   image/class/label: integer specifying the index in a classification layer.
@@ -61,7 +51,6 @@ contains the following fields:
     the background class.
   image/class/text: string specifying the human-readable version of the label
     e.g. 'dog'
-
 If your data set involves bounding boxes, please look at build_imagenet_data.py.
 """
 
@@ -76,8 +65,6 @@ import os
 import random
 import sys
 import threading
-import cv2
-from scipy.ndimage import rotate
 
 import numpy as np
 import tensorflow as tf
@@ -129,7 +116,6 @@ def _bytes_feature(value):
 
 def _convert_to_example(filename, image_buffer, label, text, height, width):
   """Build an Example proto for an example.
-
   Args:
     filename: string, path to an image file, e.g., '/path/to/example.JPG'
     image_buffer: string, JPEG encoding of RGB image
@@ -188,19 +174,16 @@ class ImageCoder(object):
 
 def _is_png(filename):
   """Determine if a file contains a PNG format image.
-
   Args:
     filename: string, path of the image file.
-
   Returns:
     boolean indicating if the image is a PNG.
   """
   return '.png' in filename
 
 
-def _process_image(filename, coder, flipRot):
+def _process_image(filename, coder):
   """Process a single image file.
-
   Args:
     filename: string, path to an image file e.g., '/path/to/example.JPG'.
     coder: instance of ImageCoder to provide TensorFlow image coding utils.
@@ -220,16 +203,6 @@ def _process_image(filename, coder, flipRot):
   #  image_data = coder.png_to_jpeg(image_data)
 
   print(filename)
-  print("flipRot:")
-  print(flipRot)
-  # Rot_Mir = False
-  if flipRot > 0:
-    image = coder.decode_jpeg(image_data)
-    rotate_img = rotate(image, 90 * (flipRot%4))
-    if flipRot > 3:
-      rotate_img = np.flipud(rotate_img)
-    image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
-
 
   # Decode the RGB JPEG.
   image = coder.decode_jpeg(image_data)
@@ -245,9 +218,8 @@ def _process_image(filename, coder, flipRot):
 
 
 def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
-                               texts, labels, num_shards, flipRot):
+                               texts, labels, num_shards):
   """Processes and saves list of images as TFRecord in 1 thread.
-
   Args:
     coder: instance of ImageCoder to provide TensorFlow image coding utils.
     thread_index: integer, unique batch to run index is within [0, len(ranges)).
@@ -285,11 +257,11 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
       filename = filenames[i]
       label = labels[i]
       text = texts[i]
-      flipRoti = flipRot[i]
+
 #      image_buffer = tf.gfile.FastGFile(filename, 'r').read()
 #      height, width = image_reader.read_image_dims(tf.Session(''), image_buffer)
 
-      image_buffer, height, width = _process_image(filename, coder, flipRoti)
+      image_buffer, height, width = _process_image(filename, coder)
 #      try:
 #        image_buffer, height, width = _process_image(filename, coder)
 #      except Exception as e:
@@ -319,9 +291,8 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
   sys.stdout.flush()
 
 
-def _process_image_files(name, filenames, texts, labels, num_shards, flipRot):
+def _process_image_files(name, filenames, texts, labels, num_shards):
   """Process and save list of images as TFRecord of Example protos.
-
   Args:
     name: string, unique identifier specifying the data set
     filenames: list of strings; each string is a path to an image file
@@ -351,7 +322,7 @@ def _process_image_files(name, filenames, texts, labels, num_shards, flipRot):
   threads = []
   for thread_index in range(len(ranges)):
     args = (coder, thread_index, ranges, name, filenames,
-            texts, labels, num_shards, flipRot)
+            texts, labels, num_shards)
     t = threading.Thread(target=_process_image_files_batch, args=args)
     t.start()
     threads.append(t)
@@ -365,20 +336,14 @@ def _process_image_files(name, filenames, texts, labels, num_shards, flipRot):
 
 def _find_image_files(name, data_dir):
   """Build a list of all images files and labels in the data set.
-
   Args:
     data_dir: string, path to the root directory of images.
-
       Assumes that the image data set resides in JPEG files located in
       the following directory structure.
-
         data_dir/dog/another-image.JPEG
         data_dir/dog/my-image.jpg
-
       where 'dog' is the label associated with these images.
-
     labels_file: string, path to the labels file.
-
       The list of valid labels are held in this file. Assumes that the file
       contains entries as such:
         dog
@@ -387,7 +352,6 @@ def _find_image_files(name, data_dir):
       where each line corresponds to a label. We map each label contained in
       the file to an integer starting with the integer 0 corresponding to the
       label contained in the first line.
-
   Returns:
     filenames: list of strings; each string is a path to an image file.
     texts: list of strings; each string is the class, e.g. 'dog'
@@ -405,7 +369,7 @@ def _find_image_files(name, data_dir):
   labels = []
   filenames = []
   texts = []
-  flipRot = []
+
   # Leave label index 0 empty as a background class.
   label_index = 1
 
@@ -428,61 +392,27 @@ def _find_image_files(name, data_dir):
       shuffled_index = list(range(len(tmp_filename)))
       random.seed(12345)
       random.shuffle(shuffled_index)
-     
+
       tmp_label = [tmp_label[i] for i in shuffled_index]
       tmp_text = [tmp_text[i] for i in shuffled_index]
       tmp_filename = [tmp_filename[i] for i in shuffled_index]
-      tmp_flipRot = [0 for i in shuffled_index]
       print("length filename:%d  " % len(tmp_filename))
-
-      if FLAGS.MaxNbImages > len(tmp_label):
-        # rotate or mirror images if more images needed
-        more_label = []
-        more_text= []
-        more_filename = []
-        more_flipRot = []
-        for i in range(1,8): #coding rotation  (3 possibilities) and mirror w/o rotation (4 possibilities)
-          more_label.extend(tmp_label)
-          more_text.extend(tmp_text)
-          more_filename.extend(tmp_filename)
-          more_flipRot.extend([i] * len(matching_files))
-        # more_shuffled_index = list(range(len(tmp_filename), len(tmp_filename)+len(more_label)))
-        more_shuffled_index = list(range(len(more_label)))
-        random.seed(12345)
-        random.shuffle(more_shuffled_index)
-        print("SIZE:")
-        print(len(more_label))
-        print(len(tmp_label))
-        print(len(tmp_filename))
-        print(len(more_shuffled_index))
-        more_label = [more_label[i] for i in more_shuffled_index]
-        more_text = [more_text[i] for i in more_shuffled_index]
-        more_filename = [more_filename[i] for i in more_shuffled_index]
-        more_flipRot = [more_flipRot[i] for i in more_shuffled_index]
-
-        tmp_label.extend(more_label)
-        tmp_text.extend(more_text)
-        tmp_filename.extend(more_filename)
-        tmp_flipRot.extend(more_flipRot)
 
       tmp_label = tmp_label[:min(FLAGS.MaxNbImages, len(tmp_filename))]
       tmp_text = tmp_text[:min(FLAGS.MaxNbImages, len(tmp_filename))]
       tmp_filename = tmp_filename[:min(FLAGS.MaxNbImages, len(tmp_filename))]
-      tmp_flipRot = tmp_flipRot[:min(FLAGS.MaxNbImages, len(tmp_filename))]
 
       print("length filename:%d  " % len(tmp_filename))
 
       labels.extend(tmp_label)
       texts.extend(tmp_text)
       filenames.extend(tmp_filename)
-      flipRot.extend(tmp_flipRot)
       print("length filename (no tmp):%d  " % len(filenames))
 
     else:
       labels.extend([label_index] * len(matching_files))
       texts.extend([text] * len(matching_files))
       filenames.extend(matching_files)
-      flipRot.extend([0] * len(matching_files))
 
     if not label_index % 100:
       print('Finished finding files in %d of %d classes.' % (
@@ -499,29 +429,26 @@ def _find_image_files(name, data_dir):
   filenames = [filenames[i] for i in shuffled_index]
   texts = [texts[i] for i in shuffled_index]
   labels = [labels[i] for i in shuffled_index]
-  flipRot = [flipRot[i] for i in shuffled_index]
 
   print('Found %d JPEG files across %d labels inside %s.' %
         (len(filenames), len(unique_labels), data_dir))
-  #for nn in range(len(filenames)):
-  #  print(filenames[nn], texts[nn], labels[nn])
-  return filenames, texts, labels, flipRot
+  for nn in range(len(filenames)):
+    print(filenames[nn], texts[nn], labels[nn])
+  return filenames, texts, labels
 
 
 def _process_dataset(name, directory, num_shards):
   """Process a complete data set and save it as a TFRecord.
-
   Args:
     name: string, unique identifier specifying the data set.
     directory: string, root path to the data set.
     num_shards: integer number of shards for this data set.
     labels_file: string, path to the labels file.
   """
-  filenames, texts, labels, flipRot = _find_image_files(name, directory)
+  filenames, texts, labels = _find_image_files(name, directory)
   print('DONE***********************************************************')
-  print(name, len(filenames), len(texts), len(labels), num_shards, len(flipRot))
   if len(filenames)>0:
-    _process_image_files(name, filenames, texts, labels, num_shards, flipRot)
+    _process_image_files(name, filenames, texts, labels, num_shards)
 
 
 def main(unused_argv):
@@ -543,4 +470,3 @@ def main(unused_argv):
 
 if __name__ == '__main__':
   tf.app.run()
-

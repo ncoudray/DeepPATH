@@ -32,7 +32,7 @@ from argparse import ArgumentParser
 import random
 import numpy as np
 from shutil import copyfile
-import cv2 as cv
+# import cv2 as cv
 import spams
 from PIL import Image
 

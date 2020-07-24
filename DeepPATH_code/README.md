@@ -416,7 +416,9 @@ Known bug: On many systems, it is better to always use `--num_threads=1`. Corrup
 
 The difference is that for the train set, the tiles are randomly assigned to the TFRecord files. For the test and validation set, it will created 1 TFRecord file per Slide (solution prefered) - though if `one_FT_per_Tile` is `True`, there will be 1 TFRecord file per Tile created. 
 
-For the trainin, the option `MaxNbImages` can be used to threshold the maximum number of images in each dataset. Tiles will be randomly selected if the number of tiles available is higher (may be useful to downsampl and balance datasets).
+For the training, the option `MaxNbImages` can be used to threshold the maximum number of images in each class. Tiles will be randomly selected if the number of tiles available is higher (may be useful to downsample and balance datasets). If the `MaxNbImages` is at most 8 times larger than the number of tiles available, tiles will be augmented by randomly rotating and/or mirroring them. If it's much higher, tiles will be missing and the program won't be able to generate `MaxNbImages` tiles per class (it will not generate an output, just take all images available - you can double-check in the log files how many tiles are finally done). 
+
+
 
 An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
 

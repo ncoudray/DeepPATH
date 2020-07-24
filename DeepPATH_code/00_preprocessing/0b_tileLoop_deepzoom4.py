@@ -33,9 +33,11 @@ import time
 import os
 import sys
 import dicom
-from scipy.misc import imsave
-from scipy.misc import imread
-from scipy.misc import imresize
+# from scipy.misc import imsave
+from imageio import imwrite as imsave
+# from scipy.misc import imread
+from imageio import imread
+# from scipy.misc import imresize
 
 from xml.dom import minidom
 from PIL import Image, ImageDraw, ImageCms
@@ -157,7 +159,8 @@ class TileWorker(Process):
                                 TileMaskO[...,0] = (TileMask[:,:].astype(float)  / maxVal * 255.0).astype(int)
                                 TileMaskO[...,1] = (TileMask[:,:].astype(float)  / maxVal * 255.0).astype(int)
                                 TileMaskO[...,2] = (TileMask[:,:].astype(float)  / maxVal * 255.0).astype(int)
-                                TileMaskO = imresize(TileMaskO, (arr.shape[0], arr.shape[1],3))
+                                TileMaskO = numpy.array(Image.fromarray(TileMaskO).resize(arr.shape[0], arr.shape[1],3))
+                                # TileMaskO = imresize(TileMaskO, (arr.shape[0], arr.shape[1],3))
                                 TileMaskO[TileMaskO<10] = 0
                                 TileMaskO[TileMaskO>=10] = 255
                                 imsave(outfile_bw,TileMaskO) #(outfile_bw, quality=self._quality)
@@ -546,12 +549,15 @@ class DeepZoomImageTiler(object):
         mask = np.array(img)
         #print(mask.shape)
         if Attribute_Name == "non_selected_regions":
-        	scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
+        	# scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
+                Image.fromarray(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
         else:
            if self._mask_type==0:
-               scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + "_inv.jpeg")) 
+               # scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + "_inv.jpeg"))
+               Image.fromarray(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + "_inv.jpeg"))
            else:
-               scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg")) 
+               # scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
+               Image.fromarray(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))  
         #print(mask)
         return mask / 255.0, xml_valid, NewFact
         # Img_Fact

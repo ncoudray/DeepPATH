@@ -76,6 +76,8 @@ def get_inference_from_file(TileName, stats_dict):
 			class_all.append(float(lineProb[nC]))
 			sum_class = sum_class + float(lineProb[nC])
 		for nC in range(NumberOfClasses-1):
+			if sum_class == 0:
+				sum_class = 1
 			class_all[nC] = class_all[nC] / sum_class
 		current_score = max(class_all)
 		oClass = class_all.index(max(class_all)) + 1

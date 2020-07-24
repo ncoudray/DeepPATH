@@ -1,3 +1,5 @@
+# 1 - Retrieve the images.
+
 Example: processing of Lung Cancer images from the TCGA database:
 
 * We originally downloaded the "Tissue Slides" dataset from the legacy website, "https://portal.gdc.cancer.gov/legacy-archive/search/f" via the gdc-client tool:
@@ -8,13 +10,17 @@ Example: processing of Lung Cancer images from the TCGA database:
 
  Some svs slides might be corrupted, in which case they could also be downloaded from the new website ("https://portal.gdc.cancer.gov/").
 
-* Tile the images using the magnification (20x) and tile size of interest (512x512 px in this example):
+# 2 - LUAD/LUSC/Normal classification
+## 2.1 - Pre-processing - tiling
+
+Tile the images using the magnification (20x) and tile size of interest (512x512 px in this example):
 
 ```shell
 python 00_preprocessing/0b_tileLoop_deepzoom4.py  -s 512 -e 0 -j 32 -B 50 -M 20 -o 512px_Tiled "downloaded_data/*/*svs"  
 ```
 It takes about 10sec to generaste 10k tiles when using 30 CPUs.
 
+## 2.2 - Pre-processing - sorting
 
 * Sort the dataset into a test, train and validation cohort for a 3-way classifier (LUAD/LUSC/Normal). You need to create a new directory and run this job from that directory
 
@@ -60,7 +66,9 @@ TCGA-LUSC_valid 116
 
 Note: on the new website, it looks like the format and information in the metadata json files have changed (the sample type is now in the biospecimen file, and the architecture of the Json seems modified). The option "3" might only compatible with the old format. If you want to use the new formated Json files, you will need to modify the code or use option 14 and create your own label file from it. 
 
-* Convert data into TFRecord files for each dataset
+## 2.2 - Pre-processing - Convert to TFRecord
+
+Convert data into TFRecord files for each dataset
 
 ```shell
 mkdir r1_TFRecord_test
@@ -75,7 +83,7 @@ python 00_preprocessing/TFRecord_2or3_Classes/build_image_data.py --directory='r
 ```
 It takes about 90 sec to convert 10k images using 1 CPU (test and valid). Multi-treading implemented on training set lowers it to about 10 seconds for 10k images on 32 CPUs.
 
-* Train the 3-way classifier
+## 2.3 - Train the 3-way classifier
 
 ```shell
 mkdir r1_results
@@ -84,6 +92,8 @@ bazel build inception/imagenet_train
 
 bazel-bin/inception/imagenet_train --num_gpus=4 --batch_size=400 --train_dir='r1_results' --data_dir='r1_TFRecord_train' --ClassNumber=3 --mode='0_softmax' --NbrOfImages=923893 --save_step_for_chekcpoint=2300 --max_steps=230001
 ```
+
+## 2.4 - Validation and test 
 
 * As the first checkpoint appear, you can start running the validation set on it. Create a "labelref_r1.txt" text file with the list of possible classes (see attached example). To run it in on loop on all existing checkpoints, the following code can be adapted:
 
@@ -158,9 +168,13 @@ In the output directory, there will be 1 sub-folder per checkpoint with the data
 The valid_out2_AvPb_AUCs_1.txt summarizes the per slide AUC obtained by averaging the per-tile probabilities.
 
 
+# 3 - Mutations
+## 3.1 - Retrieve mutation information
+
+* Retrieve the mutation information from the GDC website, at https://portal.gdc.cancer.gov/, or  here: https://xenabrowser.net/datapages/. In this particular example, we use mutect2 "masked somatic mutations". We label samples/slides as mutated with respect to every gene if it had a non-silent mutations. We used maftools to parse the Mutect2 variants from TCGA which by default uses Variant Classifications with High/Moderate variant consequences. These include: "Frame_Shift_Del", "Frame_Shift_Ins", "Splice_Site", "Translation_Start_Site", "Nonsense_Mutation", "Nonstop_Mutation", "In_Frame_Del", "In_Frame_Ins", "Missense_Mutation". We then picked the top 10 "known cancer genes" (https://cancer.sanger.ac.uk/census) with respect to the number of (non-silent) mutation across our dataset, excluding genes like TNN which are known to be frequently mutated in general (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4267152/). We can then generate a label file where the first column is the slide ID, and the second the mutation name (if a slide has several mutations, then it will have several lines - example in file attached labels_r3.txt), and a reference file with the list of possible mutations (see labelref_r3.txt).
 
 
-
+## 3.2 - slide segmentations
 * To process mutations of LUAD images, there are different ways to do it. First, to extract probability of LUAD tiles on all LUAD tiles, we'll run them through the above classifier:
 
 * Sort the tiles, assigning them all to "test"
@@ -216,9 +230,10 @@ python 02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT 
 mv $OUTPUT_DIR/out* $TEST_OUTPUT/.
 ```
 
-* Retrieve the mutation information from the GDC website. In this particular example, we use mutect2 "masked somatic mutations". We label samples/slides as mutated with respect to every gene if it had a non-silent mutations. We used maftools to parse the Mutect2 variants from TCGA which by default uses Variant Classifications with High/Moderate variant consequences. These include: "Frame_Shift_Del", "Frame_Shift_Ins", "Splice_Site", "Translation_Start_Site", "Nonsense_Mutation", "Nonstop_Mutation", "In_Frame_Del", "In_Frame_Ins", "Missense_Mutation". We then picked the top 10 "known cancer genes" (https://cancer.sanger.ac.uk/census) with respect to the number of (non-silent) mutation across our dataset, excluding genes like TNN which are known to be frequently mutated in general (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4267152/). We can then generate a label file where the first column is the slide ID, and the second the mutation name (if a slide has several mutations, then it will have several lines - example in file attached labels_r3.txt), and a reference file with the list of possible mutations (see labelref_r3.txt).
 
-* sort the LUAD tiles identified as LUAD intro a train, valid a test set for mutation analysis
+## 3.3 - multi-output classification
+
+* sort the LUAD tiles identified as LUAD intro a train, valid a test set for mutation analysis, filtering with the "outFilenameStats" to only include LUAD tiles
 
 ```shell
 mkdir r3_LUAD_sorted
