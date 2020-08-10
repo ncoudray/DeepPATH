@@ -100,7 +100,7 @@ tf.app.flags.DEFINE_integer('num_threads', 8,
                             'Number of threads to preprocess the images.')
 
 tf.app.flags.DEFINE_integer('MaxNbImages', -1,
-                            'Maximum number of images in each class - Will be taken randomly if >0, otherwise, all images are taken (may help in unbalanced datasets: undersample oneof the datasets)')
+                            'Maximum number of images in each class - Will be taken randomly if >0, otherwise, all images are taken (may help in unbalanced datasets: undersample oneof the datasets) - if MaxNbImages>number of tiles, data augmentation will be done (rotation, mirroring, leading to possibility to increase dataset 8 fold)')
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:

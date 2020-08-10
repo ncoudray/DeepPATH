@@ -267,6 +267,12 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                  myfile.write(str(net2048[kk][nn]))
                  myfile.write("\n")
 
+            #data_path = os.path.join(FLAGS.eval_dir, 'data')
+            #if os.path.isdir(data_path):
+            #  pass
+            #else:
+            #  os.makedirs(data_path)
+
 
         #print(top_1, max_percent)
         # count_top_1 += np.sum(top_1)
