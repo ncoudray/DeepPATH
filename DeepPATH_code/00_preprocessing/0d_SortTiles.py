@@ -526,7 +526,7 @@ if __name__ == '__main__':
         elif args.SortingOption == 19:
             SubDir = os.path.basename(os.path.split(cFolderName)[0])
             for nAllNewDirs in AllNewDirs:
-                if nAllNewDirs in cFolderName:
+                if ('/'+nAllNewDirs+'/') in cFolderName:
                     SubDir = nAllNewDirs
         else:
             try:
