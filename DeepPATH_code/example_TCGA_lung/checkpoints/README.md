@@ -1,4 +1,4 @@
-The checkpoints different runs using 2168 WSI (Lung) from the TCGA are saved there:
+The checkpoints different runs using 2166 WSI (Lung) from the TCGA are saved there:
 
 `run1a_3D_classifier` was run using batch size of 400; checkpoints at 69k
 (AUC of validation for Normal/LUAD/LUSC: 0.9997/0.970/0.967; for test set: 0.991/0.949/0.942)
