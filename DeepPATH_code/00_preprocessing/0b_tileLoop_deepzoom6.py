@@ -38,7 +38,7 @@ from imageio import imwrite as imsave
 # from scipy.misc import imread
 from imageio import imread
 # from scipy.misc import imresize
-
+import cv2
 from xml.dom import minidom
 from PIL import Image, ImageDraw, ImageCms
 from skimage import color, io
@@ -74,7 +74,7 @@ class TileWorker(Process):
         # Lab[:,:,0] = Lab[:,:,0] / 2.55
         # Lab[:,:,1] = Lab[:,:,1] - 128
         # Lab[:,:,2] = Lab[:,:,2] - 128
-        print("RGB to Lab")
+        # print("RGB to Lab")
         Lab = color.rgb2lab(tile)
         return Lab
 
@@ -86,7 +86,7 @@ class TileWorker(Process):
         # Lab[:,:,1] = Lab[:,:,1] + 128
         # Lab[:,:,2] = Lab[:,:,2] + 128
         # newtile = ImageCms.applyTransform(Lab, lab2rgb)
-        print("Lab to RGB")
+        # print("Lab to RGB")
         newtile = (color.lab2rgb(Lab) * 255).astype(np.uint8)
         return newtile
 
@@ -116,17 +116,24 @@ class TileWorker(Process):
     def run(self):
         self._slide = open_slide(self._slidepath)
         last_associated = None
-        dz = self._get_dz()
+        dz = self._get_dz(None, self._tile_size)
         while True:
             data = self._queue.get()
             if data is None:
                 self._queue.task_done()
                 break
             #associated, level, address, outfile = data
-            associated, level, address, outfile, format, outfile_bw, PercentMasked, SaveMasks, TileMask, Normalize = data
+            associated, level, address, outfile, format, outfile_bw, PercentMasked, SaveMasks, TileMask, Normalize, isrescale, resize_ratio, Adj_WindowSize = data
             if last_associated != associated:
-                dz = self._get_dz(associated)
+                dz = self._get_dz(associated, self._tile_size)
                 last_associated = associated
+            # try:
+            dz = self._get_dz(associated, Adj_WindowSize)
+            # except Exception as e: 
+            #     print("****** ERROR: ")
+            #    print(e)
+            #    print(associated)
+            #    break
             #try:
             if True:
                 try:
@@ -139,9 +146,9 @@ class TileWorker(Process):
                     avgBkg = np.average(bw)
                     bw = gray.point(lambda x: 0 if x<220 else 1, '1')
                     # check if the image is mostly background
-                    # print("res: " + outfile + " is " + str(avgBkg))
+                    #print("res: " + outfile + " is " + str(avgBkg))
                     if avgBkg <= (self._Bkg / 100.0):
-                        print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
+                        # print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
                         if PercentMasked >= (self._ROIpc / 100.0):
 
@@ -150,6 +157,19 @@ class TileWorker(Process):
                                 # arrtile = np.array(tile)
                                 tile = Image.fromarray(self.normalize_tile(tile, Normalize).astype('uint8'),'RGB')
 
+                            if (isrescale) and (resize_ratio != 1):
+                                # tile.save(outfile + '_orig.jpeg', quality=self._quality)
+                                print(tile.width, resize_ratio, tile.height, int(tile.width / resize_ratio), int(tile.height / resize_ratio))
+                                tile = tile.resize(  (min( self._tile_size, int(tile.width / resize_ratio) ), min( self._tile_size, int(tile.height / resize_ratio))))
+                                # tile = cv2.resize(tile, (0, 0), fx = 1/resize_ratio, fy = 1/resize_ratio)
+                                # if tile.shape[0] > self._tile_size:
+                                #    tile = tile[:self._tile_size,:,:]
+                                #    print("*** Warning: image " + str(outfile) + " had to be cropped from " + str(tile.shape[0]))
+                                #if tile.shape[1] > self._tile_size:
+                                #    tile = tile[:,:self._tile_size,:]
+                                #    print("*** Warning: image " + str(outfile) + " had to be cropped from " + str(tile.shape[1]))
+   
+ 
                             tile.save(outfile, quality=self._quality)
                             if bool(SaveMasks)==True:
                                 height = TileMask.shape[0]
@@ -177,18 +197,18 @@ class TileWorker(Process):
                     print(e)
                     self._queue.task_done()
 
-    def _get_dz(self, associated=None):
+    def _get_dz(self, associated=None, wsize=299):
         if associated is not None:
             image = ImageSlide(self._slide.associated_images[associated])
         else:
             image = self._slide
-        return DeepZoomGenerator(image, self._tile_size, self._overlap, limit_bounds=self._limit_bounds)
+        return DeepZoomGenerator(image, wsize, self._overlap, limit_bounds=self._limit_bounds)
 
 
 class DeepZoomImageTiler(object):
     """Handles generation of tiles and metadata for a single image."""
 
-    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc, ImgExtension, SaveMasks, Mag, normalize, Fieldxml):
+    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc, ImgExtension, SaveMasks, Mag, normalize, Fieldxml, pixelsize, pixelsizerange, Best_level, resize_ratio, Adj_WindowSize):
         self._dz = dz
         self._basename = basename
         self._basenameJPG = basenameJPG
@@ -206,6 +226,11 @@ class DeepZoomImageTiler(object):
         self._Mag = Mag
         self._normalize = normalize
         self._Fieldxml = Fieldxml
+        self._pixelsize = pixelsize
+        self._pixelsizerange = pixelsizerange
+        self._Best_level = Best_level
+        self._resize_ratio = resize_ratio
+        self._Adj_WindowSize = Adj_WindowSize
 
     def run(self):
         self._write_tiles()
@@ -273,14 +298,21 @@ class DeepZoomImageTiler(object):
             #if self._xmlfile != '' && :
             # print(self._xmlfile, self._ImgExtension)
             ImgID = os.path.basename(self._basename)
-            xmldir = os.path.join(self._xmlfile, ImgID + '.xml')
+            # xmldir = os.path.join(self._xmlfile, ImgID + '.xml')
+            if os.path.isfile(os.path.join(self._xmlfile, ImgID + '.xml')):
+               # If path exists, Aperio assumed
+               xmldir = os.path.join(self._xmlfile, ImgID + '.xml')
+               AnnotationMode = 'Aperio'
+            elif os.path.isfile(os.path.join(self._xmlfile, ImgID + '.json')):               
+               # QuPath assumed
+               xmldir = os.path.join(self._xmlfile, ImgID + '.json')
+               AnnotationMode = 'QuPath'
+
             # print("xml:")
             # print(xmldir)
             if (self._xmlfile != '') & (self._ImgExtension != 'jpg') & (self._ImgExtension != 'dcm'):
                 # print("read xml file...")
-                mask, xml_valid, Img_Fact = self.xml_read(xmldir, self._xmlLabel, self._Fieldxml, self._ImgExtension)
-                # if self._ImgExtension == 'scn':
-                #   mask = mask.transpose()
+                mask, xml_valid, Img_Fact = self.xml_read(xmldir, self._xmlLabel, self._Fieldxml, AnnotationMode)
                 if xml_valid == False:
                     print("Error: xml %s file cannot be read properly - please check format" % xmldir)
                     return
@@ -299,16 +331,65 @@ class DeepZoomImageTiler(object):
             #return
             #print(self._dz.level_count)
 
+            if self._Mag <= 0:
+                if self._pixelsize > 0:
+                    level_range = [level for level in range(self._dz.level_count-1,-1,-1)]
+                    print(self._slide.properties)
+                    try:
+                        OrgPixelSizeX = float(self._slide.properties['openslide.mpp-x'])
+                        OrgPixelSizeY = float(self._slide.properties['openslide.mpp-y'])
+                    except:
+                       print("Error: no pixelsize found in the header of %s" % self._basename)
+                       DesiredLevel = -1 
+                       return
+                    AllPixelSizeDiffX = [(abs(OrgPixelSizeX * pow(2,self._dz.level_count-(level+1)) - self._pixelsize)) for level in range(self._dz.level_count-1,-1,-1)]
+                    AllPixelSizeDiffY = [(abs(OrgPixelSizeY * pow(2,self._dz.level_count-(level+1)) - self._pixelsize)) for level in range(self._dz.level_count-1,-1,-1)]	
+                    IndxX = AllPixelSizeDiffX.index(min(AllPixelSizeDiffX))
+                    IndxY = AllPixelSizeDiffY.index(min(AllPixelSizeDiffY))
+                    levelX = AllPixelSizeDiffX[IndxX]
+                    levelY = AllPixelSizeDiffY[IndxY]
+                    print("**info levelX:" + str(levelX) + "; self._pixelsizerange" + str(self._pixelsizerange) + "; test: " + str((levelX > self._pixelsizerange) and (self._pixelsizerange >= 0)))
+                    if IndxX != IndxY:
+                        print("Error: X and Y pixel sizes are too different for %s"  % self._basename)
+                        return
+                    if (levelX > self._pixelsizerange) and (self._pixelsizerange >= 0):
+                        print("Error: no pixelsize within the desired range for %s"  % self._basename)
+                        return
+                    if (levelY > self._pixelsizerange) and (self._pixelsizerange >= 0):
+                        print("Error: no pixelsize within the desired range for %s"  % self._basename)
+                        return
+                    if self._pixelsizerange < 0:
+                        level_range = [level for level in range(self._dz.level_count-1,-1,-1)]
+                        IndxX = self._Best_level
+                    DesiredLevel = level_range[IndxX]
+                    print('**info: OrgPixelSizeX:' + str(OrgPixelSizeX) +'; DesiredLevel:' + str(DesiredLevel))
+                    print(AllPixelSizeDiffX)
+                    print(level_range)
+                    if not os.path.exists(('/'.join(self._basename.split('/')[:-1]))):
+                        os.makedirs(('/'.join(self._basename.split('/')[:-1])))
+                    with open(os.path.join( ('/'.join(self._basename.split('/')[:-1])) , 'pixelsizes.txt')  , 'a') as file_out:
+                        file_out.write(self._basenameJPG + "\t" + str(OrgPixelSizeX*pow(2,IndxX)) + "\t" + str(OrgPixelSizeX*pow(2,IndxX) * self._resize_ratio) + "\n")
+ 
+
+
             for level in range(self._dz.level_count-1,-1,-1):
                 ThisMag = Available[0]/pow(2,self._dz.level_count-(level+1))
                 if self._Mag > 0:
                     if ThisMag != self._Mag:
                         continue
+                elif self._pixelsize > 0:
+                    if level != DesiredLevel:
+                        continue
+                    else:
+                        tiledir_pixel = os.path.join("%s_files" % self._basename, str(self._pixelsize))
+                        
                 ########################################
                 #tiledir = os.path.join("%s_files" % self._basename, str(level))
                 tiledir = os.path.join("%s_files" % self._basename, str(ThisMag))
                 if not os.path.exists(tiledir):
                     os.makedirs(tiledir)
+                    if self._pixelsize >  0:
+                        os.symlink(str(ThisMag), tiledir_pixel, target_is_directory=True)
                 cols, rows = self._dz.level_tiles[level]
                 if xml_valid:
                     # print("xml valid")
@@ -373,17 +454,8 @@ class DeepZoomImageTiler(object):
                             endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
                             startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
                             endIndX_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact))
+                            # print(Ddimension, Dlocation, Dlevel, Dsize, self._dz.level_count , level, col, row)
 
-
-                            print(mask.shape, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
-                            if self._ImgExtension == 'scn':
-                                startIndY_current_level_conv = int( ((Dlocation[1]) - self._dz.get_tile_coordinates(level,(0, 0))[0][1]) / Img_Fact)
-                                endIndY_current_level_conv = int( ((Dlocation[1] + Ddimension[1])  - self._dz.get_tile_coordinates(level,(0, 0))[0][1]) / Img_Fact)
-                                startIndX_current_level_conv = int( ((Dlocation[0]) - self._dz.get_tile_coordinates(level,(0, 0))[0][0]) / Img_Fact)
-                                endIndX_current_level_conv = int( ((Dlocation[0] + Ddimension[0]) - self._dz.get_tile_coordinates(level,(0, 0))[0][0]) / Img_Fact)
-
-                            print(Ddimension, Dlocation, Dlevel, Dsize, self._dz.level_count , level, col, row, Img_Fact)
-                            print(mask.shape, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
                             #startIndY_current_level_conv = (int((Dlocation[1]) / Img_Fact))
                             #endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
                             #startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
@@ -410,8 +482,12 @@ class DeepZoomImageTiler(object):
                             TileMask = []
 
                         if not os.path.exists(tilename):
-                            self._queue.put((self._associated, level, (col, row),
-                                        tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize))
+                            if self._Best_level == -1:
+                                self._queue.put((self._associated, level, (col, row),
+                                            tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize, False, self._resize_ratio, self._Adj_WindowSize))
+                            else:
+                                self._queue.put((self._associated, level, (col, row),
+                                            tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize, True, self._resize_ratio, self._Adj_WindowSize))
                         self._tile_done()
 
     def _tile_done(self):
@@ -457,127 +533,147 @@ class DeepZoomImageTiler(object):
         return mask, xml_valid, Img_Fact
 
 
-    def xml_read(self, xmldir, Attribute_Name, Fieldxml, ImgExt):
-
+    def xml_read(self, xmldir, Attribute_Name, Fieldxml, AnnotationMode):
         # Original size of the image
         ImgMaxSizeX_orig = float(self._dz.level_dimensions[-1][0])
         ImgMaxSizeY_orig = float(self._dz.level_dimensions[-1][1])
         # Number of centers at the highest resolution
         cols, rows = self._dz.level_tiles[-1]
 
-        if ImgExt == 'scn':
-            tmp = ImgMaxSizeX_orig
-            ImgMaxSizeX_orig = ImgMaxSizeY_orig
-            ImgMaxSizeY_orig = tmp
-
-
         NewFact = max(ImgMaxSizeX_orig, ImgMaxSizeY_orig) / min(max(ImgMaxSizeX_orig, ImgMaxSizeY_orig),15000.0)
-        # Img_Fact = 
-        # read_region(location, level, size)
-        # dz.get_tile_coordinates(14,(0,2))
-        # ((0, 1792), 1, (320, 384))
-
         Img_Fact = float(ImgMaxSizeX_orig) / 5.0 / float(cols)
        
-        print("image info:")
-        print(ImgMaxSizeX_orig, ImgMaxSizeY_orig, cols, rows) 
-        try:
-            xmlcontent = minidom.parse(xmldir)
-            xml_valid = True
-        except:
-            xml_valid = False
-            print("error with minidom.parse(xmldir)")
-            return [], xml_valid, 1.0
 
-        xy = {}
-        xy_neg = {}
-        NbRg = 0
-        labelIDs = xmlcontent.getElementsByTagName('Annotation')
-        # print("%d labels" % len(labelIDs) )
-        for labelID in labelIDs:
-            if (Attribute_Name==[]) | (Attribute_Name==''):
-                    isLabelOK = True
-            else:
-                try:
-                    labeltag = labelID.getElementsByTagName('Attribute')[0]
-                    if (Attribute_Name==labeltag.attributes[Fieldxml].value):
-                    # if (Attribute_Name==labeltag.attributes['Value'].value):
-                    # if (Attribute_Name==labeltag.attributes['Name'].value):
-                        isLabelOK = True
-                    else:
-                        isLabelOK = False
-                except:
-                	isLabelOK = False
-            if Attribute_Name == "non_selected_regions":
-                isLabelOK = True
+        if AnnotationMode == 'Aperio':
+          try:
+              xmlcontent = minidom.parse(xmldir)
+              xml_valid = True
+          except:
+              xml_valid = False
+              print("error with minidom.parse(xmldir)")
+              return [], xml_valid, 1.0
 
-            #print("label ID, tag:")
-            #print(labelID, Attribute_Name, labeltag.attributes['Name'].value)
-            #if Attribute_Name==labeltag.attributes['Name'].value:
-            if isLabelOK:
-                regionlist = labelID.getElementsByTagName('Region')
-                for region in regionlist:
-                    vertices = region.getElementsByTagName('Vertex')
-                    NbRg += 1
-                    regionID = region.attributes['Id'].value + str(NbRg)
-                    NegativeROA = region.attributes['NegativeROA'].value
-                    # print("%d vertices" % len(vertices))
-                    if len(vertices) > 0:
-                        #print( len(vertices) )
-                        if NegativeROA=="0":
-                            xy[regionID] = []
-                            for vertex in vertices:
-                                # get the x value of the vertex / convert them into index in the tiled matrix of the base image
-                                # x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
-                                # y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
-                                x = int(round(float(vertex.attributes['X'].value) / NewFact))
-                                y = int(round(float(vertex.attributes['Y'].value) / NewFact))
-                                xy[regionID].append((x,y))
-                                #print(vertex.attributes['X'].value, vertex.attributes['Y'].value, x, y )
+          xy = {}
+          xy_neg = {}
+          NbRg = 0
+          labelIDs = xmlcontent.getElementsByTagName('Annotation')
+          # print("%d labels" % len(labelIDs) )
+          for labelID in labelIDs:
+              if (Attribute_Name==[]) | (Attribute_Name==''):
+                      isLabelOK = True
+              else:
+                  try:
+                      labeltag = labelID.getElementsByTagName('Attribute')[0]
+                      if (Attribute_Name==labeltag.attributes[Fieldxml].value):
+                      # if (Attribute_Name==labeltag.attributes['Value'].value):
+                      # if (Attribute_Name==labeltag.attributes['Name'].value):
+                          isLabelOK = True
+                      else:
+                          isLabelOK = False
+                  except:
+                      isLabelOK = False
+              if Attribute_Name == "non_selected_regions":
+                  isLabelOK = True
+
+              #print("label ID, tag:")
+              #print(labelID, Attribute_Name, labeltag.attributes['Name'].value)
+              #if Attribute_Name==labeltag.attributes['Name'].value:
+              if isLabelOK:
+                  regionlist = labelID.getElementsByTagName('Region')
+                  for region in regionlist:
+                      vertices = region.getElementsByTagName('Vertex')
+                      NbRg += 1
+                      regionID = region.attributes['Id'].value + str(NbRg)
+                      NegativeROA = region.attributes['NegativeROA'].value
+                      # print("%d vertices" % len(vertices))
+                      if len(vertices) > 0:
+                          #print( len(vertices) )
+                          if NegativeROA=="0":
+                              xy[regionID] = []
+                              for vertex in vertices:
+                                  # get the x value of the vertex / convert them into index in the tiled matrix of the base image
+                                  # x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
+                                  # y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
+                                  x = int(round(float(vertex.attributes['X'].value) / NewFact))
+                                  y = int(round(float(vertex.attributes['Y'].value) / NewFact))
+                                  xy[regionID].append((x,y))
+                                  #print(vertex.attributes['X'].value, vertex.attributes['Y'].value, x, y )
     
-                        elif NegativeROA=="1":
-                            xy_neg[regionID] = []
-                            for vertex in vertices:
-                                # get the x value of the vertex / convert them into index in the tiled matrix of the base image
-                                # x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
-                                # y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
-                                x = int(round(float(vertex.attributes['X'].value) / NewFact))
-                                y = int(round(float(vertex.attributes['Y'].value) / NewFact))
-                                xy_neg[regionID].append((x,y))
+                          elif NegativeROA=="1":
+                              xy_neg[regionID] = []
+                              for vertex in vertices:
+                                  # get the x value of the vertex / convert them into index in the tiled matrix of the base image
+                                  # x = int(round(float(vertex.attributes['X'].value) / ImgMaxSizeX_orig * (cols*Img_Fact)))
+                                  # y = int(round(float(vertex.attributes['Y'].value) / ImgMaxSizeY_orig * (rows*Img_Fact)))
+                                  x = int(round(float(vertex.attributes['X'].value) / NewFact))
+                                  y = int(round(float(vertex.attributes['Y'].value) / NewFact))
+                                  xy_neg[regionID].append((x,y))
     
 
-                        #xy_a = np.array(xy[regionID])
-
+                          #xy_a = np.array(xy[regionID])
+        ## End Aperio
+        elif AnnotationMode == 'QuPath':
+          print("QuPath annotation file detected")
+          xmlcontent = json.load(open(xmldir))
+          xml_valid = True
+          xy = {}
+          xy_neg = {}
+          NbRg = 0
+          if 'annotations' in xmlcontent.keys():
+            for eachR in range(len(xmlcontent['annotations'])):
+              if 'class' in xmlcontent['annotations'][eachR].keys(): 
+                labeltag = xmlcontent['annotations'][eachR]['class']
+                # print(labeltag, "****", Attribute_Name)
+                if (Attribute_Name==[]) | (Attribute_Name==''):
+                  # No filter on label name
+                  isLabelOK = True
+                elif (Attribute_Name == labeltag):
+                  isLabelOK = True
+                elif Attribute_Name == "non_selected_regions":
+                  isLabelOK = True
+                else:
+                  isLabelOK = False
+                # print(isLabelOK)
+                if isLabelOK:
+                  regionID = str(NbRg)
+                  xy[regionID] = []
+                  vertices = xmlcontent['annotations'][eachR]['points']
+                  NbRg += 1
+                  xy[regionID] = [ii / NewFact for ii in vertices]
+                  # no field for "negative region" - if it is, create a "xy_neg[regionID]"
+ 
+  
+	
+#### Remove 2 spaces ### 
         # print("%d xy" % len(xy))
         #print(xy)
         # print("%d xy_neg"  % len(xy_neg))
         #print(xy_neg)
-        print("NewFact:")
-        print(NewFact)
+        # print("Img_Fact:")
+        # print(NewFact)
+        # print(ImgMaxSizeX_orig/NewFact, ImgMaxSizeY_orig/NewFact)
         # img = Image.new('L', (int(cols*Img_Fact), int(rows*Img_Fact)), 0)
         img = Image.new('L', (int(ImgMaxSizeX_orig/NewFact), int(ImgMaxSizeY_orig/NewFact)), 0)
         for regionID in xy.keys():
             xy_a = xy[regionID]
+            # print(xy_a)
             ImageDraw.Draw(img,'L').polygon(xy_a, outline=255, fill=255)
         for regionID in xy_neg.keys():
             xy_a = xy_neg[regionID]
             ImageDraw.Draw(img,'L').polygon(xy_a, outline=255, fill=0)
         #img = img.resize((cols,rows), Image.ANTIALIAS)
         mask = np.array(img)
-        if ImgExt == 'scn':
-                # mask = mask.transpose()
-                mask = np.rot90(mask)   
         #print(mask.shape)
         if Attribute_Name == "non_selected_regions":
-        	# scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
-                Image.fromarray(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
+           # scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
+           Image.fromarray(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
         else:
            if self._mask_type==0:
-               # scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + "_inv.jpeg"))
-               Image.fromarray(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + "_inv.jpeg"))
+             # scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + "_inv.jpeg"))
+             Image.fromarray(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + "_inv.jpeg"))
            else:
-               # scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
-               Image.fromarray(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))  
+             # scipy.misc.toimage(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))
+             Image.fromarray(mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))  
         #print(mask)
         return mask / 255.0, xml_valid, NewFact
         # Img_Fact
@@ -587,7 +683,7 @@ class DeepZoomStaticTiler(object):
     """Handles generation of tiles and metadata for all images in a slide."""
 
     def __init__(self, slidepath, basename, format, tile_size, overlap,
-                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type, ROIpc, oLabel, ImgExtension, SaveMasks, Mag, normalize, Fieldxml):
+                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type, ROIpc, oLabel, ImgExtension, SaveMasks, Mag, normalize, Fieldxml, pixelsize, pixelsizerange):
         if with_viewer:
             # Check extra dependency before doing a bunch of work
             import jinja2
@@ -613,7 +709,10 @@ class DeepZoomStaticTiler(object):
         self._Mag = Mag
         self._normalize = normalize
         self._Fieldxml = Fieldxml
-
+        self._pixelsize = pixelsize
+        self._pixelsizerange = pixelsizerange
+        self._rescale = False
+        self._resize_ratio = 1
         for _i in range(workers):
             TileWorker(self._queue, slidepath, tile_size, overlap,
                 limit_bounds, quality, self._Bkg, self._ROIpc).start()
@@ -639,10 +738,40 @@ class DeepZoomStaticTiler(object):
             image = ImageSlide(self._slide.associated_images[associated])
             basename = os.path.join(self._basename, self._slugify(associated))
         # print("enter DeepZoomGenerator")
-        dz = DeepZoomGenerator(image, self._tile_size, self._overlap,limit_bounds=self._limit_bounds)
-        # print("enter DeepZoomImageTiler")
-        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks, self._Mag, self._normalize, self._Fieldxml)
-        tiler.run()
+        if (self._Mag <= 0) and (self._pixelsizerange < 0):
+               # calculate the best window size before rescaling to reach desired final pizelsize
+               try:
+                   Objective = float(self._slide.properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER])
+                   OrgPixelSizeX = float(self._slide.properties['openslide.mpp-x'])
+                   OrgPixelSizeY = float(self._slide.properties['openslide.mpp-y'])
+               except:
+                   print("Error: No information found in the header")
+                   return
+               Desired_FoV_um = self._pixelsize * self._tile_size
+               AllPxSizes = [OrgPixelSizeX * pow(2,nn) for nn in range(0,12)]
+               AllBoxSizes = [round(Desired_FoV_um / (OrgPixelSizeX * pow(2,nn))) for nn in range(0,12)]
+               for nn in range(0,12):
+                   if AllBoxSizes[nn] < self._tile_size:
+                       AllBoxSizes[nn] = 2000000
+               Final_pixel_size_Diff = [abs(AllBoxSizes[x] / self._tile_size * AllPxSizes[x] - self._pixelsize) for x in range(0,12)]
+               Best_level = [index for index, value in enumerate(Final_pixel_size_Diff) if value == min(Final_pixel_size_Diff)][-1]
+               Adj_WindowSize = AllBoxSizes[Best_level]
+               dz = DeepZoomGenerator(image, Adj_WindowSize, self._overlap,limit_bounds=self._limit_bounds)
+               self._resize_ratio = float(Adj_WindowSize) / float(self._tile_size)
+               print("info: Objective:" + str(Objective) + "; OrgPixelSizeX" + str(OrgPixelSizeX) + "; Desired_FoV_um: " + str(Desired_FoV_um) +"; Best_level: "+ str(Best_level) + "; resize_ratio: " +str(self._resize_ratio) + "; Adj_WindowSize:" + str(Adj_WindowSize) + "; self._tile_size: " + str(self._tile_size))
+               #with open(os.path.join('/',join(self._basename.split('/')[:-1]), 'pixelsizes.txt')  , 'a') as file_out:
+               #    file_out.write(self._basenameJPG + "\t" + str(AllPxSizes[Best_level]) + "\t" + str(AllPxSizes[Best_level]*resize_ratio))     
+ 
+        else:
+            dz = DeepZoomGenerator(image, self._tile_size, self._overlap,limit_bounds=self._limit_bounds)
+            Best_level = -1
+            self._resize_ratio = 1
+            Adj_WindowSize = self._tile_size
+        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks, self._Mag, self._normalize, self._Fieldxml, self._pixelsize, self._pixelsizerange, Best_level, self._resize_ratio, Adj_WindowSize)
+        try:
+            tiler.run()
+        except:
+            print("Error in tiler.run(); image " + self._basenameJPG + " not processed")
         self._dzi_data[self._url_for(associated)] = tiler.get_dzi()
 
 
@@ -712,23 +841,33 @@ def ImgWorker(queue):
 		subprocess.Popen(cmd, shell=True).wait()
 		queue.task_done()
 
-def xml_read_labels(xmldir, Fieldxml):
-        try:
-            xmlcontent = minidom.parse(xmldir)
+def xml_read_labels(xmldir, Fieldxml, AnnotationMode):
+        if AnnotationMode == 'Aperio':
+          try:
+              xmlcontent = minidom.parse(xmldir)
+              xml_valid = True
+          except:
+              xml_valid = False
+              print("error with minidom.parse(xmldir)")
+              return [], xml_valid
+          labeltag = xmlcontent.getElementsByTagName('Attribute')
+          xml_labels = []
+          for xmllabel in labeltag:
+              xml_labels.append(xmllabel.attributes[Fieldxml].value)
+              #xml_labels.append(xmllabel.attributes['Name'].value)
+              # xml_labels.append(xmllabel.attributes['Value'].value)
+          if xml_labels==[]:
+              xml_labels = ['']
+          # print(xml_labels)
+        elif AnnotationMode == 'QuPath':
+          data = json.load(open(xmldir))
+          xml_labels = []
+          xml_valid = False
+          for eachR in range(len(data['annotations'])):
+            xml_labels.append(data['annotations'][eachR]['class'])
+          xml_labels = np.unique(xml_labels)
+          if len(xml_labels) > 0:
             xml_valid = True
-        except:
-            xml_valid = False
-            print("error with minidom.parse(xmldir)")
-            return [], xml_valid
-        labeltag = xmlcontent.getElementsByTagName('Attribute')
-        xml_labels = []
-        for xmllabel in labeltag:
-            xml_labels.append(xmllabel.attributes[Fieldxml].value)
-            #xml_labels.append(xmllabel.attributes['Name'].value)
-            # xml_labels.append(xmllabel.attributes['Value'].value)
-        if xml_labels==[]:
-            xml_labels = ['']
-        # print(xml_labels)
         return xml_labels, xml_valid 
 
 
@@ -762,7 +901,7 @@ if __name__ == '__main__':
 		type='float', default=50,
 		help='Max background threshold [50]; percentager of background allowed')
 	parser.add_option('-x', '--xmlfile', metavar='NAME', dest='xmlfile',
-		help='xml file if needed')
+		help='path to xml file from Aperio annotation; json for QuPath')
 	parser.add_option('-F', '--Fieldxml', metavar='{Name|Value}', dest='Fieldxml',
 		default='Value',
 		help='which field of the xml file is the label saved')
@@ -781,7 +920,13 @@ if __name__ == '__main__':
 		help='base name of output folder to save intermediate dcm images converted to jpg (we assume the patient ID is the folder name in which the dcm images are originally saved)')
 	parser.add_option('-M', '--Mag', metavar='PIXELS', dest='Mag',
 		type='float', default=-1,
-		help='Magnification at which tiling should be done (-1 of all)')
+		help='Magnification at which tiling should be done; if Mag=-1 and pixelsize=-1, they will be tiles at all magnifications; if Mag=-1 and pixelsize>0, it will be tiled at a certain pixelsize')
+	parser.add_option('-P', '--pixelsize',  metavar='PIXELS', dest='pixelsize',
+		type='float', default=-1,
+		help='Ignored if -1 or if Mag>0. Otherwise, will tile the svs files at the requested pixelsize (assumed to be stored in the header of the svs, in the openslide.mpp-x field')
+	parser.add_option('-p', '--pixelsizerange',  metavar='PIXELS', dest='pixelsizerange',
+		type='float', default=0,
+		help='svs are always tiled at a factor of 2 from the original higher magnification. This is the range allowed around the pixelsize. svs will be tiles at whatever magnification is the closest to the pixelsize, plus or minus the deviation. Nothing will be tiled if no magnification falls within that range. If its valiue is -1, then the tiles will be rescaled to match the desired final size and pixelsize')
 	parser.add_option('-N', '--normalize', metavar='NAME', dest='normalize',
 		help='if normalization is needed, N list the mean and std for each channel. For example \'57,22,-8,20,10,5\' with the first 3 numbers being the targeted means, and then the targeted stds')
 
@@ -812,15 +957,8 @@ if __name__ == '__main__':
 	except:
 		opts.normalize = ''
 		parser.error("ERROR: NO NORMALIZATION APPLIED: input vector does not have the right format")
-        #if ss != '':
-        #    if os.path.isdir(opts.xmlfile):
             
 
-	# Initialization
-	# imgExample = "/ifs/home/coudrn01/NN/Lung/RawImages/*/*svs"
-	# tile_size = 512
-	# max_number_processes = 10
-	# NbrCPU = 4
 
 
 	# get  images from the data/ file.
@@ -831,8 +969,8 @@ if __name__ == '__main__':
 	#len(files)
 	# print(args)
 	# print(args[0])
-	print(slidepath)
-	print(files)
+	# print(slidepath)
+	# print(files)
 	# print("***********************")
 
 	'''
@@ -850,7 +988,7 @@ if __name__ == '__main__':
 	files = sorted(files)
 	for imgNb in range(len(files)):
 		filename = files[imgNb]
-		# print(filename)
+		#print(filename)
 		opts.basenameJPG = os.path.splitext(os.path.basename(filename))[0]
 		print("processing: " + opts.basenameJPG + " with extension: " + ImgExtension)
 		#opts.basenameJPG = os.path.splitext(os.path.basename(slidepath))[0]
@@ -887,7 +1025,7 @@ if __name__ == '__main__':
 			output = os.path.join(opts.basename, opts.basenameJPG)
 
 			try:
-				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
+				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange).run()
 			except Exception as e:
 				print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 				print(e)
@@ -898,16 +1036,27 @@ if __name__ == '__main__':
 		#		print("Image %s already tiled" % opts.basenameJPG)
 		#		continue
 
-		#	DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
+		#	DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange).run()
 
 		elif opts.xmlfile != '':
+			# Check if Aperio or Qupath annotations
+			# if len(glob(os.path.join(xmlfile,'*.xml'))) == 0:
+			#	if len(glob(os.path.join(xmlfile,'*.json'))) == 0:
+			#		print("Error: No xml or json file found for the annotations")
 			xmldir = os.path.join(opts.xmlfile, opts.basenameJPG + '.xml')
+			jsondir = os.path.join(opts.xmlfile, opts.basenameJPG + '.json')
+				
 			# print("xml:")
 			# print(xmldir)
-			if os.path.isfile(xmldir):
+			if os.path.isfile(xmldir) | os.path.isfile(jsondir):
+				if os.path.isfile(xmldir):
+					AnnotationMode = 'Aperio'
+				elif os.path.isfile(jsondir):
+					AnnotationMode = 'QuPath'
+					xmldir = jsondir
 				if (opts.mask_type==1) or (opts.oLabelref!=''):
 					# either mask inside ROI, or mask outside but a reference label exist
-					xml_labels, xml_valid = xml_read_labels(xmldir, opts.Fieldxml)
+					xml_labels, xml_valid = xml_read_labels(xmldir, opts.Fieldxml, AnnotationMode)
 					if (opts.mask_type==1):
 						# No inverse mask
 						Nbr_ROIs_ForNegLabel = 1
@@ -933,7 +1082,7 @@ if __name__ == '__main__':
 									os.makedirs(os.path.join(opts.basename, oLabel))
 							if 1:
 							#try:
-								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
+								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange).run()
 							#except:
 							#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						if Nbr_ROIs_ForNegLabel==0:
@@ -945,7 +1094,7 @@ if __name__ == '__main__':
 								os.makedirs(os.path.join(opts.basename, oLabel+'_inv'))
 							if 1:
 							#try:
-								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
+								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange).run()
 							#except:
 							#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 
@@ -956,7 +1105,7 @@ if __name__ == '__main__':
 					if not os.path.exists(os.path.join(opts.basename, oLabel)):
 						os.makedirs(os.path.join(opts.basename, oLabel))
 					try:
-						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
+						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange).run()
 					except Exception as e:
 						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						print(e)
@@ -966,7 +1115,7 @@ if __name__ == '__main__':
 					print("Input image to be tiled is jpg or dcm and not svs - will be treated as such")
 					output = os.path.join(opts.basename, opts.basenameJPG)
 					try:
-						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
+						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange).run()
 					except Exception as e:
 						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						print(e)
@@ -980,12 +1129,12 @@ if __name__ == '__main__':
 			if os.path.exists(output + "_files"):
 				print("Image %s already tiled" % opts.basenameJPG)
 				continue
-			try:
-			#if True:
-				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml).run()
-			except Exception as e:
-				print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
-				print(e)
+			# try:
+			if True:
+				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange).run()
+			#except Exception as e:
+			#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
+			#	print(e)
 	'''
 	dz_queue.join()
 	for i in range(opts.max_number_processes):

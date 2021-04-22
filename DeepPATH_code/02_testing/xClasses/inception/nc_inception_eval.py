@@ -246,7 +246,7 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
                 pickle.dump(endpoint[key][kk], output_tmp)
                 output_tmp.close()
 
-        # save last-but one layer
+        # save last-but one layer in separate text files
           if False:
             print("net2048")
             print(net2048)
@@ -274,9 +274,8 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op, max_percen
             #  os.makedirs(data_path)
 
 
-        #print(top_1, max_percent)
-        # count_top_1 += np.sum(top_1)
-        # count_top_5count_top_5 += np.sum(top_5)
+
+
         step += 1
         if step % 20 == 0:
           duration = time.time() - start_time

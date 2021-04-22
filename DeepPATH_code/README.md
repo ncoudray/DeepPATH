@@ -155,10 +155,12 @@ Example of script to submit this script on a SGE cluster (python 2.7 used):
 
 python /path_to/0b_tileLoop_deepzoom4.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
 ```
-Notes:
-* /path_to/0b_tileLoop_deepzoom4.py is the latest code version updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). Unlike 0b_tileLoop_deepzoom3.py, the label is now expected to be registered in the 'Name' field of the xml's Attributes (and not in the 'Value' field).
+Notes on the different version history:
+* /path_to/0b_tileLoop_deepzoom4.py has been updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). Unlike 0b_tileLoop_deepzoom3.py, the label is now expected to be registered in the 'Name' field of the xml's Attributes (and not in the 'Value' field).
 * To see the list of images that failed to be tiled (usually because the file is corrupted), search for the work "Failed" in the output log file
 * Also 0b_tileLoop_deepzoom4.py should now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and "-x" would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg". An additional "-t" parameter is required to save the temporary converted and renamed files (from dcm to jpg, assuming the folder name is of each dcm set represents the patient ID)
+* 0b_tileLoop_deepzoom5.jpg is the next version and should also work with annotations coming either from Aperio or Qupath (after conversion to json). In the path option `-x`, if files extension are 'xml', Aperio format is assumed. If extension is 'json', QuPath format is assumed.
+
 
 
 On a slurm cluster (Prince), you may want to try this header instead (and adjust option ```-j``` to ```28```):
@@ -298,7 +300,7 @@ module load python/gpu/3.6.5
 * `PatientID`: Number of digits used to code the patient ID (must be the first digits of the original image names)
 * `nSplit`: interger n: Split into train/test in n different ways.  If split is > 0, then the data will be split in train/test only in "# split" non-overlapping ways (each way will have 100/(#split) % of test images). `PercentTest` and `PercentValid` will be ignored. If nSplit=0, then there will be one output split done according to `PercentValid` and `PercentTest`
 * (optional) `outFilenameStats`: if an "out_filename_Stats.txt file" is given, check if the tile exists in it an only copy the tile if its value is "true".
-* (optional) `expLabel`: Index of the label to sort on within the outFilenameStats file (if only True/False is needed, leave this option empty) - tiles will only be included if there labels is the one predicted (dominant) in the  outFilenameStats file. (should be a string, separated by commas if more than 1 label desired)
+* (optional) `expLabel`: Index of the label to sort on within the outFilenameStats file (if only True/False is needed, leave this option empty) - tiles will only be included if there labels is the one predicted (dominant) in the  outFilenameStats file. (should be a string, separated by commas if more than 1 label desired; label 0 is for inception background class; label 1 to n for the user's in alphabetical order)
 * (optional) `threshold`: threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability); (should be a string, separated by commas if more than 1 label desired)
 * (optinal) `Balance`: balance the percentage of tiles in each datasets by: 0-tiles (default); 1-slides; 2-patients (must give PatientID)
 * (optional) `outputtype`: Type of output: list source/destination in a file (```File```), do symlink (```Symlink```, default) or both (```Both```)
@@ -402,6 +404,8 @@ module load python/gpu/3.6.5
 ```
 
 The jpeg must not be directly inside 'jpeg_label_directory' but in subfolders with names corresponding to the labels (for example as `jpeg_label_directory/TCGA-LUAD/...jpeg` and `jpeg_label_directory/TCGA-LUSC/...jpeg`). The name of those tiles are : `<type>_name_x_y.jpeg` with type being "test", "train" or "valid", name the TCGA name of the slide, x and y the tile coordinates.
+
+optinal parameter: `MaxNbImages`: (default: -1); Maximum number of images in each class - Will be taken randomly among images tiles if >0, otherwise, if -1, all images are taken (may help in unbalanced datasets: undersample oneof the datasets) - if MaxNbImages>number of tiles, data augmentation will be done (rotation, mirroring, leading to possibility to increase dataset up to 8 fold)
 
 
 The same was done for the test and valid set with this slightly modified script:

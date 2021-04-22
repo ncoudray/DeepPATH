@@ -89,6 +89,14 @@ def main(unused_argv=None):
     print(dataset.data_files())
     assert dataset.data_files()
     nc_inception_eval.evaluate(dataset)
+  elif "train" in FLAGS.TVmode:
+    FLAGS.data_dir = os.path.join(FLAGS.data_dir, FLAGS.ImageSet_basename + '*')
+    dataset = ImagenetData(subset=FLAGS.subset)
+    print(dataset.data_files())
+    assert dataset.data_files()
+    nc_inception_eval.evaluate(dataset)
+
+
 
   # # read data
   # output = open('out_All_Stats.txt', 'rb')

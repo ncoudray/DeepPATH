@@ -33,8 +33,11 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
 import scipy.misc
-from scipy.misc import imsave
-from scipy.misc import imread
+#from scipy.misc import imsave
+#from scipy.misc import imread
+from imageio import imwrite as imsave
+from imageio import imread
+from PIL import Image
 
 FLAGS = None
 
@@ -255,6 +258,7 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 	# save the previous heat maps if any
 	HeatMap_divider = HeatMap_divider_p * 1.0 + 0.0
 	HeatMap_0 = HeatMap_0_p
+	# Bkg = HeatMap_divider + 0.0
 	HeatMap_divider[HeatMap_divider == 0] = 1.0
 	HeatMap_0 = np.divide(HeatMap_0, HeatMap_divider)
 	alpha = 0.33
@@ -283,6 +287,8 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 			return skip
 		else:
 			print(filename + " has processed for the first times.")
+
+	out[out == [0,0,0]] = 255
 	imsave(filename,out)
 
 	#filename = os.path.join(heatmap_path, cTileRootName + "_" + label_name + "_heatmap_BW.jpg")
@@ -367,7 +373,7 @@ def main():
 			print("image not found:")
 			print(tile)
 			# break
-                        continue
+			continue
 
 		# remove slide number from image name:
 		cTileRootName =  '_'.join(os.path.basename(test_filename).split('_')[0:-2]) 
@@ -402,7 +408,8 @@ def main():
 			elif cTile<=0:
 				im2s = im2
 			else:
-				im2s = scipy.misc.imresize(im2, (cTile, rTile))
+				# im2s = scipy.misc.imresize(im2, (cTile, rTile))
+				im2s = np.array(Image.fromarray(im2).resize((cTile, rTile)))
 				rTile = im2s.shape[1]
 				cTile = im2s.shape[0]
 
