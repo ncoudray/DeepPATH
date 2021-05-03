@@ -120,12 +120,16 @@ def get_inference_from_file(lineProb_st):
 			score_correction = 1.0 / len(class_all)
 		if oClass == 1:
 			if len(class_all) == 2:
-				cmap = plt.get_cmap('OrRd')
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('red')])
+				# cmap = plt.get_cmap('OrRd')
 			else:
 				cmap = plt.get_cmap('binary')
 		elif oClass == 2:
 			if len(class_all) == 2:
-				cmap = plt.get_cmap('Blues')
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('blue')])
+				# cmap = plt.get_cmap('Blues')
 			else:
 				cmap = plt.get_cmap('OrRd')
 		elif oClass == 3:
@@ -136,15 +140,13 @@ def get_inference_from_file(lineProb_st):
 			cmap = plt.get_cmap('Greens')
 		else:
 			cmap = plt.get_cmap('Purples')
-
 	print(oClass, current_score, (current_score-score_correction)/(1.0-score_correction))
-
-	return oClass, cmap, (current_score-score_correction)/(1.0-score_correction)
+	return oClass, cmap, (current_score-score_correction)/(1.0-score_correction), [class_all[0], class_all[1]]
 
 			
 
 
-def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide, dir_name):
+def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide, dir_name, HeatMap_bin):
 	# save the previous heat maps if any
 	HeatMap_divider = HeatMap_divider_p * 1.0 + 0.0
 	HeatMap_0 = HeatMap_0_p
@@ -181,7 +183,36 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 	out[out == [0,0,0]] = 255
 	imsave(filename,out)
 
-	#filename = os.path.join(heatmap_path, cTileRootName + "_" + label_name + "_heatmap_BW.jpg")
+	if (NewSlide == False):
+		HeatMap_bin = np.divide(HeatMap_bin, HeatMap_divider) 
+		ImBin = HeatMap_bin * 0.
+		# if FLAGS.thresholds is not None:
+		# NonBkgTiles_c1 = HeatMap_0[HeatMap_divider[:,:,1]>0,0]
+		# NonBkgTiles_c2 = HeatMap_0[HeatMap_divider[:,:,1]>0,1]
+		# NonBkgTiles_c3 = HeatMap_0[HeatMap_divider[:,:,1]>0,2]
+		if FLAGS.thresholds is not None:
+			thresholds = FLAGS.thresholds
+			thresholds = [float(x) for x in thresholds.split(',')]
+			ImBin[:,:,0] = HeatMap_bin[:,:,0] >= thresholds[0]
+			ImBin[:,:,2] = HeatMap_bin[:,:,2] >= thresholds[1]
+		else:
+			Tmax = np.max(HeatMap_bin,2)
+			ImBin[:,:,0] = HeatMap_bin[:,:,0] == Tmax
+			ImBin[:,:,2] = HeatMap_bin[:,:,2] == Tmax
+		c1 = sum(ImBin[(HeatMap_divider_p[:,:,1] * 1.0 + 0.0)>0,0])
+		c3 = sum(ImBin[(HeatMap_divider_p[:,:,1] * 1.0 + 0.0)>0,2]) 
+	
+		ImBin[HeatMap_divider_p==0] = 1
+		ImBin = ImBin.transpose((1, 0, 2))
+	
+	
+		print("*************")
+		print(c1, c3)
+		print(round(c1/(c1+c3),4))
+		filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + "_bin_" + str(int(c1)) + "_" + str(int(c3)) + "_r_" + str(round(c1/(c1+c3),4)) +  ".jpg")
+		imsave(filename,ImBin * 255.)
+
+	#filename = os.path.joineheatmap_path, cTileRootName + "_" + label_name + "_heatmap_BW.jpg")
 	#imsave(filename,HeatMap_0 * 255)
 
 	#filename = os.path.join(heatmap_path, cTileRootName + "_" + label_name + "_heatmap_Div.jpg")
@@ -241,15 +272,18 @@ def main():
 		iyTile = int(stats_dict[slide]['yMax'])
 		req_xLength =  (ixTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap) + FLAGS.tiles_size
 		req_yLength =  (iyTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap) + FLAGS.tiles_size
+		# req_xLength =  (ixTile) * (FLAGS.tiles_size) + FLAGS.tiles_size
+		# req_yLength =  (iyTile) * (FLAGS.tiles_size) + FLAGS.tiles_size
 		if FLAGS.resample_factor > 0:
 			req_xLength = int(req_xLength / FLAGS.resample_factor + 1)
 			req_yLength = int(req_yLength / FLAGS.resample_factor + 1)
 		WholeSlide_0 = np.zeros([req_xLength, req_yLength, 3])
 		HeatMap_0 = np.zeros([req_xLength, req_yLength, 3])
+		HeatMap_bin = np.zeros([req_xLength, req_yLength, 3])
 		HeatMap_divider = np.zeros([req_xLength, req_yLength, 3])
 		print("Checking slide " + slide)
 		print(req_xLength, req_yLength)
-		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, slide, NewSlide, dir_name)
+		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, slide, NewSlide, dir_name, HeatMap_bin)
 		if skip:
 			print("slide done --")
 			continue
@@ -273,7 +307,6 @@ def main():
 			if isError == True:
 				# print("image not found:" + tile)
 				continue
-			
 			cTileRootName = slide
 			ixTile = int(stats_dict[slide]['tiles'][tile][0])
 			iyTile = int(stats_dict[slide]['tiles'][tile][1])
@@ -281,9 +314,10 @@ def main():
 			cTile = im2.shape[0]
 			xTile =  (ixTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap)
 			yTile =  (iyTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap)
+			# xTile =  (ixTile) * (FLAGS.tiles_size)
+			# yTile =  (iyTile) * (FLAGS.tiles_size)
 			req_xLength = xTile + rTile
-			req_yLength = yTile + cTile				
-						
+			req_yLength = yTile + cTile					
 			if FLAGS.resample_factor > 0:
 				# print("old / new r&cTile")
 				# print(rTile, cTile, xTile, yTile)
@@ -304,31 +338,26 @@ def main():
 					print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
 			else:
 				im2s = im2
-			
 			# Check score associated with that image:
-			oClass, cmap, current_score = get_inference_from_file(stats_dict[slide]['tiles'][tile][2])
-			
-			
+			oClass, cmap, current_score, class_prob = get_inference_from_file(stats_dict[slide]['tiles'][tile][2])
 			if current_score < 0:
 				print("No probability found")
 			else:
-				print(np.swapaxes(im2s,0,1).shape)
-				print(xTile,req_xLength,yTile,req_yLength)
-				print(WholeSlide_0.shape)
+				# print(np.swapaxes(im2s,0,1).shape)
+				# print(xTile,req_xLength,yTile,req_yLength)
+				# print(WholeSlide_0.shape)
 				WholeSlide_0[xTile:req_xLength, yTile:req_yLength,:] = np.swapaxes(im2s,0,1)
-
 				heattile = np.ones([req_xLength-xTile,req_yLength-yTile]) * current_score
 				heattile = cmap(heattile)
 				heattile = heattile[:,:,0:3]
-
 				HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] + heattile
 				HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] + 1
-
-	
+				HeatMap_bin[xTile:req_xLength, yTile:req_yLength,0] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,0] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[0]
+				HeatMap_bin[xTile:req_xLength, yTile:req_yLength,2] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,2] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[1]	
 			print("tile time: " + str((time.time() - t)/60))
 
 		NewSlide = False
-		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, slide, NewSlide, dir_name)
+		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, slide, NewSlide, dir_name, HeatMap_bin)
 		print("slide time: " + str((time.time() - t)/60))	
 
 
@@ -415,6 +444,8 @@ if __name__ == '__main__':
   )
 
   FLAGS, unparsed = parser.parse_known_args()
+  FLAGS.tiles_size = FLAGS.tiles_size + 2 * FLAGS.tiles_overlap
+  FLAGS.tiles_overlap = 2 * FLAGS.tiles_overlap
   main()
   #tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
