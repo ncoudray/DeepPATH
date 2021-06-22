@@ -1,4 +1,8 @@
-The checkpoints different runs using 2168 WSI (Lung) from the TCGA are saved there:
+The checkpoints different runs using 2168 WSI (Lung) from the TCGA are accessible at [https://genome.med.nyu.edu/public/tsirigoslab/DeepLearning/LungCancer_LUADLUSC_Mutations/]. If you use them, please cite the following paper:
+
+(Nicolas Coudray, Paolo Santiago Ocampo, Theodore Sakellaropoulos, Navneet Narula, Matija Snuderl, David Fenyö, Andre L. Moreira, Narges Razavian, Aristotelis Tsirigos. Classification and mutation prediction from non–small cell lung cancer histopathology images using deep learning. Nature Medicine, 2018; DOI: 10.1038/s41591-018-0177-5)
+[https://www.nature.com/articles/s41591-018-0177-5]
+
 
 `run1a_3D_classifier` was run using batch size of 400; checkpoints at 69k
 (AUC of validation for Normal/LUAD/LUSC: 0.9997/0.970/0.967; for test set: 0.991/0.949/0.942)

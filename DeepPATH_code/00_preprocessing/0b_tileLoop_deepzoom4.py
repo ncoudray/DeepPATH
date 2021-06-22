@@ -826,7 +826,7 @@ if __name__ == '__main__':
 	# get  images from the data/ file.
 	files = glob(slidepath)  
 	#ImgExtension = os.path.splitext(slidepath)[1]
-	ImgExtension = slidepath.split('*')[-1]
+	ImgExtension = slidepath.split('.')[-1]
 	#files
 	#len(files)
 	# print(args)
