@@ -43,7 +43,8 @@ from xml.dom import minidom
 from PIL import Image, ImageDraw, ImageCms
 from skimage import color, io
 Image.MAX_IMAGE_PIXELS = None
-
+import pandas as pd
+import csv
 
 VIEWER_SLIDE_NAME = 'slide'
 
@@ -125,14 +126,16 @@ class TileWorker(Process):
             #associated, level, address, outfile = data
             associated, level, address, outfile, format, outfile_bw, PercentMasked, SaveMasks, TileMask, Normalize, isrescale, resize_ratio, Adj_WindowSize = data
             if last_associated != associated:
-                dz = self._get_dz(associated, self._tile_size)
+                dz = self._get_dz(associated, Adj_WindowSize)
+                # dz = self._get_dz(associated, self._tile_size)
                 last_associated = associated
             # try:
-            dz = self._get_dz(associated, Adj_WindowSize)
+            #	dz = self._get_dz(associated, Adj_WindowSize)
             # except Exception as e: 
-            #     print("****** ERROR: ")
+            #    print("****** ERROR: ")
             #    print(e)
             #    print(associated)
+            #    self._queue.task_done()
             #    break
             #try:
             if True:
@@ -159,7 +162,7 @@ class TileWorker(Process):
 
                             if (isrescale) and (resize_ratio != 1):
                                 # tile.save(outfile + '_orig.jpeg', quality=self._quality)
-                                print(tile.width, resize_ratio, tile.height, int(tile.width / resize_ratio), int(tile.height / resize_ratio))
+                                # print(tile.width, resize_ratio, tile.height, int(tile.width / resize_ratio), int(tile.height / resize_ratio))
                                 tile = tile.resize(  (min( self._tile_size, int(tile.width / resize_ratio) ), min( self._tile_size, int(tile.height / resize_ratio))))
                                 # tile = cv2.resize(tile, (0, 0), fx = 1/resize_ratio, fy = 1/resize_ratio)
                                 # if tile.shape[0] > self._tile_size:
@@ -307,6 +310,10 @@ class DeepZoomImageTiler(object):
                # QuPath assumed
                xmldir = os.path.join(self._xmlfile, ImgID + '.json')
                AnnotationMode = 'QuPath'
+            elif os.path.isfile(os.path.join(self._xmlfile, ImgID + '.csv')):
+               xmldir = os.path.join(self._xmlfile, ImgID + '.csv')
+               AnnotationMode = 'Omero'
+
 
             # print("xml:")
             # print(xmldir)
@@ -362,9 +369,9 @@ class DeepZoomImageTiler(object):
                         level_range = [level for level in range(self._dz.level_count-1,-1,-1)]
                         IndxX = self._Best_level
                     DesiredLevel = level_range[IndxX]
-                    print('**info: OrgPixelSizeX:' + str(OrgPixelSizeX) +'; DesiredLevel:' + str(DesiredLevel))
-                    print(AllPixelSizeDiffX)
-                    print(level_range)
+                    # print('**info: OrgPixelSizeX:' + str(OrgPixelSizeX) +'; DesiredLevel:' + str(DesiredLevel))
+                    # print(AllPixelSizeDiffX)
+                    # print(level_range)
                     if not os.path.exists(('/'.join(self._basename.split('/')[:-1]))):
                         os.makedirs(('/'.join(self._basename.split('/')[:-1])))
                     with open(os.path.join( ('/'.join(self._basename.split('/')[:-1])) , 'pixelsizes.txt')  , 'a') as file_out:
@@ -454,34 +461,44 @@ class DeepZoomImageTiler(object):
                             endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
                             startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
                             endIndX_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact))
-                            print(Ddimension, Dlocation, Dlevel, Dsize, self._dz.level_count , level, col, row)
-                            print(self._ImgExtension)
-                            print(Ddimension, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
+                            # print(Ddimension, Dlocation, Dlevel, Dsize, self._dz.level_count , level, col, row)
+                            # print(self._ImgExtension)
+                            # print(Ddimension, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
+                            # if self._ImgExtension == 'scn' and AnnotationMode == 'Aperio':
                             if self._ImgExtension == 'scn':
                                startIndY_current_level_conv = int( ((Dlocation[1]) - self._dz.get_tile_coordinates(level,(0, 0))[0][1]) / Img_Fact)
                                endIndY_current_level_conv = int( ((Dlocation[1] + Ddimension[1])  - self._dz.get_tile_coordinates(level,(0, 0))[0][1]) / Img_Fact)
                                startIndX_current_level_conv = int( ((Dlocation[0]) - self._dz.get_tile_coordinates(level,(0, 0))[0][0]) / Img_Fact)
                                endIndX_current_level_conv = int( ((Dlocation[0] + Ddimension[0]) - self._dz.get_tile_coordinates(level,(0, 0))[0][0]) / Img_Fact)
+                            #elif False and self._ImgExtension == 'scn' and AnnotationMode == 'Omero':
+                            #   x_offset = int(float(self._slide.properties['openslide.bounds-x']) / Img_Fact)
+                            #   y_offset = int(float(self._slide.properties['openslide.bounds-y']) / Img_Fact)
+                            #   startIndX_current_level_conv = (int((Dlocation[1]) / Img_Fact)) - y_offset
+                            #   endIndX_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact)) - y_offset
+                            #   startIndY_current_level_conv = (int((Dlocation[0]) / Img_Fact)) - x_offset
+                            #   endIndY_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact)) - x_offset
 
 
+                            print(self._ImgExtension, AnnotationMode)
+                            print(self._ImgExtension == 'scn' and AnnotationMode == 'Omero')
                             #startIndY_current_level_conv = (int((Dlocation[1]) / Img_Fact))
                             #endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
                             #startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
                             #endIndX_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact))
                             TileMask = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv]
                             PercentMasked = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv].mean() 
-                            print(Ddimension, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
-
-
+                            # print(Ddimension, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
+                            print("(col, row)=" + str(col) + ", " + str(row) + " ----> " + str(startIndX_current_level_conv) + ", " +str(startIndY_current_level_conv))
+                            print( mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv] )
                             if self._mask_type == 0:
                                 # keep ROI outside of the mask
                                 PercentMasked = 1.0 - PercentMasked
                                 # print("Invert Mask percentage")
 
                             if PercentMasked > 0:
-                                print("PercentMasked_p %.3f" % (PercentMasked))
+                                print("PercentMasked_p %.4f" % (PercentMasked))
                             else:
-                                print("PercentMasked_0 %.3f" % (PercentMasked))
+                                print("PercentMasked_0 %.4f" % (PercentMasked))
 
  
                         else:
@@ -544,11 +561,18 @@ class DeepZoomImageTiler(object):
         # Original size of the image
         ImgMaxSizeX_orig = float(self._dz.level_dimensions[-1][0])
         ImgMaxSizeY_orig = float(self._dz.level_dimensions[-1][1])
+        print("image size:", str(ImgMaxSizeX_orig), ", ", str(ImgMaxSizeY_orig))
+        #if ImgExt == 'scn' and AnnotationMode == 'Omero':
+        #   x_offset = float(self._slide.properties['openslide.bounds-x'])
+        #   y_offset = float(self._slide.properties['openslide.bounds-y'])
+        #else:
+        #   x_offset = 0
+        #   y_offset = 0
         # Number of centers at the highest resolution
         cols, rows = self._dz.level_tiles[-1]
 
 
-        if ImgExt == 'scn':
+        if ImgExt == 'scn' and AnnotationMode == 'Aperio':
             tmp = ImgMaxSizeX_orig
             ImgMaxSizeX_orig = ImgMaxSizeY_orig
             ImgMaxSizeY_orig = tmp
@@ -556,8 +580,67 @@ class DeepZoomImageTiler(object):
         NewFact = max(ImgMaxSizeX_orig, ImgMaxSizeY_orig) / min(max(ImgMaxSizeX_orig, ImgMaxSizeY_orig),15000.0)
         Img_Fact = float(ImgMaxSizeX_orig) / 5.0 / float(cols)
        
+        if AnnotationMode == 'Omero':
+          print("Omero annotations not yet ready")
+          f = open(xmldir, 'r')
+          reader = csv.reader(f)
+          headers = next(reader, None)
+          xmlcontent = {}
+          for ncol in headers:
+            xmlcontent[ncol] = []
+          for nrow in reader:
+            for h, r in zip(headers, nrow):
+              xmlcontent[h].append(r)
+          f.close()
 
-        if AnnotationMode == 'Aperio':
+          xml_valid = True
+          xy = {}
+          xy_neg = {}
+          NbRg = 0
+          x_min = ImgMaxSizeX_orig
+          x_max = 0
+          y_min = ImgMaxSizeY_orig
+          y_max = 0
+          if True:
+            for eachR in range(len(xmlcontent['image_name'])):
+              labeltag = xmlcontent['text'][eachR]
+              whichRegion = xmlcontent['image_name'][eachR].split('[')[-1]
+              whichRegion = whichRegion.split(']')[0]
+              x_min = min(x_min, int( int(self._slide.properties['openslide.region[' + whichRegion + '].x']) / NewFact) )
+              y_min = min(y_min, int( int(self._slide.properties['openslide.region[' + whichRegion + '].y']) / NewFact) )
+              x_max = max(x_max, int( int(self._slide.properties['openslide.region[' + whichRegion + '].height']) + int(self._slide.properties['openslide.region[' + whichRegion + '].x']) / NewFact) )
+              y_max = max(y_max, int( int(self._slide.properties['openslide.region[' + whichRegion + '].width']) + int(self._slide.properties['openslide.region[' + whichRegion + '].y'])  / NewFact) )
+              # print(labeltag, "****", Attribute_Name)
+              if (Attribute_Name==[]) | (Attribute_Name==''):
+                # No filter on label name
+                isLabelOK = True
+              elif (Attribute_Name == labeltag):
+                isLabelOK = True
+              elif Attribute_Name == "non_selected_regions":
+                isLabelOK = True
+              else:
+                isLabelOK = False
+              # print(isLabelOK)
+              if isLabelOK:
+                regionID = str(NbRg)
+                xy[regionID] = []
+                # vertices = xmlcontent['Points']
+                tmp_v =  re.sub(","," ",xmlcontent['Points'][eachR]).split()
+                tmp_v2 = [float(ii) for ii in tmp_v]
+                vertices = list(tmp_v2)
+                # for ii in range(0,len(tmp_v2),2):
+                  #vertices[ii+1] =  tmp_v2[ii]
+                  # vertices[ii] =  ImgMaxSizeX_orig - tmp_v2[ii+1]
+                  # vertices[ii] =  tmp_v2[ii+1]
+                NbRg += 1
+                xy[regionID] = [ii / NewFact for ii in vertices]
+                # no field for "negative region" - if it is, create a "xy_neg[regionID]"
+                #for ii in range(0,len(xy[regionID]),2):
+                #  print(xy[regionID][ii]) 
+                #  print(x_offset)
+                #  xy[regionID][ii] = xy[regionID][ii] + y_offset / NewFact
+                #  xy[regionID][ii+1] = xy[regionID][ii+1] + x_offset / NewFact
+        elif AnnotationMode == 'Aperio':
           try:
               xmlcontent = minidom.parse(xmldir)
               xml_valid = True
@@ -565,7 +648,6 @@ class DeepZoomImageTiler(object):
               xml_valid = False
               print("error with minidom.parse(xmldir)")
               return [], xml_valid, 1.0
-
           xy = {}
           xy_neg = {}
           NbRg = 0
@@ -676,7 +758,17 @@ class DeepZoomImageTiler(object):
             ImageDraw.Draw(img,'L').polygon(xy_a, outline=255, fill=0)
         #img = img.resize((cols,rows), Image.ANTIALIAS)
         mask = np.array(img)
-        if ImgExt == 'scn':
+        if AnnotationMode == 'Omero':
+          if Attribute_Name == "non_selected_regions" or self._mask_type==0:
+            print("Box:")
+            print(x_min, y_min, x_max, y_max)
+            # mask[:x_min,:] = 255
+            # mask[:,:y_min] = 255
+            # mask[x_max:,:] = 255
+            # mask[:,y_max:] = 255
+
+
+        if ImgExt == 'scn' and AnnotationMode == 'Aperio':
                 # mask = mask.transpose()
                 mask = np.rot90(mask)
         #print(mask.shape)
@@ -784,10 +876,10 @@ class DeepZoomStaticTiler(object):
             self._resize_ratio = 1
             Adj_WindowSize = self._tile_size
         tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks, self._Mag, self._normalize, self._Fieldxml, self._pixelsize, self._pixelsizerange, Best_level, self._resize_ratio, Adj_WindowSize)
-        try:
-       	     tiler.run()
-        except:
-            print("Error in tiler.run(); image " + self._basenameJPG + " not processed")
+        # try:
+       	tiler.run()
+        # except:
+        #    print("Error in tiler.run(); image " + self._basenameJPG + " not processed")
         self._dzi_data[self._url_for(associated)] = tiler.get_dzi()
 
 
@@ -884,6 +976,24 @@ def xml_read_labels(xmldir, Fieldxml, AnnotationMode):
           xml_labels = np.unique(xml_labels)
           if len(xml_labels) > 0:
             xml_valid = True
+        elif AnnotationMode == 'Omero':      
+          f = open(xmldir, 'r')
+          reader = csv.reader(f)
+          headers = next(reader, None)
+          xmlcontent = {}
+          for ncol in headers:
+            xmlcontent[ncol] = []
+          for nrow in reader:
+            for h, r in zip(headers, nrow):
+              xmlcontent[h].append(r)
+          f.close()
+          xml_labels = []
+          for eachR in range(len(xmlcontent['image_name'])):
+            xml_labels.append(xmlcontent['text'][eachR])
+          xml_labels = np.unique(xml_labels)
+          if len(xml_labels) > 0:
+            xml_valid = True
+
         return xml_labels, xml_valid 
 
 
@@ -1061,15 +1171,18 @@ if __name__ == '__main__':
 			#		print("Error: No xml or json file found for the annotations")
 			xmldir = os.path.join(opts.xmlfile, opts.basenameJPG + '.xml')
 			jsondir = os.path.join(opts.xmlfile, opts.basenameJPG + '.json')
-				
+			csvdir  = os.path.join(opts.xmlfile, opts.basenameJPG + '.csv')
 			# print("xml:")
 			# print(xmldir)
-			if os.path.isfile(xmldir) | os.path.isfile(jsondir):
+			if os.path.isfile(xmldir) | os.path.isfile(jsondir) | os.path.isfile(csvdir) :
 				if os.path.isfile(xmldir):
 					AnnotationMode = 'Aperio'
 				elif os.path.isfile(jsondir):
 					AnnotationMode = 'QuPath'
 					xmldir = jsondir
+				elif os.path.isfile(csvdir):
+					AnnotationMode = 'Omero'
+					xmldir = csvdir
 				if (opts.mask_type==1) or (opts.oLabelref!=''):
 					# either mask inside ROI, or mask outside but a reference label exist
 					xml_labels, xml_valid = xml_read_labels(xmldir, opts.Fieldxml, AnnotationMode)

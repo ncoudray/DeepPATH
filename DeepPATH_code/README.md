@@ -45,6 +45,8 @@ git clone https://github.com/ncoudray/DeepPATH.git
 ```
 Installation should take just a few seconds.
 
+For the environment, see the 'requirements.txt' file. You can set the environment using “pip install -r requirements.txt”. Alternatively, if you are using anaconda, you should be able to run this in your environment with “conda install --yes --file requirements.txt”.
+
 ### Licence on our code
 This license only concerns the code fully written by us. 
 
@@ -153,15 +155,14 @@ Example of script to submit this script on a SGE cluster (python 2.7 used):
 #$ -q gpu0.q
 #$ -l excl=true
 
-python /path_to/0b_tileLoop_deepzoom4.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
+python /path_to/0b_tileLoop_deepzoom6.py  -s 299 -e 0 -j 32 -B 25 -o <full_path_to_output_folder> "full_path_to_input_slides/*/*svs"  
 ```
 Notes on the different version history:
 * /path_to/0b_tileLoop_deepzoom4.py has been updated to deal with xml files having multiple layers, each having a different label. Tiles sharing the same label will be saved in similar sub-directories (name of the sub-directory will be the name of the layer, so it is better if the names are consistent throughout the different xml files, without space and only using alphanumeric characters). Unlike 0b_tileLoop_deepzoom3.py, the label is now expected to be registered in the 'Name' field of the xml's Attributes (and not in the 'Value' field).
 * To see the list of images that failed to be tiled (usually because the file is corrupted), search for the work "Failed" in the output log file
 * Also 0b_tileLoop_deepzoom4.py should now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and "-x" would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg". An additional "-t" parameter is required to save the temporary converted and renamed files (from dcm to jpg, assuming the folder name is of each dcm set represents the patient ID)
 * 0b_tileLoop_deepzoom5.jpg is the next version and should also work with annotations coming either from Aperio or Qupath (after conversion to json). In the path option `-x`, if files extension are 'xml', Aperio format is assumed. If extension is 'json', QuPath format is assumed.
-
-
+* In 0b_tileLoop_deepzoom6.jpg, we added the possibility to rescale the tiles at a given pixelsize: If '-Mag -1'  and '-pixelsize' is >0, the tiles will rescaled at that pixelsize.
 
 On a slurm cluster (Prince), you may want to try this header instead (and adjust option ```-j``` to ```28```):
 
@@ -203,7 +204,7 @@ Mandatory parameters:
 *  The final mandatory parameter is the path to all svs images.
 Optional parameters when regions have been selected with Aperio:
 * `-x` is the path to the xml files. The rootname of the xml file must match exactly the one of the svs images. All the xml files sharing the same label should be in the same folder (named after this label, for example xml_<label>). If there are ROIs with different labels, they should be saved in separate folders and tiles independently in separate output folders (also named after the label, for example <###>pxTiles_<label>)
-* `-F` in which field of the xml's Attributes tag are the labels saved, can be 'Name' (default), or 'Value'
+* `-F` in which field of the xml's Attributes tag are the labels saved, can be 'Name' (default), or 'Value' (used for ImageScope xml annotations only)
 * `-m` 1 or 0 if you want to tile the region inside the ROI, or outside (only tested with masks defined in xml files). If `-l=''`, then if will be everything outside all the ROIs, whatever their label. If `-l` is associated with a particular label, it will the inverse mask for that particular label. 
 * `-R` minimum percentage of tile covered by ROI. If below the percentage, tile is not kept.
 * `-l` To be used with xml file - Only do the tiling for the labels which name contains the characters in this option (string)

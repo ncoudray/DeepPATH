@@ -306,6 +306,10 @@ if __name__ == '__main__':
     parser.add_argument("--outputtype",
                         help="Type of output: list source/destination in a file (File), do symlink (Symlink, default) or both (Both)",
                         dest='outputtype')
+    parser.add_argument("--MaxTilePerWSI",
+                        help="maximum number of tiles to take randomly for each slide (or each labeled ROIs). Default: take everything",
+                        type=int,
+                        dest='MaxTilePerWSI')
 
     ## Parse Arguments
     args = parser.parse_args()
@@ -508,6 +512,7 @@ if __name__ == '__main__':
     '''
     print("imgFolders: " + str(len(imgFolders)))
     print(imgFolders[0:min(10,len(imgFolders))])
+    NbrPatientsCateg_Total = 0
     for cFolderName in imgFolders:
 
         NbSlides += 1
@@ -591,6 +596,10 @@ if __name__ == '__main__':
         print("Symlinking tiles... for subdir %s" % SubDir)
         SourceImageDir = os.path.join(cFolderName, AvailMagsDir, "*")
         AllTiles = glob(SourceImageDir)
+        if args.MaxTilePerWSI is not None:
+            if len(AllTiles) > args.MaxTilePerWSI:
+                random.shuffle(AllTiles)
+                AllTiles = AllTiles[:args.MaxTilePerWSI]
 
         if SubDir in NbrTilesCateg.keys():
             print("%s Already in dictionary" % SubDir)
@@ -705,6 +714,7 @@ if __name__ == '__main__':
                         SetIndx = Patient_set[Patient]
                         tileNewPatient = False
                     else:
+                        NbrPatientsCateg_Total = NbrPatientsCateg_Total + 1
                         SetIndx = nbr_valid[SubDir].index(min(nbr_valid[SubDir]))
                         Patient_set[Patient] = SetIndx
                         tileNewPatient = True
@@ -816,6 +826,8 @@ if __name__ == '__main__':
         NbrImagesCateg[SubDir] = NbrImagesCateg.get(SubDir) + 1
         if NewPatient: 
             NbrPatientsCateg[SubDir] = NbrPatientsCateg.get(SubDir) + 1
+            if int(args.nSplit) > 0:
+              NbrPatientsCateg[SubDir] = max(NbrPatientsCateg[SubDir], NbrPatientsCateg_Total)
 
         print("New Patient: " + str(NewPatient))
         print("NbrPatientsCateg[SubDir]: " + str(NbrPatientsCateg[SubDir]))

@@ -132,32 +132,39 @@ def get_inference_from_file(lineProb_st):
 				cmap = make_colormap([c('white'), c('blue')])
 				# cmap = plt.get_cmap('Blues')
 			else:
-				cmap = plt.get_cmap('OrRd')
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('green')])
+				# cmap = plt.get_cmap('OrRd')
 		elif oClass == 3:
-			cmap = plt.get_cmap('Blues')
+			c = mcolors.ColorConverter().to_rgb
+			cmap = make_colormap([c('white'), c('blue')])
+			# cmap = plt.get_cmap('Blues')
 		elif oClass == 4:
+			c = mcolors.ColorConverter().to_rgb
+			cmap = make_colormap([c('white'), c('red')])
 			cmap = plt.get_cmap('Oranges')
 		elif oClass == 5:
 			cmap = plt.get_cmap('Greens')
 		else:
 			cmap = plt.get_cmap('Purples')
-	# print(oClass, current_score, (current_score-score_correction)/(1.0-score_correction))
-	return oClass, cmap, (current_score-score_correction)/(1.0-score_correction), [class_all[0], class_all[1]]
+	print(lineProb)
+	print(oClass, current_score, (current_score-score_correction)/(1.0-score_correction),  [class_all[1], class_all[2], class_all[3]])
+	return oClass, cmap, (current_score-score_correction)/(1.0-score_correction), [class_all[0], class_all[1], class_all[2], class_all[3]]
 
 			
 
 
-def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide, dir_name, HeatMap_bin_or):
+def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide, dir_name, HeatMap_bin_or):
 	# HeatMap_0_p: heatmap coded
 	# HeatMap_bin_or: sum of probabilities
 	# WholeSlide_0: whole slide images
 
 	# save the previous heat maps if any
-	HeatMap_divider = HeatMap_divider_p * 1.0 + 0.0
+	HeatMap_divider = HeatMap_divider_p0 * 1.0 + 0.0
 	HeatMap_0 = HeatMap_0_p
 	# Bkg = HeatMap_divider + 0.0
 	HeatMap_divider[HeatMap_divider == 0] = 1.0
-	HeatMap_0 = np.divide(HeatMap_0, HeatMap_divider)
+	HeatMap_0 = np.divide(HeatMap_0, HeatMap_divider[:,:,0:3])
 	alpha = 0.33
 	out = HeatMap_0 * 255 * (1.0 - alpha) + WholeSlide_0 * alpha
 	out = out.transpose((1, 0, 2))
@@ -168,7 +175,8 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 	else:
 		os.makedirs(heatmap_path)
 	
-	filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + ".jpg")
+	filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + ".jpg")
+	# filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + ".jpg")
 	#print(cTileRootName + "_heatmap.jpg")
 #	try:
 #		os.remove(filename)
@@ -199,19 +207,37 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 			thresholds = FLAGS.thresholds
 			thresholds = [float(x) for x in thresholds.split(',')]
 			ImBin[:,:,0] = HeatMap_bin[:,:,0] >= thresholds[0]
-			ImBin[:,:,2] = HeatMap_bin[:,:,2] >= thresholds[1]
+			ImBin[:,:,1] = HeatMap_bin[:,:,1] >= thresholds[1]
+			ImBin[:,:,2] = HeatMap_bin[:,:,2] >= thresholds[2]
+			ImBin[:,:,3] = HeatMap_bin[:,:,3] >= thresholds[3]
 		else:
 			Tmax = np.max(HeatMap_bin,2)
 			ImBin[:,:,0] = HeatMap_bin[:,:,0] == Tmax
+			ImBin[:,:,1] = HeatMap_bin[:,:,1] == Tmax
 			ImBin[:,:,2] = HeatMap_bin[:,:,2] == Tmax
-		c1 = sum(ImBin[(HeatMap_divider_p[:,:,1] * 1.0 + 0.0)>0,0])
-		c3 = sum(ImBin[(HeatMap_divider_p[:,:,1] * 1.0 + 0.0)>0,2]) 
-	
-		ImBin[HeatMap_divider_p==0] = 1
-		ImBin = ImBin.transpose((1, 0, 2))
-		ImBin = ImBin * 255.
+			ImBin[:,:,3] = HeatMap_bin[:,:,3] == Tmax
+
+
+
+		cred = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,3])
+		cgreen = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1])
+		cblue = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,2]) 
+
+		HeatMap_divider_p = np.zeros([ImBin.shape[0],ImBin.shape[1], 3])
+		HeatMap_divider_p[:,:,0] = HeatMap_divider_p0[:,:,3]
+		HeatMap_divider_p[:,:,1] = HeatMap_divider_p0[:,:,1]
+		HeatMap_divider_p[:,:,2] = HeatMap_divider_p0[:,:,2]
+		ImBinf = np.zeros([ImBin.shape[0],ImBin.shape[1], 3])
+		ImBinf[:,:,0] = ImBin[:,:,3] 
+		ImBinf[:,:,1] = ImBin[:,:,1]
+		ImBinf[:,:,2] = ImBin[:,:,2]
+		#ImBinf = [ImBin[:,:,3], ImBin[:,:,1], ImBin[:,:,2]] 
+		ImBinf[HeatMap_divider_p==0] = 1
+		ImBinf = ImBinf.transpose((1, 0, 2))
+		ImBinf = ImBinf * 255.
 	
 		print("*************")
+		'''
 		print(c1, c3)
 		if (c1+c3)>0:
 			print(round(c1/(c1+c3),4))
@@ -219,12 +245,13 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 			c3 = 1
 		# filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + "_bin_" + str(int(c1)) + "_" + str(int(c3)) + "_r_" + str(round(c1/(c1+c3),4)) +  ".jpg")
 		# imsave(filename,ImBin)
-		
-		
-		filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name +  ".csv")
-		Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p[:,:,1] * 1.0 + 0.0)>0,0])/np.sum(HeatMap_0[:,:,1]>0.0)
-		NbPixels_Class1 = int(c1) * FLAGS.resample_factor * FLAGS.resample_factor
-		
+		'''
+
+		filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName +  ".csv")		
+		# filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name +  ".csv")
+		# Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p[:,:,1] * 1.0 + 0.0)>0,0])/np.sum(HeatMap_0[:,:,1]>0.0)
+		# NbPixels_Class1 = int(c1) * FLAGS.resample_factor * FLAGS.resample_factor
+		'''
 		t, b_tmp= cv2.threshold(np.array(np.uint8(ImBin[:,:,2])),120,255,cv2.THRESH_BINARY_INV)
 		contours,h = cv2.findContours(b_tmp,cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 		Each_Tumor_Area = []
@@ -253,7 +280,7 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 				cx = 0
 				cy = 0
 			ImBin = cv2.putText(ImBin, text = str(nIt), org=(cx, cy),  fontFace= cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=(255,211,25), thickness=4, lineType=cv2.LINE_AA)
-
+		
 		Nb_Tumor = len(Each_Tumor_Area)
 		import csv
 		with open(filename, 'w', newline='') as csvfile:
@@ -262,10 +289,18 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 			csvwriter.writerow(fields)
 			rows = [[cTileRootName, str(round(c1/(c1+c3)*100,2)), str(round(Avg_Prob_Class1*100, 2)), str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Area), str(Each_Tumor_Mean_Dia)]]
 			csvwriter.writerows(rows)	
+		'''
+		import csv
+		with open(filename, 'w', newline='') as csvfile:
+			csvwriter = csv.writer(csvfile)
+			fields = ['imageName', 'Necrotic tumor','Normal tissue','Viable Tumor']
+			csvwriter.writerow(fields)
+			rows = [[cTileRootName, str(round(cgreen,1)),str(round(cblue,1)),str(round(cred,1))]]
+			csvwriter.writerows(rows)       
 
-
-		filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + "_bin_" + str(int(c1)) + "_" + str(int(c3)) + "_r_" + str(round(c1/(c1+c3),4)) +  ".jpg")
-		imsave(filename,ImBin * 255.)
+		# filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + "_bin_" + str(int(cgreen)) + "_" + str(int(cblue)) + "_" + str(int(cred)) + ".jpg")
+		filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_bin_" + str(int(cgreen)) + "_" + str(int(cblue)) + "_" + str(int(cred)) + ".jpg")
+		imsave(filename,ImBinf * 255.)
 
 
 		# filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + "_BW.jpg")
@@ -273,6 +308,7 @@ def saveMap(HeatMap_divider_p, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlid
 
 		# remove or blannk image
 		filename_tmp = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + "unknown"  + ".jpg")
+		print(filename_tmp)
 		if os.path.exists(filename_tmp):
 			os.remove(filename_tmp)
 
@@ -319,7 +355,7 @@ def main():
 		#print(k)
 		if FLAGS.slide_filter in k:
 			filtered_dict[k] =stats_dict[k]
-	#print(filtered_dict)
+	print(filtered_dict)
 
 	## Aggregate the results and build heatmaps
 	dir_name = 'unknown'
@@ -338,8 +374,8 @@ def main():
 			req_yLength = int(req_yLength / FLAGS.resample_factor + 1)
 		WholeSlide_0 = np.zeros([req_xLength, req_yLength, 3])
 		HeatMap_0 = np.zeros([req_xLength, req_yLength, 3])
-		HeatMap_bin = np.zeros([req_xLength, req_yLength, 3])
-		HeatMap_divider = np.zeros([req_xLength, req_yLength, 3])
+		HeatMap_bin = np.zeros([req_xLength, req_yLength, 4])
+		HeatMap_divider = np.zeros([req_xLength, req_yLength, 4])
 		print("Checking slide " + slide)
 		print(req_xLength, req_yLength)
 		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, slide, NewSlide, dir_name, HeatMap_bin)
@@ -417,7 +453,9 @@ def main():
 				HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_0[xTile:req_xLength, yTile:req_yLength,:] + heattile
 				HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] + 1
 				HeatMap_bin[xTile:req_xLength, yTile:req_yLength,0] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,0] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[0]
-				HeatMap_bin[xTile:req_xLength, yTile:req_yLength,2] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,2] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[1]	
+				HeatMap_bin[xTile:req_xLength, yTile:req_yLength,1] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,1] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[1]
+				HeatMap_bin[xTile:req_xLength, yTile:req_yLength,2] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,2] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[2]
+				HeatMap_bin[xTile:req_xLength, yTile:req_yLength,3] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,3] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[3]	
 			if cc % 1000 == 0: 
 				print("tile time (sec): " + str((time.time() - t) / cc))
 

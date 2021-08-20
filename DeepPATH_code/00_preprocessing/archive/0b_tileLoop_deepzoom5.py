@@ -381,6 +381,12 @@ class DeepZoomImageTiler(object):
                             startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
                             endIndX_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact))
                             # print(Ddimension, Dlocation, Dlevel, Dsize, self._dz.level_count , level, col, row)
+                            if self._ImgExtension == 'scn':
+                               startIndY_current_level_conv = int( ((Dlocation[1]) - self._dz.get_tile_coordinates(level,(0, 0))[0][1]) / Img_Fact)
+                               endIndY_current_level_conv = int( ((Dlocation[1] + Ddimension[1])  - self._dz.get_tile_coordinates(level,(0, 0))[0][1]) / Img_Fact)
+                               startIndX_current_level_conv = int( ((Dlocation[0]) - self._dz.get_tile_coordinates(level,(0, 0))[0][0]) / Img_Fact)
+                               endIndX_current_level_conv = int( ((Dlocation[0] + Ddimension[0]) - self._dz.get_tile_coordinates(level,(0, 0))[0][0]) / Img_Fact)
+
 
                             #startIndY_current_level_conv = (int((Dlocation[1]) / Img_Fact))
                             #endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
@@ -461,6 +467,12 @@ class DeepZoomImageTiler(object):
         ImgMaxSizeY_orig = float(self._dz.level_dimensions[-1][1])
         # Number of centers at the highest resolution
         cols, rows = self._dz.level_tiles[-1]
+
+
+        if ImgExt == 'scn':
+            tmp = ImgMaxSizeX_orig
+            ImgMaxSizeX_orig = ImgMaxSizeY_orig
+            ImgMaxSizeY_orig = tmp
 
         NewFact = max(ImgMaxSizeX_orig, ImgMaxSizeY_orig) / min(max(ImgMaxSizeX_orig, ImgMaxSizeY_orig),15000.0)
         Img_Fact = float(ImgMaxSizeX_orig) / 5.0 / float(cols)
@@ -585,6 +597,9 @@ class DeepZoomImageTiler(object):
             ImageDraw.Draw(img,'L').polygon(xy_a, outline=255, fill=0)
         #img = img.resize((cols,rows), Image.ANTIALIAS)
         mask = np.array(img)
+        if ImgExt == 'scn':
+                # mask = mask.transpose()
+                mask = np.rot90(mask)
         #print(mask.shape)
         if Attribute_Name == "non_selected_regions":
            # scipy.misc.toimage(255-mask).save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_" + Attribute_Name + ".jpeg"))

@@ -17,6 +17,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 import os
 import numpy as np
 import argparse
+from sklearn.metrics import balanced_accuracy_score
+
 
 def main(args): 
 	# files_stats = "test_fold0_bal/test_130000k/out_filename_Stats.txt" 
@@ -51,7 +53,14 @@ def main(args):
                                 lineProb = [float(x) for x in lineProb]
                                 stats_dict[cTileRootName]['tiles'][tilename] = [str(ixTile), str(iyTile), lineProb, int(line2[-1])]
 
+#balanced_accuracy_score(y_true = , y_pred= )
 
+
+	y_true = {}
+	y_pred = {}
+	for kk in range(len(lineProb)):
+		y_true[kk] = []
+		y_pred[kk] = []
 
 	TPN_matrix = [[0,0],[0,0]]
 	for nslide in stats_dict.keys():
@@ -60,6 +69,15 @@ def main(args):
 	                assigned_label = stats_dict[nslide]['tiles'][ntile][-2]
 	                assigned_label = assigned_label.index(max(assigned_label)) - 1
 	                TPN_matrix[true_label][assigned_label] = TPN_matrix[true_label][assigned_label] + 1
+	                # for kk in range(len(stats_dict[nslide]['tiles'][ntile][-2])):
+	                #	#y_true[kk].append( float(1 if stats_dict[nslide]['tiles'][ntile][-1]==kk else 0) )
+	                #	#y_pred[kk].append( stats_dict[nslide]['tiles'][ntile][-2][kk])
+	                y_true[0].append( true_label )
+	                y_pred[0].append( assigned_label )
+
+
+#balanced_accuracy_score(y_true = , y_pred= )
+
 
 	TPN_matrix = np.array(TPN_matrix)
 	nspecificity = TPN_matrix[1,1] / sum(TPN_matrix[1,:])
@@ -67,6 +85,7 @@ def main(args):
 	nprecision  = (TPN_matrix[0,0]) / sum(TPN_matrix[:,0])
 	nRecall_sensitivity = TPN_matrix[0,0] / sum(TPN_matrix[0,:])
 	F1score = 2 * (nprecision * nRecall_sensitivity) / (nprecision + nRecall_sensitivity)
+	FbalAcc = balanced_accuracy_score(y_true[0],y_pred[0])
 
 	print("**default threshold**")
 	print("specificity: " + str(round(nspecificity,4)))
@@ -74,7 +93,14 @@ def main(args):
 	print("precision: " + str(round(nprecision,4)))
 	print("recall/sensitivity: " + str(round(nRecall_sensitivity,4)))
 	print("F1score: " + str(round(F1score,4)))
-	
+	print("balanced accuracy: " + str(round(FbalAcc,4)))
+
+
+	y_true = {}
+	y_pred = {}
+	for kk in range(len(lineProb)):
+		y_true[kk] = []
+		y_pred[kk] = []
 
 	TPN_matrix = [[0,0],[0,0]]
 	for nslide in stats_dict.keys():
@@ -86,21 +112,26 @@ def main(args):
 	                else:
 	                        assigned_label = 1 - true_label
 	                TPN_matrix[true_label][assigned_label] = TPN_matrix[true_label][assigned_label] + 1
+	                y_true[0].append( true_label )
+	                y_pred[0].append( assigned_label )
 	
 	
+
 	TPN_matrix = np.array(TPN_matrix)
 	nspecificity = TPN_matrix[1,1] / sum(TPN_matrix[1,:])
 	naccuracy = (TPN_matrix[0,0]  + TPN_matrix[1,1] ) / sum(sum(TPN_matrix))
 	nprecision  = (TPN_matrix[0,0]) / sum(TPN_matrix[:,0])
 	nRecall_sensitivity = TPN_matrix[0,0] / sum(TPN_matrix[0,:])
 	F1score = 2 * (nprecision * nRecall_sensitivity) / (nprecision + nRecall_sensitivity)
-	
+	FbalAcc = balanced_accuracy_score(y_true[0],y_pred[0])
+
 	print("**chosen threshold**")
 	print("specificity: " + str(round(nspecificity,4)))
 	print("accuracy: " + str(round(naccuracy,4)))
 	print("precision: " + str(round(nprecision,4)))
 	print("recall/sensitivity: " + str(round(nRecall_sensitivity,4)))
 	print("F1score: " + str(round(F1score,4)))
+	print("balanced accuracy: " + str(round(FbalAcc,4)))
 	
 
 
