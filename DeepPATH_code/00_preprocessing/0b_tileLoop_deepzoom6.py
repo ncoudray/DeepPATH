@@ -341,7 +341,7 @@ class DeepZoomImageTiler(object):
             if self._Mag <= 0:
                 if self._pixelsize > 0:
                     level_range = [level for level in range(self._dz.level_count-1,-1,-1)]
-                    print(self._slide.properties)
+                    # print(self._slide.properties)
                     try:
                         OrgPixelSizeX = float(self._slide.properties['openslide.mpp-x'])
                         OrgPixelSizeY = float(self._slide.properties['openslide.mpp-y'])
@@ -355,7 +355,7 @@ class DeepZoomImageTiler(object):
                     IndxY = AllPixelSizeDiffY.index(min(AllPixelSizeDiffY))
                     levelX = AllPixelSizeDiffX[IndxX]
                     levelY = AllPixelSizeDiffY[IndxY]
-                    print("**info levelX:" + str(levelX) + "; self._pixelsizerange" + str(self._pixelsizerange) + "; test: " + str((levelX > self._pixelsizerange) and (self._pixelsizerange >= 0)))
+                    # print("**info levelX:" + str(levelX) + "; self._pixelsizerange" + str(self._pixelsizerange) + "; test: " + str((levelX > self._pixelsizerange) and (self._pixelsizerange >= 0)))
                     if IndxX != IndxY:
                         print("Error: X and Y pixel sizes are too different for %s"  % self._basename)
                         return
@@ -479,8 +479,8 @@ class DeepZoomImageTiler(object):
                             #   endIndY_current_level_conv = (int((Dlocation[0] + Ddimension[0]) / Img_Fact)) - x_offset
 
 
-                            print(self._ImgExtension, AnnotationMode)
-                            print(self._ImgExtension == 'scn' and AnnotationMode == 'Omero')
+                            # print(self._ImgExtension, AnnotationMode)
+                            # print(self._ImgExtension == 'scn' and AnnotationMode == 'Omero')
                             #startIndY_current_level_conv = (int((Dlocation[1]) / Img_Fact))
                             #endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
                             #startIndX_current_level_conv = (int((Dlocation[0]) / Img_Fact))
@@ -488,8 +488,8 @@ class DeepZoomImageTiler(object):
                             TileMask = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv]
                             PercentMasked = mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv].mean() 
                             # print(Ddimension, startIndY_current_level_conv, endIndY_current_level_conv, startIndX_current_level_conv, endIndX_current_level_conv)
-                            print("(col, row)=" + str(col) + ", " + str(row) + " ----> " + str(startIndX_current_level_conv) + ", " +str(startIndY_current_level_conv))
-                            print( mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv] )
+                            # print("(col, row)=" + str(col) + ", " + str(row) + " ----> " + str(startIndX_current_level_conv) + ", " +str(startIndY_current_level_conv))
+                            # print( mask[startIndY_current_level_conv:endIndY_current_level_conv, startIndX_current_level_conv:endIndX_current_level_conv] )
                             if self._mask_type == 0:
                                 # keep ROI outside of the mask
                                 PercentMasked = 1.0 - PercentMasked
@@ -601,15 +601,26 @@ class DeepZoomImageTiler(object):
           x_max = 0
           y_min = ImgMaxSizeY_orig
           y_max = 0
+          print(xmlcontent['image_name'])
+          print(xmlcontent['text'])
+          print(self._slide.properties)
           if True:
             for eachR in range(len(xmlcontent['image_name'])):
               labeltag = xmlcontent['text'][eachR]
               whichRegion = xmlcontent['image_name'][eachR].split('[')[-1]
               whichRegion = whichRegion.split(']')[0]
-              x_min = min(x_min, int( int(self._slide.properties['openslide.region[' + whichRegion + '].x']) / NewFact) )
-              y_min = min(y_min, int( int(self._slide.properties['openslide.region[' + whichRegion + '].y']) / NewFact) )
-              x_max = max(x_max, int( int(self._slide.properties['openslide.region[' + whichRegion + '].height']) + int(self._slide.properties['openslide.region[' + whichRegion + '].x']) / NewFact) )
-              y_max = max(y_max, int( int(self._slide.properties['openslide.region[' + whichRegion + '].width']) + int(self._slide.properties['openslide.region[' + whichRegion + '].y'])  / NewFact) )
+              # print(whichRegion)
+              whichRegion = str(int(whichRegion) - 1)
+              if ImgExt == 'scn':
+                x_min = min(x_min, int( int(self._slide.properties['openslide.region[' + whichRegion + '].x']) / NewFact) )
+                y_min = min(y_min, int( int(self._slide.properties['openslide.region[' + whichRegion + '].y']) / NewFact) )
+                x_max = max(x_max, int( (int(self._slide.properties['openslide.region[' + whichRegion + '].width']) + int(self._slide.properties['openslide.region[' + whichRegion + '].x'])) / NewFact) )
+                y_max = max(y_max, int( (int(self._slide.properties['openslide.region[' + whichRegion + '].height']) + int(self._slide.properties['openslide.region[' + whichRegion + '].y']))  / NewFact) )
+              else:
+                x_min = 0
+                y_min = 0
+                x_max = ImgMaxSizeX_orig / NewFact
+                y_max = ImgMaxSizeY_orig / NewFact
               # print(labeltag, "****", Attribute_Name)
               if (Attribute_Name==[]) | (Attribute_Name==''):
                 # No filter on label name
@@ -627,6 +638,11 @@ class DeepZoomImageTiler(object):
                 # vertices = xmlcontent['Points']
                 tmp_v =  re.sub(","," ",xmlcontent['Points'][eachR]).split()
                 tmp_v2 = [float(ii) for ii in tmp_v]
+                if ImgExt == 'scn':
+                  for i in range(1,len(tmp_v2),2):
+                    tmp_v2[i] = tmp_v2[i] +  int(self._slide.properties['openslide.region[' + whichRegion + '].y'])
+                  for i in range(0,len(tmp_v2),2):
+                    tmp_v2[i] = tmp_v2[i] +  int(self._slide.properties['openslide.region[' + whichRegion + '].x'])
                 vertices = list(tmp_v2)
                 # for ii in range(0,len(tmp_v2),2):
                   #vertices[ii+1] =  tmp_v2[ii]
@@ -640,6 +656,22 @@ class DeepZoomImageTiler(object):
                 #  print(x_offset)
                 #  xy[regionID][ii] = xy[regionID][ii] + y_offset / NewFact
                 #  xy[regionID][ii+1] = xy[regionID][ii+1] + x_offset / NewFact
+          if ImgExt == 'scn':
+            x_start = ImgMaxSizeX_orig
+            y_start = ImgMaxSizeY_orig
+            for kk in range(0,100):
+              try:
+                x_start = min(x_start, int( int(self._slide.properties['openslide.region[' + str(kk) + '].x']) / NewFact) )
+                y_start = min(y_start, int( int(self._slide.properties['openslide.region[' + str(kk) + '].y']) / NewFact) )
+              except:
+                break
+            # print("start " + str(x_start) + " / " + str(y_start) )
+            # print("min " + str(x_min) + " / " + str(y_min) )
+            for kk in xy.keys(): 
+              for i in range(1,len(xy[kk]),2):
+                xy[kk][i] = xy[kk][i] - y_start
+              for i in range(0,len(xy[kk]),2):
+                xy[kk][i] = xy[kk][i] - x_start
         elif AnnotationMode == 'Aperio':
           try:
               xmlcontent = minidom.parse(xmldir)
@@ -744,8 +776,8 @@ class DeepZoomImageTiler(object):
         #print(xy)
         # print("%d xy_neg"  % len(xy_neg))
         #print(xy_neg)
-        # print("Img_Fact:")
-        # print(NewFact)
+        print("Img_Fact:")
+        print(NewFact)
         # print(ImgMaxSizeX_orig/NewFact, ImgMaxSizeY_orig/NewFact)
         # img = Image.new('L', (int(cols*Img_Fact), int(rows*Img_Fact)), 0)
         img = Image.new('L', (int(ImgMaxSizeX_orig/NewFact), int(ImgMaxSizeY_orig/NewFact)), 0)
@@ -760,12 +792,22 @@ class DeepZoomImageTiler(object):
         mask = np.array(img)
         if AnnotationMode == 'Omero':
           if Attribute_Name == "non_selected_regions" or self._mask_type==0:
-            print("Box:")
-            print(x_min, y_min, x_max, y_max)
-            # mask[:x_min,:] = 255
-            # mask[:,:y_min] = 255
-            # mask[x_max:,:] = 255
-            # mask[:,y_max:] = 255
+            #x_start = ImgMaxSizeX_orig
+            #y_start = ImgMaxSizeY_orig
+            #for kk in range(0,100):
+            #  try:
+            #    x_start = min(x_start, int( int(self._slide.properties['openslide.region[' + whichRegion + '].x']) / NewFact) )
+            #    y_start = min(y_start, int( int(self._slide.properties['openslide.region[' + whichRegion + '].y']) / NewFact) )
+            #  except:
+            #    break
+            # print("Box:")
+            # print(x_min, y_min, x_max, y_max)
+            # print(x_start, y_start)
+            # print(np.shape(mask))
+            mask[:,:x_min-x_start] = 255
+            mask[:y_min-y_start,:] = 255
+            mask[:,x_max-x_start:] = 255
+            mask[y_max-y_start:,:] = 255
 
 
         if ImgExt == 'scn' and AnnotationMode == 'Aperio':

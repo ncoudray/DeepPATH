@@ -162,7 +162,10 @@ Notes on the different version history:
 * To see the list of images that failed to be tiled (usually because the file is corrupted), search for the work "Failed" in the output log file
 * Also 0b_tileLoop_deepzoom4.py should now be working on dcm and jpg files. In this case, the mask can also be jpg instead xml files and "-x" would point to the directory where those masks are saved. Mask must have exactly the same basename as the original images and end in "mask.jpg". An additional "-t" parameter is required to save the temporary converted and renamed files (from dcm to jpg, assuming the folder name is of each dcm set represents the patient ID)
 * 0b_tileLoop_deepzoom5.jpg is the next version and should also work with annotations coming either from Aperio or Qupath (after conversion to json). In the path option `-x`, if files extension are 'xml', Aperio format is assumed. If extension is 'json', QuPath format is assumed.
-* In 0b_tileLoop_deepzoom6.jpg, we added the possibility to rescale the tiles at a given pixelsize: If '-Mag -1'  and '-pixelsize' is >0, the tiles will rescaled at that pixelsize.
+* In 0b_tileLoop_deepzoom6.jpg,  we added:
+  - the possibility to rescale the tiles at a given pixelsize: If '-Mag -1'  and '-pixelsize' is >0, the tiles will rescaled at that pixelsize.
+  - taking into account annotations from Omero (csv format, with label name in the "Label" field) 
+
 
 On a slurm cluster (Prince), you may want to try this header instead (and adjust option ```-j``` to ```28```):
 

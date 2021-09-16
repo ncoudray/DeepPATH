@@ -828,6 +828,9 @@ if __name__ == '__main__':
             NbrPatientsCateg[SubDir] = NbrPatientsCateg.get(SubDir) + 1
             if int(args.nSplit) > 0:
               NbrPatientsCateg[SubDir] = max(NbrPatientsCateg[SubDir], NbrPatientsCateg_Total)
+        else:
+            if NbrPatientsCateg[SubDir]==0:
+              NbrPatientsCateg[SubDir]=1
 
         print("New Patient: " + str(NewPatient))
         print("NbrPatientsCateg[SubDir]: " + str(NbrPatientsCateg[SubDir]))
