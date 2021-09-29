@@ -119,7 +119,7 @@ nibabel==2.3.3
 nilearn==0.5.0
 nimfa==1.4.0
 nipype==1.1.9
-nltk==3.3
+nltk==3.6.3
 notebook==5.6.0
 numba==0.53.1
 numexpr==2.6.9
