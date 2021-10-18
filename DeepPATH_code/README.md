@@ -37,6 +37,10 @@ Major dependencies are:
 - openslide-python 1.1.1
 - Pillow 5.1.0
 
+see the requirements.txt file attached for full details (or https://github.com/ncoudray/DeepPATH/issues/89#issuecomment-945626092 from @gabrieldernbach  for a dockerfile contained).
+
+
+
 ### Installation guide
 
 Instructions Clone this repo to your local machine using:

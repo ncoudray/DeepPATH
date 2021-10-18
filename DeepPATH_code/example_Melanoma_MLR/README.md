@@ -6,7 +6,8 @@ See annotations in the code for usage.
 
 For reference, please see the following paper(s):
 
-"Johannet, Paul, et al. "Using machine learning to predict immunotherapy response in advanced melanoma." (2020): 10010-10010. Journal of Clinical Oncology" (conf paper)
+"Johannet, Paul, et al. "Using machine learning algorithms to predict immunotherapy response in patients with advanced melanoma." Clinical Cancer Research 27.1 (2021): 131-140."
+
 
 
 

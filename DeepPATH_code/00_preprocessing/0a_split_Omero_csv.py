@@ -1,6 +1,10 @@
 import csv
 import argparse
 
+# Example to remove spaces for filenames, run firt:
+# for f in *csv; do mv -- "$f" "${f// /_}"; done
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input',
     type=str,

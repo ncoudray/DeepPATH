@@ -1080,6 +1080,7 @@ if __name__ == '__main__':
 		type='float', default=50,
 		help='To be used with xml file - minimum percentage of tile covered by ROI (white)')
 	parser.add_option('-l', '--oLabelref', metavar='NAME', dest='oLabelref',
+		default='',
 		help='To be used with xml file - Only tile for label which contains the characters in oLabel')
 	parser.add_option('-S', '--SaveMasks', metavar='NAME', dest='SaveMasks',
 		default=False,
@@ -1103,6 +1104,8 @@ if __name__ == '__main__':
 
 	(opts, args) = parser.parse_args()
 
+	print(opts)
+	print(args)
 
 	try:
 		slidepath = args[0]
