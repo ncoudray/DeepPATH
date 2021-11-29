@@ -51,6 +51,8 @@ Installation should take just a few seconds.
 
 For the environment, see the 'requirements.txt' file. You can set the environment using “pip install -r requirements.txt”. Alternatively, if you are using anaconda, you should be able to run this in your environment with “conda install --yes --file requirements.txt”.
 
+Alternatively, the 'conda3_520_env_deepPath.yml' conda environement created with anaconda3/5.2.0 can be recreated using 'conda env create -f conda3_520_env_deepPath.yml'
+
 ### Licence on our code
 This license only concerns the code fully written by us. 
 
@@ -65,7 +67,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Other sources
-For tiling, we modified the code from [this page](https://github.com/openslide/openslide-python/blob/master/examples/deepzoom/deepzoom_tile.py) from thge Carnegie Mellon University and  while "under the terms of version 2.1 of 
+For tiling, we modified the code from [this page](https://github.com/openslide/openslide-python/blob/master/examples/deepzoom/deepzoom_tile.py) from the Carnegie Mellon University and  while "under the terms of version 2.1 of 
 
 For the conversion from jpg to TFREcord, the training, testing and validation of inception v3, we modified the code from [this page](https://github.com/tensorflow/models/tree/master/research/inception) "Copyright 2016 Google Inc. All Rights Reserved", under the "Licensed under the Apache License, Version 2.0"
 
