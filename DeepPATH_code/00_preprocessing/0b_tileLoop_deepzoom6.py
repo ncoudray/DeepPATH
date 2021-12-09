@@ -1230,8 +1230,8 @@ if __name__ == '__main__':
 		else:
 			Best_level = -1
 			resize_ratio = 1
-			Adj_WindowSize = self._tile_size
-
+			# Adj_WindowSize = self._tile_size
+			Adj_WindowSize =  opts.tile_size
 
 		#print(filename)
 		opts.basenameJPG = os.path.splitext(os.path.basename(filename))[0]
