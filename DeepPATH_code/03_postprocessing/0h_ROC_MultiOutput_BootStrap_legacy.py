@@ -25,6 +25,11 @@ from itertools import cycle
 from sklearn.metrics.pairwise import euclidean_distances
 from scipy.stats import sem
 import glob
+from itertools import cycle
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import average_precision_score
+# from sklearn.metrics import PrecisionRecallDisplay
+
 FLAGS = None
 
 def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
@@ -454,14 +459,87 @@ def main():
 
 
 	## Compute ROC per tile
+	PrecisionRecall(y_score_Avg_PerTile, y_ref_PerTile, 'out1', n_classes, corr)
 	ROCs(y_score_Avg_PerTile, y_score_PcS_PerTile, y_ref_PerTile, 'out1', n_classes, corr)
-	
+
 	## Compute ROC per slide
+	PrecisionRecall(y_score,y_ref,  'out2', n_classes, corr)
 	ROCs(y_score, y_score_PcSelect, y_ref, 'out2', n_classes, corr)
 
 
 	## Compute ROC per patient
+	PrecisionRecall(y_score_Patient, y_ref_Patient, 'out3', n_classes, corr)
 	ROCs(y_score_Patient, y_score_PcSelect_Patient, y_ref_Patient, 'out3', n_classes, corr)
+
+
+def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
+	y_score = np.array(y_score_in)
+	y_ref = np.array(y_ref_in)
+	# For each class
+	precision = dict()
+	recall = dict()
+	average_precision = dict()
+	for i in range(n_classes):
+		precision[i], recall[i], _ = precision_recall_curve(y_ref[:, i], y_score[:, i])
+		average_precision[i] = average_precision_score(y_ref[:, i], y_score[:, i])
+
+	# A "micro-average": quantifying score on all classes jointly
+	precision["micro"], recall["micro"], _ = precision_recall_curve(y_ref.ravel(), y_score.ravel())
+	average_precision["micro"] = average_precision_score(y_ref, y_score, average="micro")
+
+	# save data
+	print("******* Precision / Recall")
+	for i in range(n_classes):
+		output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data_AvPb_c' + str(i+1)+ '_AP_' + str("%.4f" % average_precision[i]) + '.txt'),'w')
+		for kk in range(len(precision[i])):
+			output.write("%f\t%f\n" % (precision[i][kk], recall[i][kk]) )
+		output.close()
+
+	output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data_AvPb_cmicro_AP_' + str("%.4f" % average_precision["micro"]) + '.txt'),'w')
+	for kk in range(len(precision["micro"])):
+		output.write("%f\t%f\n" % (precision["micro"][kk], recall["micro"][kk]) )
+	output.close()
+
+	'''
+	font = {'family' : 'Arial',
+        'weight' : 'medium',
+        'size'   : 10}
+	matplotlib.rc('font', **font)
+	colors = cycle(["red","navy", "turquoise", "darkorange", "cornflowerblue", "teal"])
+	_, ax = plt.subplots(figsize=(7, 8))
+	f_scores = np.linspace(0.2, 0.8, num=4)
+	lines, labels = [], []
+	for f_score in f_scores:
+    		x = np.linspace(0.01, 1)
+    		y = f_score * x / (2 * x - f_score)
+    		(l,) = plt.plot(x[y >= 0], y[y >= 0], color="gray", alpha=0.2)
+    		plt.annotate("f1={0:0.1f}".format(f_score), xy=(0.9, y[45] + 0.02))
+	display = PrecisionRecallDisplay(recall=recall["micro"],precision=precision["micro"],average_precision=average_precision["micro"],)
+	display.plot(ax=ax, name="Micro-average precision-recall", color="gold")
+	for i, color in zip(range(n_classes), colors):
+		display = PrecisionRecallDisplay(recall=recall[i],precision=precision[i],average_precision=average_precision[i],)
+		display.plot(ax=ax, name=f"Precision-recall for class {i}")
+	# add the legend for the iso-f1 curves
+	handles, labels = display.ax_.get_legend_handles_labels()
+	handles.extend([l])
+	labels.extend(["iso-f1 curves"])
+	# set the legend and the axes
+	ax.set_xlim([0.0, 1.0])
+	ax.set_ylim([0.0, 1.05])
+	# ax.legend(handles=handles, labels=labels, loc="best")
+	# ax.set_title("Extension of Precision-Recall curve to multi-class")
+
+	from matplotlib.ticker import FixedLocator, FixedFormatter
+	x_locator = FixedLocator([0, 0.25, 0.5, 0.75, 1])
+	ax.xaxis.set_major_locator(x_locator)
+	ax.yaxis.set_major_locator(x_locator)
+
+	# plt.show()
+	figure = plt.gcf()
+	figure.set_size_inches(3.5, 3.5)
+	plt.savefig(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data.png'), dpi=1000)
+	'''
+	return
 
 def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, corr):
 

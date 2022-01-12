@@ -49,9 +49,10 @@ git clone https://github.com/ncoudray/DeepPATH.git
 ```
 Installation should take just a few seconds.
 
-For the environment, see the 'requirements.txt' file. You can set the environment using “pip install -r requirements.txt”. Alternatively, if you are using anaconda, you should be able to run this in your environment with “conda install --yes --file requirements.txt”.
+For the environment, it can be set using anaconda, with the gpu version 5.2.0 of anaconda3, using command line `create -f <conda3_filename>.yml`, with `<conda3_filename>` being:
+* `conda3_520_env_deepPath.yml`  running python 3.6.5 and tensorflow 1.9. Works with all code, except the new `0h_ROC_MultiOutput_BootStrap_2.py` (but still work with the `0h_ROC_MultiOutput_BootStrap_legacy.py`
+* `conda3_520_env_deepPath.yml` should be used instead for `0h_ROC_MultiOutput_BootStrap_2.py` (python 3.7.6) 
 
-Alternatively, the 'conda3_520_env_deepPath.yml' conda environement created with anaconda3/5.2.0 can be recreated using 'conda env create -f conda3_520_env_deepPath.yml'
 
 ### Licence on our code
 This license only concerns the code fully written by us. 
@@ -173,23 +174,8 @@ Notes on the different version history:
   - taking into account annotations from Omero (csv format, with label name in the "Label" field) 
 
 
-On a slurm cluster (Prince), you may want to try this header instead (and adjust option ```-j``` to ```28```):
 
-```shell
-#!/bin/bash
-#SBATCH --job-name=rq_tile
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=28
-#SBATCH --mem=50GB
-#SBATCH --time=47:00:00
-#SBATCH --output=rq_00tile_%A_%a.out
-#SBATCH --error=rq_00tile_%A_%a.err
-
-module load openslide-python/intel/1.1.1
-module load pillow/python3.5/intel/4.2.1 
-```
-
-Example on bigpurple (should work with CPU nodes as well):
+Example on a slurm cluster (should work with CPU nodes as well):
 ```shell
 #!/bin/bash
 #SBATCH --partition=gpu4_medium
@@ -233,7 +219,7 @@ Output:
 ## 0.2a Sort the tiles into train/valid/test sets according to the classes defined
 
 
-Then sort according to cancer type (script example for Phoenix):
+Then sort according to cancer type (script header example for SGE cluster):
 
 ```shell
 #!/bin/tcsh
@@ -247,21 +233,8 @@ Then sort according to cancer type (script example for Phoenix):
 python /full_path_to/0d_SortTiles.py --SourceFolder=<tiled images path> --JsonFile=<JsonFilePath> --Magnification=<Magnification To copy>  --MagDiffAllowed=<Difference Allowed on Magnification> --SortingOption=<Sorting option> --PercentTest=15 --PercentValid=15 --PatientID=12 --nSplit 0
 ```
 
-For Prince, the header of the script may be:
-```shell
-#!/bin/bash
-#SBATCH --gres=gpu:1
-#SBATCH --job-name=sort
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
-#SBATCH --output=rq_sort_%A_%a.out
-#SBATCH --error=rq_sort_%A_%a.err
-#SBATCH --mem=2G
 
-module load numpy/intel/1.13.1
-```
-
-For BigPurple, the header of the script should be:
+Examplpe of header of the script on a slurm cluster:
 ```shell
 #!/bin/bash
 #SBATCH --partition=cpu_short
@@ -379,25 +352,8 @@ module load python/3.5.3
 python build_image_data.py --directory='jpeg_label_directory' --output_directory='outputfolder' --train_shards=1024  --validation_shards=128 --num_threads=4
 ```
 
-For Prince, the header of the script may be:
 
-```shell
-#!/bin/bash
-#SBATCH --gres=gpu:1
-#SBATCH --job-name=TFR_Vset
-#SBATCH --cpus-per-task=1
-#SBATCH --output=rq_TFR_%A_%a.out
-#SBATCH --error=rq_TFR_%A_%a.err
-#SBATCH --mem=20G
-
-module load numpy/intel/1.13.1
-module load cuda/8.0.44    
-module load tensorflow/python2.7/1.0.1
-module load bazel/gnu/0.4.3 
-
-```
-
-For BigPurple, the header can be (should work on CPU nodes too)
+For a slurm cluster, the header can be (should work on CPU nodes too)
 ```shell
 #!/bin/bash
 #SBATCH --partition=gpu4_medium
@@ -514,26 +470,9 @@ module load bazel/0.4.4
 bazel build inception/imagenet_train
 ```
 
-Note, on the Prince cluster, the header could be something like:
-```shell
-#!/bin/bash
-#SBATCH --gres=gpu:1
-#SBATCH --job-name=train
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
-#SBATCH --output=rq_train_%A_%a.out
-#SBATCH --error=rq_train_%A_%a.err
-#SBATCH --mem=20G
-#SBATCH --time=168:00:00
-
-module load numpy/intel/1.13.1
-module load cuda/8.0.44    
-module load tensorflow/python2.7/1.0.1
-module load bazel/gnu/0.4.3 
-```
 
 
-On the bigpurple cluster (Note: you may have to adjust the partition and mem lines depending on your needs!! nodelist is optional but allows you to select which node exactly. Also, large batch sizes can be used [up to 320 tested]):
+On a slurm cluster (Note: you may have to adjust the partition and mem lines depending on your needs!! nodelist is optional but allows you to select which node exactly. Also, large batch sizes can be used [up to 320 tested]):
 
 ```shell
 #!/bin/bash
@@ -645,7 +584,7 @@ Thi script should be run on the validation test set *at the same time* as the tr
 Code is in 02_testing/xClasses/. 
 
 
-run the job:
+run the job (SGE cluster header example):
 
 ```shell
 #!/bin/tcsh
@@ -663,25 +602,7 @@ module load python/3.5.3
 python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_valid/"  --batch_size 30 --ImageSet_basename='valid' --ClassNumber 2 --mode='0_softmax' --run_once --TVmode='valid'
 ```
 
-
-Note, on the Prince cluster, the header could be something like:
-```shell
-#!/bin/bash
-#SBATCH --gres=gpu:1
-#SBATCH --job-name=valid
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
-#SBATCH --time=150:00:00
-#SBATCH --output=rq_valid_%A_%a.out
-#SBATCH --error=rq_valid_%A_%a.err
-#SBATCH --mem=10G
-
-module load numpy/intel/1.13.1
-module load cuda/8.0.44    
-module load tensorflow/python2.7/1.0.1
-```
-On bigpurple, the head can be (adjust partition and mem as needed):
-
+On a slurm cluster, the header could be replaced by:
 ```shell
 #!/bin/bash
 #SBATCH --partition=gpu4_long
@@ -759,10 +680,10 @@ The following script shows an example on how to run it for all of the checkpoint
 #SBATCH --gres=gpu:2
 ### nodelist is optional - only if you want a specific node
 
-export CHECKPOINT_PATH='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/training/01_All/results_00'
-export OUTPUT_DIR='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/test/01_All/valid'
-export DATA_DIR='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/images/0_TFRecords_valid'
-export LABEL_FILE='/gpfs/scratch/coudrn01/NN_test/Embryoscopy/test/01_All/labels.txt'
+export CHECKPOINT_PATH='/gpfs/scratch/training/01_All/results_00'
+export OUTPUT_DIR='/gpfs/scratch/test/01_All/valid'
+export DATA_DIR='/gpfs/scratch/images/0_TFRecords_valid'
+export LABEL_FILE='/gpfs/scratch/test/01_All/labels.txt'
 
 module load python/gpu/3.6.5
 
@@ -793,14 +714,14 @@ while true; do
 			echo 'all_model_checkpoint_paths: "'$CUR_CHECKPOINT'/model.ckpt-'$count'"' >> $CUR_CHECKPOINT/checkpoint
 
 			# Test
-			python /gpfs/scratch/coudrn01/NN_test/code/DeepPATH/DeepPATH_code/02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT --eval_dir=$OUTPUT_DIR --data_dir=$DATA_DIR  --batch_size 80  --run_once --ImageSet_basename='valid_' --ClassNumber $NbClasses --mode='0_softmax'  --TVmode='test'
+			python /gpfs/scratch/DeepPATH_code/02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT --eval_dir=$OUTPUT_DIR --data_dir=$DATA_DIR  --batch_size 80  --run_once --ImageSet_basename='valid_' --ClassNumber $NbClasses --mode='0_softmax'  --TVmode='test'
 			# wait
 
 			mv $OUTPUT_DIR/out* $TEST_OUTPUT/.
 
 			# ROC
 			export OUTFILENAME=$TEST_OUTPUT/out_filename_Stats.txt
-			python /gpfs/scratch/coudrn01/NN_test/code/DeepPATH/DeepPATH_code/03_postprocessing/0h_ROC_MultiOutput_BootStrap.py --file_stats=$OUTFILENAME  --output_dir=$TEST_OUTPUT --labels_names=$LABEL_FILE
+			python /gpfs/scratch/DeepPATH_code/03_postprocessing/0h_ROC_MultiOutput_BootStrap_legacy.py --file_stats=$OUTFILENAME  --output_dir=$TEST_OUTPUT --labels_names=$LABEL_FILE
 
 		else
 			echo 'checkpoint '$TEST_OUTPUT' skipped'
@@ -832,95 +753,6 @@ ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c3*  | sed -e 's/k\/out2_roc_data_A
 
 ```
 
-and the same for Prince cluster:
-```shell
-#!/bin/tcsh
-#SBATCH --gres=gpu:1
-#SBATCH --job-name=loop32
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
-#SBATCH --time=48:00:00
-#SBATCH --output=rq_valid_%A_%a.out
-#SBATCH --error=rq_valid_%A_%a.err
-#SBATCH --mem=100G
-
-#python -V
-# module swap python/intel  python3/intel/3.5.3
-# module load tensorflow/python3.5/1.0.1
-
-module load numpy/intel/1.13.1
-module load cuda/8.0.44    
-module load tensorflow/python2.7/1.0.1
-module load scikit-learn/intel/0.18.1
-
-setenv CHECKPOINT_PATH /beegfs/coudrn01/OsmanLab/training/32c_POD/results_32c
-setenv OUTPUT_DIR /beegfs/coudrn01/OsmanLab/valid_train/32c_POD/valid_all
-setenv DATA_DIR /beegfs/coudrn01/OsmanLab/images/set_3more/32c_TFRecord_valid
-setenv LABEL_FILE /beegfs/coudrn01/OsmanLab/valid_train/32c_POD/labels.txt
-
-# create temporary directory for checkpoints
-mkdir  -p $OUTPUT_DIR/tmp_checkpoints
-setenv CUR_CHECKPOINT $OUTPUT_DIR/tmp_checkpoints
-
-
-# check if next checkpoint available
-@ count = 0 
-@ step = 5000
-
-@ DoWait = 1
-while ($DoWait == 1)
-	echo count
-	if ( -f $CHECKPOINT_PATH/model.ckpt-$count.meta ) then
-		echo $CHECKPOINT_PATH/model.ckpt-$count.meta " exists"
-		# check if there's already a computation for this checkpoinmt
-		setenv TEST_OUTPUT  $OUTPUT_DIR/test_$count'k'
-		if (! -d $TEST_OUTPUT ) then
-			mkdir -p $TEST_OUTPUT
-			
-
-			ln -s $CHECKPOINT_PATH/*-$count.* $CUR_CHECKPOINT/.
-			touch $CUR_CHECKPOINT/checkpoint
-			echo 'model_checkpoint_path: "'$CUR_CHECKPOINT'/model.ckpt-'$count'"' > $CUR_CHECKPOINT/checkpoint
-			echo 'all_model_checkpoint_paths: "'$CUR_CHECKPOINT'/model.ckpt-'$count'"' >> $CUR_CHECKPOINT/checkpoint
-
-			# Test
-			python /beegfs/coudrn01/OsmanLab/code/DeepPATH/DeepPATH_code/02_testing/xClasses/nc_imagenet_eval.py --checkpoint_dir=$CUR_CHECKPOINT --eval_dir=$OUTPUT_DIR --data_dir=$DATA_DIR  --batch_size 30  --run_once --ImageSet_basename='valid_' --ClassNumber 2 --mode='0_softmax'  --TVmode='test'
-
-			mv $OUTPUT_DIR/out* $TEST_OUTPUT/.
-
-			# ROC
-			setenv OUTFILENAME $TEST_OUTPUT/out_filename_Stats.txt
-			python /beegfs/coudrn01/OsmanLab/code/DeepPATH/DeepPATH_code/03_postprocessing/0h_ROC_MultiOutput_BootStrap.py --file_stats=$OUTFILENAME  --output_dir=$TEST_OUTPUT --labels_names=$LABEL_FILE
-
-		else
-			echo 'checkpoint '$TEST_OUTPUT' skipped'
-		endif
-
-	else
-		echo $CHECKPOINT_PATH/model.ckpt-$count.meta " does not exist"
-		@ DoWait = 0
-	endif
-
-	# next checkpoint
-	@ count = `expr "$count" + "$step"`
-end
-
-# summarize all AUC per slide (average probability) for class 1: 
-ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c1*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_1.txt
-
-
-# summarize all AUC per slide (average probability) for macro average: 
-ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_macro*  | sed -e 's/k\/out2_roc_data_AvPb_macro_/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_macro.txt
-
-
-# summarize all AUC per slide (average probability) for micro average: 
-ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_micro*  | sed -e 's/k\/out2_roc_data_AvPb_micro_/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_micro.txt
-
-ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c2*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_2.txt
-
-ls -tr $OUTPUT_DIR/test_*/out2_roc_data_AvPb_c3*  | sed -e 's/k\/out2_roc_data_AvPb_c1/ /' | sed -e 's/test_/ /' | sed -e 's/_/ /g' | sed -e 's/.txt//'   > $OUTPUT_DIR/valid_out2_AvPb_AUCs_3.txt
-
-```
 
 That script will run the validation script and the compute the ROC curve (code and namings explained in section 3). 
 
@@ -947,10 +779,7 @@ Main modifications when adjusting the code:
         * line 513: replaced ```return images, tf.reshape(label_index_batch, [batch_size])``` with ```return images, tf.reshape(label_index_batch, [batch_size, FLAGS.nbr_of_classes+1])```
     * in ```inception/inception_model.py``` ```sparse_labels = tf.reshape(labels, [batch_size, 1])  [....]  dense_labels = tf.sparse_to_dense(concated,
  [batch_size, num_classes], 1.0, 0.0)``` replaced by ```dense_labels = tf.reshape(labels, [batch_size, FLAGS.nbr_of_classes+1])```
-
-
-
---TVmode='test'
+    * --TVmode='test' option added
 
 
 
@@ -962,18 +791,6 @@ Code is the same as the one used for the validation, but with different options:
 
 
 ```shell
-#!/bin/tcsh
-#$ -pe openmpi 1
-#$ -A TensorFlow
-#$ -N rq_Test
-#$ -cwd
-#$ -S /bin/tcsh
-#$ -q gpu0.q
-#$ -l excl=true
-
-module load cuda/8.0
-module load python/3.5.3
-
 python nc_imagenet_eval.py --checkpoint_dir='full_path_to/0_scratch/' --eval_dir='output_directory' --data_dir="full_path_to/TFRecord_perSlide_test/"  --batch_size 30 --ImageSet_basename='test_' --run_once --ClassNumber 2 --mode='0_softmax' --TVmode='test'
 ```
 
@@ -994,21 +811,6 @@ expected processing time for this step: on a gpu, about 1000 tiles per minute.
 ## Generate heat-maps per slides overlaid on original slide (all test slides in a given folder; code not optimized and slow):
 code in 03_postprocessing/0f_HeatMap_nClasses.py:
 
-on the Phoenix cluster, the header for the following commands could be:
-```shell
-#!/bin/tcsh
-#$ -pe openmpi 1
-#$ -A TensorFlow
-#$ -N rq_nHeatmap
-#$ -cwd
-#$ -S /bin/tcsh
-#$ -q all.q
-#$ -l mem_free=100G
-
-module load python/3.5.3
-```
-
-code:
 ```shell
 python 0f_HeatMap_nClasses.py  --image_file 'directory_to_jpeg_classes' --tiles_overlap 0 --output_dir 'result_folder' --tiles_stats 'out_filename_Stats.txt' --resample_factor 10 --slide_filter 'TCGA-05-5425' --filter_tile '' --Cmap 'CancerType' --tiles_size 512
 ```
@@ -1045,37 +847,24 @@ python 03_postprocessing/0g_HeatMap_MultiChannels.py --tiles_overlap=0 --tiles_s
 
 ## Code for ROC curves:
 
+### latest code (ROC curve and Precision/Recall) 
+To be used with python 3.7.6 (see `conda3_520_env_deepPath.yml`)
 
-On the Phoenix  cluster, the header for the following commands could be something like:
-```shell
-#!/bin/tcsh
-#$ -pe openmpi 1
-#$ -A TensorFlow
-#$ -N rq_Analyze
-#$ -cwd
-#$ -S /bin/tcsh
-#$ -q all.q
-
-module load python/3.5.3
-# Note: the scikit-learn seems to work properly only wiyh Native python, so unload 3.5.3 - heatmaps work with python/3.5.3
-```
-
-To also get confidence intervals (Bootstrap technique), use this code:
+Usage example on slurm cluster:
 
 ```shell
-python 0h_ROC_MultiOutput_BootStrap.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats '' 
+python 0h_ROC_MultiOutput_BootStrap_2.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats '' --color="red,orange,green"
 ```
-
 
 options:
 * ```labels_names```: text file with the names of the labels, 1 per line
-* ``` ref_file``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide). 
+* ``` ref_file``` (only with multi-output) could be a out_filename_Stats.txt from a different run and used as a filter (will compute the ROC curve only with tiles labelled as "True" in that second out_filename_Stats.txt - could be usefull for example to select only tiles which are really LUAD within a slide).
 *  ``` ref_label``` number of the label in the ref_file to use for filter
 * ```ref_thresh``` threshold to use for ref_label. Use "-1" to use True/False labels instead in the out_filenamestats file. Use "-2" to use label only if they have the max probability
 * ```--MultiThresh 0.5```. There are two ways to aggregate the values per slide. One is computing the percentage of tiles "selected", that is, above a threshold. By default, for two classes, a tile is selected for a given class if the probability is above 0.5. That threshold can be changed with this option.
+* ```color``` (optional): comma separated string with color names to be used when plotting the ROC and Precision/Recall graphs of the different classes
 
-
-It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename. 
+It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename.
 File names of the outputs:
 * start with out1 if the ROC are per tile
 * start with out2 if the ROC are per slide
@@ -1091,20 +880,18 @@ File names of the outputs:
 
 
 
-On the Prince cluster, the header could be something like:
+ 
+
+### legacy code (ROC curve only)
+
+
 ```shell
-#!/bin/bash
-#SBATCH --job-name=ROC
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
-#SBATCH --output=rq_ROC_%A_%a.out
-#SBATCH --error=rq_ROC_%A_%a.err
-#SBATCH --mem=2G
-
-module load numpy/intel/1.13.1
-module load scikit-learn/intel/0.18.1
-
+python 0h_ROC_MultiOutput_BootStrap_legacy.py  --file_stats /path_to/out_filename_Stats.txt  --output_dir /path_to/output_folder/ --labels_names /path_to/label_names.txt --ref_stats '' 
 ```
+
+same options as above, without the "color" one. 
+
+
 
 ## Code in 03_postprocessing/multiClasses for  probability distributions (mutation analysis):
 

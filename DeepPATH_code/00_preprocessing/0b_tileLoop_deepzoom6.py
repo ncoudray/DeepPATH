@@ -140,6 +140,8 @@ class TileWorker(Process):
             if True:
                 # if True:
                 try:
+                    #print(level)
+                    #print(address)
                     tile = dz.get_tile(level, address)
                     # A single tile is being read
                     #check the percentage of the image with "information". Should be above 50%

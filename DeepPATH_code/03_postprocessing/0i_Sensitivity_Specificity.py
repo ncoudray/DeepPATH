@@ -111,6 +111,8 @@ def main(args):
 				t_assigned_label = 1 - true_label
 
 			assigned_label = assigned_label.index(max(assigned_label)) - 1
+			print(true_label, assigned_label)
+			print(TPN_matrix_Til)
 			TPN_matrix_Til[true_label][assigned_label] = TPN_matrix_Til[true_label][assigned_label] + 1
 			y_true_perTil[0].append( true_label )
 			y_pred_perTil[0].append( assigned_label )

@@ -1,4 +1,4 @@
-name: /gpfs/data/coudraylab/NN/env/env_deepPath
+name: env_deepPath_2
 channels:
   - lukepfister
   - bioconda/label/cf201901
