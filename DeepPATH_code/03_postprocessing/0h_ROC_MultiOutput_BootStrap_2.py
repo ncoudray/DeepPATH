@@ -135,6 +135,16 @@ def main():
 			for eachline in line:
 				if len(eachline)>0:
 					unique_labels.append(eachline)
+	if FLAGS.combine is not '':
+		print("unique labels combination")
+		print(unique_labels)
+		classesIDstr = FLAGS.combine.split(',')
+		classesID = [int(x) for x in classesIDstr]
+		classesID = sorted(classesID, reverse = True)
+		for nCl in classesID[:-1]:
+			unique_labels.pop(nCl-1)
+		print(unique_labels)
+
 
 	ref_file_data = {}
 	if os.path.isfile(FLAGS.ref_file):
@@ -250,7 +260,21 @@ def main():
 			TotNbTiles += 1
 			ExpectedProb = line.split('[')[1]
 			ExpectedProb = ExpectedProb.split(']')[0]
-			ExpectedProb = ExpectedProb.split()
+			ExpectedProbst = ExpectedProb.split()
+			ExpectedProb = [float(x) for x in ExpectedProbst]
+			if FLAGS.combine is not '':
+				print("combine classes - ")
+				print(ExpectedProb)
+				#classesIDstr = FLAGS.combine.split(',')
+				#classesID = [int(x) for x in classesIDstr]
+				classesID = sorted(classesID, reverse = False)
+				for nCl in classesID[1:]:
+					ExpectedProb[classesID[0]] = ExpectedProb[classesID[0]] + ExpectedProb[nCl]
+				classesID = sorted(classesID, reverse = True)
+				for nCl in classesID[:-1]:
+					ExpectedProb.pop(nCl)
+				print(ExpectedProb) 
+
 			# Read probabilities and adjust to ignore background class 0
 			try: # mutations format
 				IncProb = line.split('[')[2]
@@ -289,6 +313,17 @@ def main():
 					else:
 						True_Label = minProb_Indx
 				#print("True label: %d " % True_Label)
+				if FLAGS.combine is not '':
+					print("unique labels combination - true label:")
+					print(True_Label)
+					classesID = sorted(classesID, reverse = False)
+					if True_Label in classesID:
+						True_Label = classesID[0]
+					else:
+						True_Label = True_Label - sum([True_Label > x for x in classesID[1:]])
+					print(True_Label)
+
+
 				ExpectedProb[True_Label] = 1
 			true_label = []
 			true_label_name = ''
@@ -496,12 +531,12 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
 	for i in range(n_classes):
 		output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data_AvPb_c' + str(i+1)+ '_AP_' + str("%.4f" % average_precision[i]) + '.txt'),'w')
 		for kk in range(len(precision[i])):
-			output.write("%f\t%f\n" % (precision[i][kk], recall[i][kk]) )
+			output.write("%f\t%f\n" % (recall[i][kk], precision[i][kk]) )
 		output.close()
 
 	output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data_AvPb_cmicro_AP_' + str("%.4f" % average_precision["micro"]) + '.txt'),'w')
 	for kk in range(len(precision["micro"])):
-		output.write("%f\t%f\n" % (precision["micro"][kk], recall["micro"][kk]) )
+		output.write("%f\t%f\n" % (recall["micro"][kk], precision["micro"][kk]) )
 	output.close()
 
 
@@ -515,7 +550,7 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
 	# print(firstcolors)
 	# colors = cycle(firstcolors)
 	colors = cycle(FLAGS.color)
-	fig = plt.figure(figsize=(2, 4))
+	fig = plt.figure(figsize=(3, 6))
 	ax = plt.subplot(2, 1,1)
 	f_scores = np.linspace(0.2, 0.8, num=4)
 	lines, labels = [], []
@@ -534,8 +569,8 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
 	handles.extend([l])
 	labels.extend(["iso-f1 curves"])
 	# set the legend and the axes
-	ax.set_xlim([0.0, 1.05])
-	ax.set_ylim([0.0, 1.05])
+	ax.set_xlim([-0.05, 1.05])
+	ax.set_ylim([-0.05, 1.05])
 	ax.get_legend().remove()
 	ax2 = plt.subplot(2, 1,2) 
 	plt.axis('off')
@@ -675,9 +710,13 @@ def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, co
 	output.close()
 
 
-
+        
+	font = {'family' : 'Times New Roman', 
+	'weight' : 'medium',
+	'size'   : 8}
+	matplotlib.rc('font', **font)
 	# Plot all ROC curves
-	fig = plt.figure(figsize=(2, 4))
+	fig = plt.figure(figsize=(3, 6))
 	ax = plt.subplot(2, 1,1)
 	# plt.figure()
 	plt.plot(
@@ -713,8 +752,8 @@ def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, co
 	handles, labels = ax.get_legend_handles_labels()
 	# handles.extend([l])
 	plt.plot([0, 1], [0, 1], "k--", linewidth=0.5)
-	plt.xlim([0.0, 1.0])
-	plt.ylim([0.0, 1.05])
+	plt.xlim([-0.05, 1.05])
+	plt.ylim([-0.05, 1.05])
 	plt.xlabel("False Positive Rate")
 	plt.ylabel("True Positive Rate")
 	ax2 = plt.subplot(2, 1,2)
@@ -814,7 +853,12 @@ if __name__ == '__main__':
       default='',
       help='comma separated list of colors to use for the plot'
   )
-
+  parser.add_argument(
+      '--combine',
+      type=str,
+      default='',
+      help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1'
+  )
 
 
   FLAGS, unparsed = parser.parse_known_args()

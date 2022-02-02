@@ -95,6 +95,23 @@ def dict_tiles_stats():
 
 def get_inference_from_file(lineProb_st):
 	lineProb = [float(x) for x in lineProb_st]
+	NotaClass = []
+	if FLAGS.combine is not '':
+		print("combine probabilities")
+		print(lineProb)
+		classesIDstr = FLAGS.combine.split(',')
+		classesID = [int(x) for x in classesIDstr]
+		classesID = sorted(classesID, reverse = False)
+		NotaClass = classesID
+		for nCl in classesID[1:]:
+			lineProb[classesID[0]] = lineProb[classesID[0]] + lineProb[nCl]
+		classesID = sorted(classesID, reverse = True)
+		for nCl in classesID[:-1]:
+			# lineProb.pop(nCl)
+			lineProb[nCl] = 0
+		print(lineProb)
+	else:
+		classesID = []
 	if FLAGS.Cmap == 'CancerType':
 		NumberOfClasses = len(lineProb)
 		class_all = []
@@ -119,6 +136,11 @@ def get_inference_from_file(lineProb_st):
 			score_correction = thresholds[oClass-1]
 		else:
 			score_correction = 1.0 / len(class_all)
+		# Apply correction if some classes are merged
+		#print("class adjustment:")
+		#print(oClass)
+		#oClass = oClass + sum([oClass >= x for x in classesID[1:]])
+		#print(oClass)
 		if FLAGS.project == '01_METbrain':
 			if oClass == 1:
 				# cmap = plt.get_cmap('binary')
@@ -140,6 +162,26 @@ def get_inference_from_file(lineProb_st):
 				cmap = make_colormap([c('white'), c('mediumorchid')])
 			else:
 				cmap = plt.get_cmap('Greens')
+		elif FLAGS.project == '02_METliver':
+			if oClass == 1:
+				if len(class_all) == 2:
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('red')])
+				else:
+					cmap = plt.get_cmap('binary')
+			elif oClass == 2:
+				if len(class_all) == 2:
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('blue')])
+				else:
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('red')])
+			elif oClass == 3:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('blue')])
+			else:
+				cmap = plt.get_cmap('Purples')
+	
 		elif FLAGS.project == '03_OAS':
 			if oClass == 1:
 				cmap = plt.get_cmap('binary')
@@ -246,6 +288,13 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [1.0, 165.0/255.0, 0]
 			class_rgb[3] = [0, 0, 1.0]
 			class_rgb[4] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
+		elif FLAGS.project == '02_METliver':
+			class_rgb = {}
+			class_rgb[0] = [1.0, 0, 0]
+			class_rgb[1] = [0, 0.0, 1.0]
+			class_rgb[2] = [1, 1, 1]
+			class_rgb[3] = [1, 1, 1]
+			class_rgb[4] = [1, 1, 1]
 		elif FLAGS.project == '03_OAS':
 			class_rgb = {}
 			class_rgb[0] = [0, 0, 0]
@@ -288,6 +337,10 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				fields = ['imageName', 'Intraparaenchymal','Leptomeningeal','Non tumor']
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1))]]
+			elif FLAGS.project == '02_METliver':
+				fields = ['imageName', 'Tumor','Normal tissue']
+				csvwriter.writerow(fields)
+				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1))]]
 			elif FLAGS.project == '03_OAS':
 				fields = ['imageName', 'Necrotic tumor','Normal tissue','Viable Tumor']
 				csvwriter.writerow(fields)
@@ -451,10 +504,6 @@ def main():
 				HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] = HeatMap_divider[xTile:req_xLength, yTile:req_yLength,:] + 1
 				for kC in range(len(class_prob)):
 					HeatMap_bin[xTile:req_xLength, yTile:req_yLength,kC] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,kC] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[kC]
-					# HeatMap_bin[xTile:req_xLength, yTile:req_yLength,1] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,1] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[1]
-					# HeatMap_bin[xTile:req_xLength, yTile:req_yLength,2] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,2] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[2]
-					# HeatMap_bin[xTile:req_xLength, yTile:req_yLength,3] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,3] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[3]
-					# HeatMap_bin[xTile:req_xLength, yTile:req_yLength,4] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,4] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[4]	
 			if cc % 1000 == 0: 
 				print("tile time (sec): " + str((time.time() - t) / cc))
 
@@ -540,7 +589,12 @@ if __name__ == '__main__':
       default='01_METbrain',
       help='Project name (will define the number of classes and colors assigned). Can be: 01_METbrain, 03_OSA.'
   )
-
+  parser.add_argument(
+      '--combine',
+      type=str,
+      default='',
+      help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1'
+  )
 
 
   FLAGS, unparsed = parser.parse_known_args()

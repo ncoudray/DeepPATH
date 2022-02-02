@@ -863,6 +863,7 @@ options:
 * ```ref_thresh``` threshold to use for ref_label. Use "-1" to use True/False labels instead in the out_filenamestats file. Use "-2" to use label only if they have the max probability
 * ```--MultiThresh 0.5```. There are two ways to aggregate the values per slide. One is computing the percentage of tiles "selected", that is, above a threshold. By default, for two classes, a tile is selected for a given class if the probability is above 0.5. That threshold can be changed with this option.
 * ```color``` (optional): comma separated string with color names to be used when plotting the ROC and Precision/Recall graphs of the different classes
+* ```combine```: classes ID of classes to merge (optional); comma separated string
 
 It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename.
 File names of the outputs:
