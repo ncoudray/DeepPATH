@@ -913,10 +913,45 @@ python ./00_preprocessing/0e_jpgtoHDF.py --input_path <input_folder> --output hd
 ```
 
 Options:
-* 'mode': Define what the `input_path` format is like:
+* `mode`: Define what the `input_path` format is like:
     * `0`: this is the root path of the original folder in which the slides were tiled. Subfolders are the `<slide_name>_files` themselves
     * `1`: this is the root path of the original folder in which the slides were tiled, but they are already sorted according to their label. The name of the subfolders are the labels, the  `<slide_name>_files` folders with the tiles will be saved within those subfolders/
-    * `2` this is the root path of the folder after the "sorting" step.
+    * `2` this is the root path of the folder after the "sorting" step (achieved by the `0d_SortTiles.py` script)
+* `output`: name of the output hdf5 file
+* `chunks`: number of MPIs used
+*  `sub_chunks`: will further split the dataset is subchunk during process (help with speed and memory management)
+* `wSize`: size of the tiles to be stored in the hdf5 file. If different from the jpeg, then the input tiles will be rescaled
+* `startS` and `stepS`: can be  used to save only a subset of the tiles. It will create a vector of the tile and sample "stepS" tiles starting at the tile "startS" from that vector
+* `maxIm`: maximum number of tiles to save (takes everything if set to `-1`)
+* `mag`: name of the folder where the tiles are saved (for mode 0 and 1 only)
+* `label`: label to assign to the tiles in the hdf5 file (string; all tiles will be assigned the same label); for mode 0 only (the sub-folder names are used as labels in mode 1 and 2)
+* `subset`: in mode 2 only, can be 'train', 'test', 'valid' or 'combined' depending on which sets of tiles need to be saved in the final hdf5 file
+The output hdf5 fields will be named after the subset. Fields are:
+    * `<subset>_img`: wSizexwSizex3 matrix
+    * `<subset>_labels`: label assigned to each tile (string) 
+    * `<subset>_patterns`: label assigned to each tile (as an integer)
+    * `<subset>_slides`: name of the slide (first 23 characters only)
+    * `<subset>_tiles`: name of the tiles (16 characters max)
 
 
+example of a submission script on a slurm cluster:
+```shell
+#!/bin/bash
+#SBATCH --partition=cpu_medium
+#SBATCH --time=2-10:00:00
+#SBATCH --job-name=tr_h5
+#SBATCH --ntasks=80
+#SBATCH --cpus-per-task=1
+#SBATCH --output=rq_tr_%A.out
+#SBATCH --error=rq_tr_%A.err
+#SBATCH --mem=70GB
+
+
+# module unload gcc
+module load openmpi/3.1.0-mt
+module load python/cpu/3.6.5
+
+
+mpirun -n 80 python ./00_preprocessing/0e_jpgtoHDF.py --input_path path_to_sorted_TCGA --output hdf5_TCGA_he_combined.h5 --chunks 80 --sub_chunks 20 --wSize 224 --mode 2 --subset='combined'
+```
 
