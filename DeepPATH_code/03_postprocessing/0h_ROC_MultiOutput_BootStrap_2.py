@@ -821,7 +821,7 @@ if __name__ == '__main__':
       '--ref_label',
       type=int,
       default=1,
-      help='Label ID in ref_file that needs to be checked.'
+      help='Label ID in ref_file that needs to be checked; 0 is background inception class.'
   )
   parser.add_argument(
       '--ref_thresh',

@@ -902,4 +902,21 @@ Generate probability distribution with means for each class for each slide:
 python 0f_ProbHistogram.py --output_dir='result folder' --tiles_stats='out_filename_Statsout_filename_Stats.txt' --ctype='Lung3Classes'
 ```
 
+# 4 - Other scripts:
+
+## Convert tiled images in jpg format to hdf5 format
+
+
+
+```shell
+python ./00_preprocessing/0e_jpgtoHDF.py --input_path <input_folder> --output hdf5_TCGA_he_train.h5 --chunks 80 --sub_chunks 20 --wSize 224 --mode 0 --subset='combined' --mag 20 --label PAAD
+```
+
+Options:
+* 'mode': Define what the `input_path` format is like:
+    * `0`: this is the root path of the original folder in which the slides were tiled. Subfolders are the `<slide_name>_files` themselves
+    * `1`: this is the root path of the original folder in which the slides were tiled, but they are already sorted according to their label. The name of the subfolders are the labels, the  `<slide_name>_files` folders with the tiles will be saved within those subfolders/
+    * `2` this is the root path of the folder after the "sorting" step.
+
+
 

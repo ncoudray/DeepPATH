@@ -340,7 +340,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			elif FLAGS.project == '02_METliver':
 				fields = ['imageName', 'Tumor','Normal tissue']
 				csvwriter.writerow(fields)
-				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1))]]
+				rows = [[cTileRootName, str(round(cl0,1)),str(round(cl1,1))]]
 			elif FLAGS.project == '03_OAS':
 				fields = ['imageName', 'Necrotic tumor','Normal tissue','Viable Tumor']
 				csvwriter.writerow(fields)
