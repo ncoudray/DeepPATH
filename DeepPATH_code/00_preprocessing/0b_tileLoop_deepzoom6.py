@@ -659,8 +659,27 @@ class DeepZoomImageTiler(object):
                 regionID = str(NbRg)
                 xy[regionID] = []
                 # vertices = xmlcontent['Points']
-                tmp_v =  re.sub(","," ",xmlcontent['Points'][eachR]).split()
-                tmp_v2 = [float(ii) for ii in tmp_v]
+                if xmlcontent['type'][eachR] == 'rectangle':
+                  tmp_x = float(xmlcontent['X'][eachR])
+                  tmp_y = float(xmlcontent['Y'][eachR])
+                  tmp_w = float(xmlcontent['Width'][eachR])
+                  tmp_h = float(xmlcontent['Height'][eachR])
+                  tmp_v2 = [tmp_x, tmp_y, tmp_x+tmp_w, tmp_y, tmp_x+tmp_w, tmp_y+tmp_h, tmp_x, tmp_y+tmp_h]
+                elif xmlcontent['type'][eachR] == 'ellipse':
+                  tmp_x = float(xmlcontent['X'][eachR])
+                  tmp_y = float(xmlcontent['Y'][eachR])
+                  radiusX = float(xmlcontent['RadiusX'][eachR])
+                  radiusY = float(xmlcontent['RadiusY'][eachR])
+                  tmp_v2 = []
+                  for Xi in np.linspace(tmp_x - radiusX/2, tmp_x + radiusX/2, np.ceil(radiusX/20))[2:-1]:
+                    tmp_v2.append(Xi)
+                    tmp_v2.append(tmp_y + radiusY/2 * np.sqrt(1 - (Xi - tmp_x)**2 / (radiusX/2)**2 ))
+                  for Xi in np.linspace(tmp_x + radiusX/2, tmp_x - radiusX/2, np.ceil(radiusX/20))[2:-1]:
+                    tmp_v2.append(Xi)
+                    tmp_v2.append(tmp_y - radiusY/2 * np.sqrt(1 - (Xi - tmp_x)**2 / (radiusX/2)**2 ))
+                else:
+                  tmp_v =  re.sub(","," ",xmlcontent['Points'][eachR]).split()
+                  tmp_v2 = [float(ii) for ii in tmp_v]
                 if ImgExt == 'scn':
                   for i in range(1,len(tmp_v2),2):
                     tmp_v2[i] = tmp_v2[i] +  int(self._slide.properties['openslide.region[' + whichRegion + '].y'])
