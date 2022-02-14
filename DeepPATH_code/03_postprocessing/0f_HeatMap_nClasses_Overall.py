@@ -340,9 +340,14 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		with open(filename, 'w', newline='') as csvfile:
 			csvwriter = csv.writer(csvfile)
 			if FLAGS.project == '01_METbrain':
-				fields = ['imageName', 'Intraparaenchymal','Leptomeningeal','Non tumor']
-				csvwriter.writerow(fields)
-				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1))]]
+				if '2' and '3'  in FLAGS.combine.split(','):
+					fields = ['imageName', 'Tumor','Non tumor']
+					csvwriter.writerow(fields)
+					rows = [[cTileRootName, str(round(cl1,1)+round(cl2,1)),str(round(cl3,1))]]
+				else:
+					fields = ['imageName', 'Intraparaenchymal','Leptomeningeal','Non tumor']
+					csvwriter.writerow(fields)
+					rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1))]]
 			elif FLAGS.project == '02_METliver':
 				fields = ['imageName', 'Tumor','Normal tissue']
 				csvwriter.writerow(fields)

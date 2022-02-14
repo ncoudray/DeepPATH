@@ -792,7 +792,6 @@ class DeepZoomImageTiler(object):
             for eachR in range(len(xmlcontent['annotations'])):
               if 'class' in xmlcontent['annotations'][eachR].keys(): 
                 labeltag = xmlcontent['annotations'][eachR]['class']
-                # print(labeltag, "****", Attribute_Name)
                 if (Attribute_Name==[]) | (Attribute_Name==''):
                   # No filter on label name
                   isLabelOK = True
@@ -810,9 +809,30 @@ class DeepZoomImageTiler(object):
                   NbRg += 1
                   xy[regionID] = [ii / NewFact for ii in vertices]
                   # no field for "negative region" - if it is, create a "xy_neg[regionID]"
- 
-  
-	
+          elif 'dictionaries' in xmlcontent.keys():
+            # Imagedrive format
+           NbRg = 0 
+           for eachROI in range(len(xmlcontent['dictionaries'])):
+              vertices = []
+              if 'label' in xmlcontent['dictionaries'][eachROI].keys():
+                labeltag = xmlcontent['dictionaries'][eachROI]['label']
+                if (Attribute_Name==[]) | (Attribute_Name==''):
+                  # No filter on label name
+                  isLabelOK = True
+                elif (Attribute_Name == labeltag):
+                  isLabelOK = True
+                elif Attribute_Name == "non_selected_regions":
+                  isLabelOK = True
+                else:
+                  isLabelOK = False
+                if isLabelOK:
+                  for eachXY in range(len(xmlcontent['dictionaries'][eachROI]['path']['segments'])):
+                    vertices.append( xmlcontent['dictionaries'][eachROI]['path']['segments'][eachXY][0] )
+                    vertices.append( xmlcontent['dictionaries'][eachROI]['path']['segments'][eachXY][1] )
+                  regionID = str(NbRg)
+                  xy[regionID] =  [ii / NewFact for ii in vertices]
+                  NbRg += 1
+
 #### Remove 2 spaces ### 
         # print("%d xy" % len(xy))
         #print(xy)
@@ -1075,8 +1095,12 @@ def xml_read_labels(xmldir, Fieldxml, AnnotationMode):
           data = json.load(open(xmldir))
           xml_labels = []
           xml_valid = False
-          for eachR in range(len(data['annotations'])):
-            xml_labels.append(data['annotations'][eachR]['class'])
+          if 'annotations' in data.keys():
+            for eachR in range(len(data['annotations'])):
+              xml_labels.append(data['annotations'][eachR]['class'])
+          elif 'dictionaries' in data.keys():
+            for eachR in range(len(data['dictionaries'])):
+              xml_labels.append(data['dictionaries'][eachR]['label'])
           xml_labels = np.unique(xml_labels)
           if len(xml_labels) > 0:
             xml_valid = True
