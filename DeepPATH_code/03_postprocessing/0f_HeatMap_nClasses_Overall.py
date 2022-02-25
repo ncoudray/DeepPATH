@@ -96,9 +96,11 @@ def dict_tiles_stats():
 def get_inference_from_file(lineProb_st):
 	lineProb = [float(x) for x in lineProb_st]
 	NotaClass = []
+	#print("*** Enter get_inference_from_file")
+	#print(lineProb)
 	if FLAGS.combine is not '':
-		print("combine probabilities")
-		print(lineProb)
+		#print("combine probabilities")
+		#print(lineProb)
 		classesIDstr = FLAGS.combine.split(',')
 		classesID = [int(x) for x in classesIDstr]
 		classesID = sorted(classesID, reverse = False)
@@ -109,7 +111,7 @@ def get_inference_from_file(lineProb_st):
 		for nCl in classesID[:-1]:
 			# lineProb.pop(nCl)
 			lineProb[nCl] = 0
-		print(lineProb)
+		#print(lineProb)
 	else:
 		classesID = []
 	if FLAGS.Cmap == 'CancerType':
@@ -137,11 +139,32 @@ def get_inference_from_file(lineProb_st):
 		else:
 			score_correction = 1.0 / len(class_all)
 		# Apply correction if some classes are merged
-		#print("class adjustment:")
-		#print(oClass)
+		print("class adjustment:")
+		print(oClass)
+		print(score_correction)
 		#oClass = oClass + sum([oClass >= x for x in classesID[1:]])
-		#print(oClass)
-		if FLAGS.project == '01_METbrain':
+		print(oClass)
+		if FLAGS.project == '00_Adjacency':
+			# compute adj
+			if oClass == 1:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('red')])
+			elif oClass == 2:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('orange')])
+			elif oClass == 3:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('yellow')])
+			elif oClass == 4:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('green')])
+			elif oClass ==5:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('blue')])
+			else:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('black')])
+		elif FLAGS.project == '01_METbrain':
 			if oClass == 1:
 				# cmap = plt.get_cmap('binary')
 				c = mcolors.ColorConverter().to_rgb
@@ -178,10 +201,10 @@ def get_inference_from_file(lineProb_st):
 					cmap = make_colormap([c('white'), c('blue')])
 			elif oClass == 3:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('red')])
+				cmap = make_colormap([c('white'), c('mediumorchid')])
 			elif oClass == 4:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('mediumorchid')])
+				cmap = make_colormap([c('white'), c('red')])
 			else:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('yellow')])
@@ -285,7 +308,14 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			ImBin[:,:,3] = HeatMap_bin[:,:,3] == Tmax
 			ImBin[:,:,4] = HeatMap_bin[:,:,4] == Tmax
 
-		if FLAGS.project == '01_METbrain':
+		if FLAGS.project == '00_Adjacency':
+			class_rgb = {}
+			class_rgb[0] = [1., 0., 0.]
+			class_rgb[1] = [1., 0.84, 0.]
+			class_rgb[2] = [1., 1., 0.]
+			class_rgb[3] = [0, 1., 0.]
+			class_rgb[4] = [0., 0., 1.]
+		elif FLAGS.project == '01_METbrain':
 			class_rgb = {}
 			class_rgb[0] = [0, 0, 0]
 			class_rgb[1] = [1.0, 0, 0]
@@ -298,8 +328,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			# class_rgb[1] = [0, 0.0, 1.0]
 			class_rgb[0] = [0.0, 0, 0]
 			class_rgb[1] = [0, 0.0, 1.0]
-			class_rgb[2] = [1, 0.0, 0.0]
-			class_rgb[3] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
+			class_rgb[2] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
+			class_rgb[3] = [1,0,0]
 			class_rgb[4] = [1, 1, 1]
 		elif FLAGS.project == '03_OAS':
 			class_rgb = {}
@@ -339,7 +369,26 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		import csv
 		with open(filename, 'w', newline='') as csvfile:
 			csvwriter = csv.writer(csvfile)
-			if FLAGS.project == '01_METbrain':
+			if FLAGS.project == '00_Adjacency':
+				ClassMatrix = ImBin[:,:,0] + ImBin[:,:,1] * 2 + ImBin[:,:,2] * 3 + ImBin[:,:,3] * 4 +  ImBin[:,:,4] * 5
+				AdjMatrix_UpDown = ClassMatrix[:-1,:] + ClassMatrix[1:,:] * 10
+				AdjMatrix_RLeft = ClassMatrix[:,:-1] + ClassMatrix[:,1:] * 10
+				fields = ['imageName']
+				fields_val = []
+				for cl1 in range(1,5,1):
+					val = cl1 + cl1 * 10
+					fields.append(str(val))
+					fields_val.append( sum(sum(AdjMatrix_UpDown == val)) + sum(sum(AdjMatrix_RLeft == val)) )
+					for cl2 in range(cl1+1,5,1):
+						val = cl1 + cl2 * 10
+						valinv = cl2 + cl1 * 10
+						fields.append(str(val))
+						fields_val.append( sum(sum(AdjMatrix_UpDown == val)) + sum(sum(AdjMatrix_RLeft == val)) + sum(sum(AdjMatrix_UpDown == valinv)) + sum(sum(AdjMatrix_RLeft == valinv)))
+				csvwriter.writerow(fields)
+				rows = [cTileRootName]
+				rows.extend([str(x) for x in fields_val])
+				rows = [rows]
+			elif FLAGS.project == '01_METbrain':
 				if '2' and '3'  in FLAGS.combine.split(','):
 					fields = ['imageName', 'Tumor','Non tumor']
 					csvwriter.writerow(fields)
@@ -397,9 +446,10 @@ def main():
 
 	# Read the name of the folder (= class names)
 	sub_dirs = []
-	for item in os.listdir(image_dir):
-    		if os.path.isdir(os.path.join(image_dir, item)):
-        		sub_dirs.append(os.path.join(image_dir,item))
+	if os.path.isdir(image_dir):
+		for item in os.listdir(image_dir):
+    			if os.path.isdir(os.path.join(image_dir, item)):
+        			sub_dirs.append(os.path.join(image_dir,item))
 
 	#sub_dirs = [image_dir]
 
@@ -426,6 +476,10 @@ def main():
 		t = time.time()
 		ixTile = int(stats_dict[slide]['xMax'])
 		iyTile = int(stats_dict[slide]['yMax'])
+		if FLAGS.project == '00_Adjacency':
+			FLAGS.tiles_size = 1
+			FLAGS.tiles_overlap = 0
+			FLAGS.resample_factor = 0
 		req_xLength =  (ixTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap) + FLAGS.tiles_size
 		req_yLength =  (iyTile) * (FLAGS.tiles_size - FLAGS.tiles_overlap) + FLAGS.tiles_size
 		# req_xLength =  (ixTile) * (FLAGS.tiles_size) + FLAGS.tiles_size
@@ -444,29 +498,38 @@ def main():
 			print("slide done --")
 			continue
 		cc = 0
+		# print(stats_dict[slide]['tiles'].keys())
 		for tile in stats_dict[slide]['tiles'].keys():
+			# print(tile)
 			cc+=1
 			# if cc > 20000:
 			#	break		
 			extensions = ['.jpeg', '.jpg']
 			isError = True
 			dir_name = 'unknownTMP'
-			for extension in extensions:
-				for sub_dir in list(sub_dirs):
-					try:
-						test_filename = os.path.join(sub_dir, tile + extension)
-						im2 = imread(test_filename)
-						dir_name_old = dir_name
-						dir_name = os.path.basename(sub_dir)
-						isError = False
-					except:
-						isError = True
+			if FLAGS.project == '00_Adjacency':
+				im2 = np.zeros([1, 1, 3])
+				isError = False
+				dir_name_old = dir_name
+				dir_name = 'Adj'
+			else:
+				for extension in extensions:
+					for sub_dir in list(sub_dirs):
+						# print(extension, sub_dir)
+						try:
+							test_filename = os.path.join(sub_dir, tile + extension)
+							im2 = imread(test_filename)
+							dir_name_old = dir_name
+							dir_name = os.path.basename(sub_dir)
+							isError = False
+						except:
+							isError = True
+						if isError == False:
+							break
 					if isError == False:
 						break
-				if isError == False:
-					break
 			if isError == True:
-				# print("image not found:" + tile)
+				print("image not found:" + tile)
 				continue
 			cTileRootName = slide
 			ixTile = int(stats_dict[slide]['tiles'][tile][0])
@@ -598,7 +661,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 01_METbrain, 03_OSA.'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA.'
   )
   parser.add_argument(
       '--combine',

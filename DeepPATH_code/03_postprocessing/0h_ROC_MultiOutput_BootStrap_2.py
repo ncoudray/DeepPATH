@@ -136,14 +136,14 @@ def main():
 				if len(eachline)>0:
 					unique_labels.append(eachline)
 	if FLAGS.combine is not '':
-		print("unique labels combination")
-		print(unique_labels)
+		# print("unique labels combination")
+		# print(unique_labels)
 		classesIDstr = FLAGS.combine.split(',')
 		classesID = [int(x) for x in classesIDstr]
 		classesID = sorted(classesID, reverse = True)
 		for nCl in classesID[:-1]:
 			unique_labels.pop(nCl-1)
-		print(unique_labels)
+		# print(unique_labels)
 
 
 	ref_file_data = {}
@@ -263,8 +263,8 @@ def main():
 			ExpectedProbst = ExpectedProb.split()
 			ExpectedProb = [float(x) for x in ExpectedProbst]
 			if FLAGS.combine is not '':
-				print("combine classes - ")
-				print(ExpectedProb)
+				# print("combine classes - ")
+				# print(ExpectedProb)
 				#classesIDstr = FLAGS.combine.split(',')
 				#classesID = [int(x) for x in classesIDstr]
 				classesID = sorted(classesID, reverse = False)
@@ -273,7 +273,7 @@ def main():
 				classesID = sorted(classesID, reverse = True)
 				for nCl in classesID[:-1]:
 					ExpectedProb.pop(nCl)
-				print(ExpectedProb) 
+				# print(ExpectedProb) 
 
 			# Read probabilities and adjust to ignore background class 0
 			try: # mutations format

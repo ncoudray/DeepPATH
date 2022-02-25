@@ -867,18 +867,21 @@ options:
 * ```color``` (optional): comma separated string with color names to be used when plotting the ROC and Precision/Recall graphs of the different classes
 * ```combine```: classes ID of classes to merge (optional); comma separated string
 
-It will generate files starting with "out1" for non aggregated per tile ROC, and files starting with "out2" for per slide aggregated ROC curve. AUC will be show in the filename.
-File names of the outputs:
-* start with out1 if the ROC are per tile
-* start with out2 if the ROC are per slide
+It will generate different files:
+* the filenames start with out1 if the measurements are given per tile
+* the filenames start with out2 if the measurements are aggregated per slide
+* the filenames start with out3 if the measurements are aggregated per patient
 * then contain <AvPb> if the per slide aggregation was done by averaging probabilities
 * or <PcSel> if the aggregation was done by computing the percentage of tile selected
-* then, the names end with something like
-........c1auc_0.6071_CIs_0.6023_0.6121_t0.367.txt
--> c1 (or c2 or c3...) means class 1
--> auc_0.6071. is the AUC for this class (if you have only 2 classes, the curves and AUC should be the same)
-* the next two numbers are the CIs
-* the last one with the "t" is the "optimal" threshold for this class (computed such as it's the nearest point on the ROC curve to the perfect (1,0) corner).
+* the file name contains "roc" if the measurements are for the ROC curve:
+   * then, the names end with something like
+   ........c1auc_0.6071_CIs_0.6023_0.6121_t0.367.txt
+   -> c1 (or c2 or c3...) means class 1
+   -> auc_0.6071. is the AUC for this class (if you have only 2 classes, the curves and AUC should be the same)
+   * the next two numbers are the CIs
+   * the last one with the "t" is the "optimal" threshold for this class (computed such as it's the nearest point on the ROC curve to the perfect (1,0) corner).
+   * the values inside the files allow to plot the ROC curves
+* the file name contains "PrecRec" for data related to Precision/Recall curve. Values inside the folder can be used to re-plot the curve. The AP is average precision AP is given in the file name
 
 
 
