@@ -373,8 +373,10 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				ClassMatrix = ImBin[:,:,0] + ImBin[:,:,1] * 2 + ImBin[:,:,2] * 3 + ImBin[:,:,3] * 4 +  ImBin[:,:,4] * 5
 				AdjMatrix_UpDown = ClassMatrix[:-1,:] + ClassMatrix[1:,:] * 10
 				AdjMatrix_RLeft = ClassMatrix[:,:-1] + ClassMatrix[:,1:] * 10
-				fields = ['imageName']
-				fields_val = []
+				# surfaces
+				fields = ['imageName', 'class0_surface','class1_surface','class2_surface', 'class3_surface', 'class4_surface']
+				fields_val = [ str(cl0), str(cl1), str(cl2), str(cl3), str(cl4) ]
+				# Adjacency matrix
 				for cl1 in range(1,5,1):
 					val = cl1 + cl1 * 10
 					fields.append(str(val))

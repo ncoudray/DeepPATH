@@ -1,7 +1,9 @@
-name: env_deepPath_2
+name: /gpfs/data/coudraylab/NN/env/env_deepPath
 channels:
   - lukepfister
   - bioconda/label/cf201901
+  - intel
+  - anaconda
   - conda-forge
   - bioconda
   - defaults
@@ -15,15 +17,18 @@ dependencies:
   - blas=1.0=mkl
   - bzip2=1.0.8=h7b6447c_0
   - c-ares=1.15.0=h7b6447c_1001
-  - ca-certificates=2021.10.26=h06a4308_2
+  - ca-certificates=2020.10.14=0
   - cairo=1.14.12=h8948797_3
-  - certifi=2021.5.30=py36h06a4308_0
+  - certifi=2020.6.20=py36_0
   - cloudpickle=2.0.0=pyhd3eb1b0_0
   - cudatoolkit=9.0=h13b8566_0
   - cudnn=7.6.5=cuda9.0_0
   - cupti=9.0.176=0
   - cycler=0.10.0=py36_0
   - cytoolz=0.11.0=py36h7b6447c_0
+  - daal=2021.5.1=intel_803
+  - daal4py=2021.5.1=py36_intel_803
+  - dal=2021.5.1=intel_803
   - dask-core=2021.3.0=pyhd3eb1b0_0
   - dbus=1.13.16=hb2f20db_0
   - decorator=5.1.0=pyhd3eb1b0_0
@@ -42,12 +47,14 @@ dependencies:
   - gstreamer=1.14.0=hb453b48_1
   - harfbuzz=1.8.8=hffaf4a1_0
   - hdf5=1.10.2=hba1933b_1
+  - icc_rt=2020.3=intel_304
   - icu=58.2=he6710b0_3
   - imageio=2.8.0=py_0
   - importlib-metadata=4.8.1=py36h06a4308_0
   - importlib_metadata=4.8.1=hd3eb1b0_0
   - iniconfig=1.1.1=pyhd3eb1b0_0
   - intel-openmp=2020.1=217
+  - intelpython=2022.0.0=0
   - jasper=2.0.14=hd8c5072_2
   - joblib=0.16.0=py_0
   - jpeg=9b=h024ee3a_2
@@ -97,7 +104,7 @@ dependencies:
   - pcre=8.44=he6710b0_0
   - pillow=7.2.0=py36hb39fc2d_0
   - pip=20.1.1=py36_1
-  - pixman=0.40.0=h7b6447c_0
+  - pixman=0.40.0=h36c2ea0_0
   - pluggy=0.13.1=py36h06a4308_0
   - protobuf=3.12.3=py36he6710b0_0
   - py=1.10.0=pyhd3eb1b0_0
@@ -124,6 +131,7 @@ dependencies:
   - sip=4.19.8=py36hf484d3e_0
   - six=1.15.0=py_0
   - sqlite=3.32.3=h62c20be_0
+  - tbb=2021.5.0=intel_707
   - tensorboard=1.9.0=py36hf484d3e_0
   - tensorflow=1.9.0=gpu_py36h02c5d5e_1
   - tensorflow-base=1.9.0=gpu_py36h6ecc378_0
