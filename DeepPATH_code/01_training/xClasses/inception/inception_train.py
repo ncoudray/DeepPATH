@@ -118,9 +118,10 @@ def _tower_loss(images, labels, num_classes, scope, reuse_variables=None):
   split_batch_size = images.get_shape().as_list()[0]
   inception.loss(logits, labels, batch_size=split_batch_size)
 
+  print("bebug 1")
   # Assemble all of the losses for the current tower only.
   losses = tf.get_collection(slim.losses.LOSSES_COLLECTION, scope)
-
+  print(losses)
   # Calculate the total loss for the current tower.
   regularization_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
   total_loss = tf.add_n(losses + regularization_losses, name='total_loss')

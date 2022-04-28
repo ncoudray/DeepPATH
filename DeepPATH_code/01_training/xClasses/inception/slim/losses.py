@@ -30,6 +30,17 @@ import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
 
+tf.app.flags.DEFINE_float('alpha_FL_loss', 4,
+                          """alpha for FL loss.""")
+
+tf.app.flags.DEFINE_float('gamma_FL_loss', 2,
+                          """samme for FL loss.""")
+
+tf.app.flags.DEFINE_float('epsilon_FL_loss', 1e-9,
+                          """epsilon for FL loss.""")
+
+
+
 
 # In order to gather all losses in a network, the user should use this
 # key for get_collection, i.e:
@@ -169,11 +180,30 @@ def cross_entropy_loss(logits, one_hot_labels, label_smoothing=0,
     if FLAGS.mode == '0_softmax':
       cross_entropy = tf.contrib.nn.deprecated_flipped_softmax_cross_entropy_with_logits(
           logits, one_hot_labels, name='xentropy')
-      print("softmax loss")
+      print(cross_entropy)
+      print("softmax loss - cross_entropy_loss")
     elif FLAGS.mode == '1_sigmoid':
       cross_entropy = tf.contrib.nn.deprecated_flipped_sigmoid_cross_entropy_with_logits(
           logits, one_hot_labels, name='xentropy')
-      print("sigmoid loss")
+      print("sigmoid loss - cross_entropy_loss")
+    elif FLAGS.mode == '2_FocalLoss':
+      epsilon = FLAGS.epsilon_FL_loss
+      gamma = FLAGS.gamma_FL_loss
+      #higher the value of γ, the lower the loss for well-classified examples;higher γ extends the range in which an example receives low loss; when γ=0, this equation is equivalent to Cross Entropy Loss
+      alpha = FLAGS.alpha_FL_loss
+      # Give high weights to the rare class and small weights to the dominating or common class. These weights are referred to as α.
+      probs = tf.nn.softmax(logits)
+      y_pred = tf.clip_by_value(probs, epsilon, 1. - epsilon)
+      ce = tf.multiply(one_hot_labels, -tf.log(y_pred))
+      weight_FL = tf.multiply(one_hot_labels, tf.pow(tf.subtract(1., y_pred), gamma))
+      fl = tf.multiply(alpha, tf.multiply(weight_FL, ce))
+      reduced_fl = tf.reduce_max(fl, axis=1, name='xentropy/Reshape_2')
+      # reduced_fl = tf.reduce_sum(fl, axis=1)  # same as reduce_max
+      # cross_entropy = tf.reduce_mean(reduced_fl)
+      cross_entropy = reduced_fl
+      print(reduced_fl)
+      print(cross_entropy)
+      print("Focal Loss -cross_entropy_loss")
     else:
       cross_entropy = tf.contrib.nn.deprecated_flipped_softmax_cross_entropy_with_logits(
           logits, one_hot_labels, name='xentropy')

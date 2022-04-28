@@ -30,6 +30,8 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import PrecisionRecallDisplay
 from matplotlib.ticker import FixedLocator, FixedFormatter
+from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
 
 FLAGS = None
 
@@ -37,8 +39,8 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 	#if True:
 	#	return 0, 0
 	# initialization by bootstraping
-	n_bootstraps = 2000
-	# n_bootstraps = 3
+	#n_bootstraps = 2000
+	n_bootstraps = 3
 	rng_seed = 42  # control reproducibility
 	bootstrapped_scores = []
 	# print(y_true)
@@ -495,7 +497,11 @@ def main():
 	output.close()
 
 
-
+	#print(f1_score(y_ref_PerTile, y_score_Avg_PerTile, average=None))
+	#print(f1_score(y_ref_PerTile, y_score_Avg_PerTile, average='macro'))
+	#print(f1_score(y_ref_PerTile, y_score_Avg_PerTile, average='micro'))
+	#print(f1_score(y_ref_PerTile, y_score_Avg_PerTile, average='weighted'))
+	#print(f1_score(y_ref_PerTile, y_score_Avg_PerTile, average='samples'))
 
 	## Compute ROC per tile
 	PrecisionRecall(y_score_Avg_PerTile, y_ref_PerTile, 'out1', n_classes, corr)

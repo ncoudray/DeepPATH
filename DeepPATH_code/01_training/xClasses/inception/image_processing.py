@@ -396,6 +396,15 @@ def parse_example_proto(example_serialized):
         'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
                                                default_value=''),
     }
+  elif FLAGS.mode == '2_FocalLoss':
+    feature_map = {
+        'image/encoded': tf.FixedLenFeature([], dtype=tf.string,
+                                            default_value=''),
+        'image/class/label': tf.FixedLenFeature([1], dtype=tf.int64,
+                                                default_value=-1),
+        'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
+                                               default_value=''),
+    }
   else:
     raise ValueError("You must set the mode option (to 0_softmax or 1_sigmoid for example)")
 

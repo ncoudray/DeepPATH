@@ -123,6 +123,14 @@ def loss(logits, labels, batch_size=None):
                                       1.0, 0.0)
   elif FLAGS.mode == '1_sigmoid':
     dense_labels = tf.reshape(labels, [batch_size, FLAGS.ClassNumber+1])
+  elif FLAGS.mode == '2_FocalLoss':
+    sparse_labels = tf.reshape(labels, [batch_size, 1])
+    indices = tf.reshape(tf.range(batch_size), [batch_size, 1])
+    concated = tf.concat(axis=1, values=[indices, sparse_labels])
+    num_classes = logits[0].get_shape()[-1].value
+    dense_labels = tf.sparse_to_dense(concated,
+                                      [batch_size, num_classes],
+                                      1.0, 0.0)
 
   # Cross entropy loss for the main softmax prediction.
   slim.losses.cross_entropy_loss(logits[0],

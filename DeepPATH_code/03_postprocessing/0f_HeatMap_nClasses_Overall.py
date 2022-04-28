@@ -224,6 +224,23 @@ def get_inference_from_file(lineProb_st):
 				cmap = plt.get_cmap('Oranges')
 			else:
 				cmap = plt.get_cmap('Purples')
+		elif FLAGS.project == '04_HN':
+			if oClass == 1:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('red')])
+			elif oClass == 2:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('blue')])
+			elif oClass == 3:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('black')])
+			elif oClass == 4:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('green')])
+			else:
+				cmap = plt.get_cmap('Purples')
+
+
 
 	# print(lineProb)
 	# print(oClass, current_score, (current_score-score_correction)/(1.0-score_correction),  [class_all[1], class_all[2], class_all[3]])
@@ -338,6 +355,14 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [0, 0.0, 1.0]
 			class_rgb[3] = [1.0, 0, 0.0]
 			class_rgb[4] = [1, 1, 1]
+		elif FLAGS.project == '04_HN':
+			class_rgb = {}
+			class_rgb[0] = [1, 0, 0]
+			class_rgb[1] = [0, 0.0, 1.0]
+			class_rgb[2] = [1.0, 1.0, 1.0]
+			class_rgb[3] = [0.0, 1.0, 0]
+			class_rgb[4] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
+
 
 		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0])
 		cl1 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1])
@@ -407,6 +432,10 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				fields = ['imageName', 'Necrotic tumor','Normal tissue','Viable Tumor']
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1))]]
+			elif FLAGS.project == '04_HN':
+				fields = ['imageName', 'Invasive_scc','Normal epidermus','SCCIS']
+				csvwriter.writerow(fields)
+				rows = [[cTileRootName, str(round(cl0,1)),str(round(cl1,1)),str(round(cl3,1))]]
 			csvwriter.writerows(rows)       
 
 		# filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + "_bin_" + str(int(cgreen)) + "_" + str(int(cblue)) + "_" + str(int(cred)) + ".jpg")
@@ -504,7 +533,7 @@ def main():
 		for tile in stats_dict[slide]['tiles'].keys():
 			# print(tile)
 			cc+=1
-			# if cc > 20000:
+			#if cc > 100:
 			#	break		
 			extensions = ['.jpeg', '.jpg']
 			isError = True
@@ -533,6 +562,7 @@ def main():
 			if isError == True:
 				print("image not found:" + tile)
 				continue
+			# print("here 1")
 			cTileRootName = slide
 			ixTile = int(stats_dict[slide]['tiles'][tile][0])
 			iyTile = int(stats_dict[slide]['tiles'][tile][1])
@@ -543,7 +573,10 @@ def main():
 			# xTile =  (ixTile) * (FLAGS.tiles_size)
 			# yTile =  (iyTile) * (FLAGS.tiles_size)
 			req_xLength = xTile + rTile
-			req_yLength = yTile + cTile					
+			req_yLength = yTile + cTile
+			# print(rTile, cTile)					
+			if rTile!= cTile:
+                                continue
 			if FLAGS.resample_factor > 0:
 				# print("old / new r&cTile")
 				# print(rTile, cTile, xTile, yTile)
@@ -565,6 +598,7 @@ def main():
 			else:
 				im2s = im2
 			# Check score associated with that image:
+			# print("here 2")
 			oClass, cmap, current_score, class_prob = get_inference_from_file(stats_dict[slide]['tiles'][tile][2])
 			if current_score < 0:
 				print("No probability found")
@@ -582,7 +616,7 @@ def main():
 					HeatMap_bin[xTile:req_xLength, yTile:req_yLength,kC] = HeatMap_bin[xTile:req_xLength, yTile:req_yLength,kC] + np.ones([req_xLength-xTile,req_yLength-yTile]) * class_prob[kC]
 			if cc % 1000 == 0: 
 				print("tile time (sec): " + str((time.time() - t) / cc))
-
+			# print("here 3")
 		NewSlide = False
 		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, slide, NewSlide, dir_name, HeatMap_bin)
 		print("slide time (min): " + str((time.time() - t)/60))	
@@ -663,7 +697,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA.'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN.'
   )
   parser.add_argument(
       '--combine',

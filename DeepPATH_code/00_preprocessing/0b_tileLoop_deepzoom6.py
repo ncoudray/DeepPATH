@@ -146,10 +146,10 @@ class TileWorker(Process):
                     # A single tile is being read
                     #check the percentage of the image with "information". Should be above 50%
                     gray = tile.convert('L')
-                    bw = gray.point(lambda x: 0 if x<220 else 1, 'F')
+                    bw = gray.point(lambda x: 0 if x<230 else 1, 'F')
                     arr = np.array(np.asarray(bw))
                     avgBkg = np.average(bw)
-                    bw = gray.point(lambda x: 0 if x<220 else 1, '1')
+                    bw = gray.point(lambda x: 0 if x<230 else 1, '1')
                     # check if the image is mostly background
                     #print("res: " + outfile + " is " + str(avgBkg))
                     if avgBkg <= (self._Bkg / 100.0):
@@ -1265,7 +1265,8 @@ if __name__ == '__main__':
 			for nn in range(0,12):
 				if AllBoxSizes[nn] < opts.tile_size:
 					AllBoxSizes[nn] = 2000000
-			Final_pixel_size_Diff = [abs(AllBoxSizes[x] / opts.tile_size * AllPxSizes[x] - opts.pixelsize) for x in range(0,12)]
+			# Final_pixel_size_Diff = [abs(AllBoxSizes[x] / opts.tile_size * AllPxSizes[x] - opts.pixelsize) for x in range(0,12)]
+			Final_pixel_size_Diff = [abs(AllBoxSizes[x] / (opts.tile_size + 2 * opts.overlap) * AllPxSizes[x] - opts.pixelsize) for x in range(0,12)]
 			Best_level = [index for index, value in enumerate(Final_pixel_size_Diff) if value == min(Final_pixel_size_Diff)][-1]
 			Adj_WindowSize = AllBoxSizes[Best_level]
 			# dz = DeepZoomGenerator(image, Adj_WindowSize, opt.overlap,limit_bounds=opt.limit_bounds)
