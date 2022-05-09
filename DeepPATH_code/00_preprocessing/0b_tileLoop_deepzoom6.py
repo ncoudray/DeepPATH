@@ -163,8 +163,8 @@ class TileWorker(Process):
 
                             if (isrescale) and (resize_ratio != 1):
                                 # tile.save(outfile + '_orig.jpeg', quality=self._quality)
-                                print(tile.width, resize_ratio, tile.height, int(tile.width / resize_ratio), int(tile.height / resize_ratio))
-                                tile = tile.resize(  (min( self._tile_size, int(tile.width / resize_ratio) ), min( self._tile_size, int(tile.height / resize_ratio))))
+                                print(tile.width, resize_ratio, tile.height, int(round(tile.width / resize_ratio)), int(round(tile.height / resize_ratio)))
+                                tile = tile.resize(  (min( self._tile_size, int(round(tile.width / resize_ratio)) ), min( self._tile_size, int(round(tile.height / resize_ratio)))))
                                 # tile = cv2.resize(tile, (0, 0), fx = 1/resize_ratio, fy = 1/resize_ratio)
                                 # if tile.shape[0] > self._tile_size:
                                 #    tile = tile[:self._tile_size,:,:]
@@ -253,15 +253,20 @@ class DeepZoomImageTiler(object):
             Objective = float(self._slide.properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER])
             # print(self._basename + " - Obj information found")
         except:
-            print(self._basename + " - No Obj information found")
-            print(self._ImgExtension)
-            if ("jpg" in self._ImgExtension) | ("dcm" in self._ImgExtension) | ("tif" in self._ImgExtension):
-                #Objective = self._ROIpc
-                Objective = 1.
-                Magnification = Objective
-                print("input is jpg - will be tiled as such with %f" % Objective)
-            else:
-                return
+            try:
+                for nfields in slide.properties['tiff.ImageDescription'].split('|'):
+                    if 'AppMag' in nfields:
+                        Objective = float(nfields.split(' = ')[1])
+            except:
+                print(self._basename + " - No Obj information found")
+                print(self._ImgExtension)
+                if ("jpg" in self._ImgExtension) | ("dcm" in self._ImgExtension) | ("tif" in self._ImgExtension):
+                    #Objective = self._ROIpc
+                    Objective = 1.
+                    Magnification = Objective
+                    print("input is jpg - will be tiled as such with %f" % Objective)
+                else:
+                    return
         #calculate magnifications
         Available = tuple(Objective / x for x in Factors)
         #find highest magnification greater than or equal to 'Desired'
@@ -361,9 +366,15 @@ class DeepZoomImageTiler(object):
                         OrgPixelSizeX = float(self._slide.properties['openslide.mpp-x'])
                         OrgPixelSizeY = float(self._slide.properties['openslide.mpp-y'])
                     except:
-                       print("Error: no pixelsize found in the header of %s" % self._basename)
-                       DesiredLevel = -1 
-                       return
+                        try:
+                            for nfields in slide.properties['tiff.ImageDescription'].split('|'):
+                                if 'MPP' in nfields:
+                                    OrgPixelSizeX = float(nfields.split(' = ')[1])
+                                    OrgPixelSizeY = OrgPixelSizeX
+                        except:
+                            print("Error: no pixelsize found in the header of %s" % self._basename)
+                            DesiredLevel = -1 
+                            return
                     AllPixelSizeDiffX = [(abs(OrgPixelSizeX * pow(2,self._dz.level_count-(level+1)) - self._pixelsize)) for level in range(self._dz.level_count-1,-1,-1)]
                     AllPixelSizeDiffY = [(abs(OrgPixelSizeY * pow(2,self._dz.level_count-(level+1)) - self._pixelsize)) for level in range(self._dz.level_count-1,-1,-1)]	
                     IndxX = AllPixelSizeDiffX.index(min(AllPixelSizeDiffX))
@@ -1247,7 +1258,6 @@ if __name__ == '__main__':
 	files = sorted(files)
 	for imgNb in range(len(files)):
 		filename = files[imgNb]
-
 		## New WindowSize
 		slide = open_slide(filename)
 		if (opts.Mag <= 0) and (opts.pixelsizerange < 0):
@@ -1257,8 +1267,16 @@ if __name__ == '__main__':
 				OrgPixelSizeX = float(slide.properties['openslide.mpp-x'])
 				OrgPixelSizeY = float(slide.properties['openslide.mpp-y'])
 			except:
-				print("Error: No information found in the header")
-				continue
+				try:
+					for nfields in slide.properties['tiff.ImageDescription'].split('|'):
+						if 'AppMag' in nfields:
+							Objective = float(nfields.split(' = ')[1])
+						if 'MPP' in nfields:
+							OrgPixelSizeX = float(nfields.split(' = ')[1])
+							OrgPixelSizeY = OrgPixelSizeX
+				except:
+					print("Error: No information found in the header")
+					continue
 			Desired_FoV_um = opts.pixelsize * opts.tile_size
 			AllPxSizes = [OrgPixelSizeX * pow(2,nn) for nn in range(0,12)]
 			AllBoxSizes = [round(Desired_FoV_um / (OrgPixelSizeX * pow(2,nn))) for nn in range(0,12)]
@@ -1271,8 +1289,8 @@ if __name__ == '__main__':
 			Adj_WindowSize = AllBoxSizes[Best_level]
 			# dz = DeepZoomGenerator(image, Adj_WindowSize, opt.overlap,limit_bounds=opt.limit_bounds)
 			resize_ratio = float(Adj_WindowSize) / float(opts.tile_size)
-			opts.overlap = int(opts.overlap * resize_ratio)
-			print("info: Objective:" + str(Objective) + "; OrgPixelSizeX" + str(OrgPixelSizeX) + "; Desired_FoV_um: " + str(Desired_FoV_um) +"; Best_level: "+ str(Best_level) + "; resize_ratio: " +str(resize_ratio) + "; Adj_WindowSize:" + str(Adj_WindowSize) + "; self._tile_size: " + str(opts.tile_size))
+			opts.overlap = int(round(opts.overlap * resize_ratio))
+			print("info: Objective:" + str(Objective) + "; OrgPixelSizeX" + str(OrgPixelSizeX) + "; Desired_FoV_um: " + str(Desired_FoV_um) +"; Best_level: "+ str(Best_level) + "; resize_ratio: " +str(resize_ratio) + "; Adj_WindowSize:" + str(Adj_WindowSize) + "; self._tile_size: " + str(opts.tile_size),"; opts.overlap:", str(opts.overlap))
 		else:
 			Best_level = -1
 			resize_ratio = 1
@@ -1423,6 +1441,7 @@ if __name__ == '__main__':
 					print("No xml file found for slide %s.svs (expected: %s). Directory or xml file does not exist" %  (opts.basenameJPG, xmldir) )
 					continue
 		else:
+			print("start tiling")
 			output = os.path.join(opts.basename, opts.basenameJPG)
 			if os.path.exists(output + "_files"):
 				print("Image %s already tiled" % opts.basenameJPG)

@@ -26,7 +26,6 @@ def main(args):
 	files_stats = args.files_stats
 	PatientID = args.PatientID
 	nthreshold = [float(x) for x in args.threshold.split(',')]
-	# print(nthreshold)
 	
 	stats_dict = {}
 	with open(files_stats) as f:
@@ -52,7 +51,7 @@ def main(args):
                                 lineProb = lineProb.split(']')[0]
                                 lineProb = lineProb.split()
                                 lineProb = [float(x) for x in lineProb]
-                                stats_dict[cTileRootName]['tiles'][tilename] = [str(ixTile), str(iyTile), lineProb, int(line2[-1])]
+                                stats_dict[cTileRootName]['tiles'][tilename] = [str(ixTile), str(iyTile), lineProb, lineProb.index(max(lineProb)), int(line2[-1])]
 
 #balanced_accuracy_score(y_true = , y_pred= )
 
@@ -83,48 +82,80 @@ def main(args):
 		t_y_pred_perSli[kk] = []
 		t_y_true_perSli[kk] = []
 
-	TPN_matrix_Til = [[0,0],[0,0]]
-	TPN_matrix_Sli = [[0,0],[0,0]]
-	TPN_matrix_Pat = [[0,0],[0,0]]
-	t_TPN_matrix_Til = [[0,0],[0,0]]
-	t_TPN_matrix_Sli = [[0,0],[0,0]]
-	t_TPN_matrix_Pat = [[0,0],[0,0]]
+	#TPN_matrix_Til = [[0,0],[0,0]]
+	#TPN_matrix_Sli = [[0,0],[0,0]]
+	#TPN_matrix_Pat = [[0,0],[0,0]]
+	#t_TPN_matrix_Til = [[0,0],[0,0]]
+	#t_TPN_matrix_Sli = [[0,0],[0,0]]
+	#t_TPN_matrix_Pat = [[0,0],[0,0]]
+
+	TPN_matrix_Til  = [[0 for x in range(len(lineProb)-1)] for x in range(len(lineProb)-1)]
+	TPN_matrix_Sli = [[0 for x in range(len(lineProb)-1)] for x in range(len(lineProb)-1)]
+	TPN_matrix_Pat = [[0 for x in range(len(lineProb)-1)] for x in range(len(lineProb)-1)]
+	t_TPN_matrix_Til = [[0 for x in range(len(lineProb)-1)] for x in range(len(lineProb)-1)]
+	t_TPN_matrix_Sli = [[0 for x in range(len(lineProb)-1)] for x in range(len(lineProb)-1)]
+	t_TPN_matrix_Pat = [[0 for x in range(len(lineProb)-1)] for x in range(len(lineProb)-1)]
+
 	PerPatientData = {}		
 	for nslide in stats_dict.keys():
 		if nslide[:PatientID] not in PerPatientData.keys():
 			PerPatientData[nslide[:PatientID]] = {}
 			PerPatientData[nslide[:PatientID]]['NbTiles'] = 0
-			PerPatientData[nslide[:PatientID]]['Sum_Labels'] = [0, 0, 0]
-		sum_Labels = [0, 0, 0]
+			PerPatientData[nslide[:PatientID]]['Sum_Labels'] = [0 for x in range(len(lineProb))]
+		sum_Labels = [0 for x in range(len(lineProb))]
 		for ntile in stats_dict[nslide]['tiles'].keys():
 			true_label = stats_dict[nslide]['tiles'][ntile][-1] - 1 
-			assigned_label = stats_dict[nslide]['tiles'][ntile][-2]
-			sum_Labels[0] = sum_Labels[0] + assigned_label[0]
-			sum_Labels[1] = sum_Labels[1] + assigned_label[1]
-			sum_Labels[2] = sum_Labels[2] + assigned_label[2]
-			PerPatientData[nslide[:PatientID]]['Sum_Labels'][0] = PerPatientData[nslide[:PatientID]]['Sum_Labels'][0] + assigned_label[0]
-			PerPatientData[nslide[:PatientID]]['Sum_Labels'][1] = PerPatientData[nslide[:PatientID]]['Sum_Labels'][1] + assigned_label[1]
-			PerPatientData[nslide[:PatientID]]['Sum_Labels'][2] = PerPatientData[nslide[:PatientID]]['Sum_Labels'][2] + assigned_label[2]
-			if assigned_label[true_label + 1] >= nthreshold[true_label]:
-				t_assigned_label = true_label
+			assigned_label = stats_dict[nslide]['tiles'][ntile][-3]
+			for nkk in range(len(lineProb)):
+				sum_Labels[nkk] = sum_Labels[nkk] + assigned_label[nkk]
+				PerPatientData[nslide[:PatientID]]['Sum_Labels'][nkk]  = PerPatientData[nslide[:PatientID]]['Sum_Labels'][nkk] + assigned_label[nkk]
+			#sum_Labels[0] = sum_Labels[0] + assigned_label[0]
+			#sum_Labels[1] = sum_Labels[1] + assigned_label[1]
+			#sum_Labels[2] = sum_Labels[2] + assigned_label[2]
+			#PerPatientData[nslide[:PatientID]]['Sum_Labels'][0] = PerPatientData[nslide[:PatientID]]['Sum_Labels'][0] + assigned_label[0]
+			#PerPatientData[nslide[:PatientID]]['Sum_Labels'][1] = PerPatientData[nslide[:PatientID]]['Sum_Labels'][1] + assigned_label[1]
+			#PerPatientData[nslide[:PatientID]]['Sum_Labels'][2] = PerPatientData[nslide[:PatientID]]['Sum_Labels'][2] + assigned_label[2]
+			if len(nthreshold) >= 2:
+				# print(assigned_label, true_label)
+				NewT = []
+				for nC in range(len(nthreshold)):
+					NewT.append( (assigned_label[nC + 1] - nthreshold[nC]) / (1 - nthreshold[nC]) )
+				# print(assigned_label, NewT)
+				t_assigned_label = NewT.index(max(NewT))
+				#if assigned_label[true_label + 1] >= nthreshold[true_label]:
+				#	t_assigned_label = true_label
+				#else:
+				#	t_assigned_label = 1 - true_label
 			else:
-				t_assigned_label = 1 - true_label
+				t_assigned_label =    stats_dict[nslide]['tiles'][ntile][-2]-1
 
 			assigned_label = assigned_label.index(max(assigned_label)) - 1
-			print(true_label, assigned_label)
+			print(true_label, assigned_label, t_assigned_label)
 			print(TPN_matrix_Til)
 			TPN_matrix_Til[true_label][assigned_label] = TPN_matrix_Til[true_label][assigned_label] + 1
 			y_true_perTil[0].append( true_label )
 			y_pred_perTil[0].append( assigned_label )
+			#print(true_label, t_assigned_label)
+			print(t_TPN_matrix_Til)
 			t_TPN_matrix_Til[true_label][t_assigned_label] = t_TPN_matrix_Til[true_label][t_assigned_label] + 1
 			t_y_true_perTil[0].append( true_label )
 			t_y_pred_perTil[0].append( t_assigned_label )
 
 		Av_Slide = [x / float(len(stats_dict[nslide]['tiles'].keys())) for x in sum_Labels]
-		if Av_Slide[true_label + 1] >= nthreshold[true_label]:
-			t_assigned_label = true_label
+		if len(nthreshold) >= 2:
+			#print(true_label)
+			#print(Av_Slide)
+			#print(nthreshold)
+			NewT = []
+			for nC in range(len(nthreshold)):
+				NewT.append( (Av_Slide[nC + 1] - nthreshold[nC]) / (1 - nthreshold[nC]) )
+			t_assigned_label = NewT.index(max(NewT))
+			#if Av_Slide[true_label + 1] >= nthreshold[true_label]:
+			#	t_assigned_label = true_label
+			#else:
+			#	t_assigned_label = 1 - true_label
 		else:
-			t_assigned_label = 1 - true_label
+			t_assigned_label = Av_Slide.index(max(Av_Slide))-1
 		assigned_label = Av_Slide.index(max(Av_Slide)) - 1
 		TPN_matrix_Sli[true_label][assigned_label] = TPN_matrix_Sli[true_label][assigned_label] + 1
 		y_true_perSli[0].append( true_label )
@@ -138,10 +169,17 @@ def main(args):
 	for nPat in PerPatientData:
 		true_label = PerPatientData[nPat]['true_label']
 		Av_Slide = [x / PerPatientData[nPat]['NbTiles'] for x in PerPatientData[nPat]['Sum_Labels']]
-		if Av_Slide[true_label + 1] >= nthreshold[true_label]:
-			t_assigned_label = true_label
+		if len(nthreshold) >= 2:
+			NewT = []
+			for nC in range(len(nthreshold)):
+				NewT.append( (Av_Slide[nC + 1] - nthreshold[nC]) / (1 - nthreshold[nC]) )
+			t_assigned_label = NewT.index(max(NewT))
+			#if Av_Slide[true_label + 1] >= nthreshold[true_label]:
+			#	t_assigned_label = true_label
+			#else:
+			#	t_assigned_label = 1 - true_label
 		else:
-			t_assigned_label = 1 - true_label
+			t_assigned_label = Av_Slide.index(max(Av_Slide))-1
 		assigned_label = Av_Slide.index(max(Av_Slide)) - 1
 		#print(Av_Slide, assigned_label, t_assigned_label, true_label)
 		TPN_matrix_Pat[true_label][assigned_label] = TPN_matrix_Pat[true_label][assigned_label]  + 1
@@ -236,7 +274,7 @@ if __name__ == '__main__':
   parser.add_argument(
       '--threshold',
       type=str,
-      default='0.5,0.5',
+      default='0',
       help="threshold to use for the classes in out_filename_Stats.txt"
   )
   parser.add_argument(
