@@ -192,7 +192,7 @@ module load python/gpu/3.6.5
 
 Mandatory parameters:
 *  `-s` is tile_size: 299 (299x299 pixel tiles)
-*  `-e` is overlap, 0 (no overlap between adjacent tiles). Important: the overlap is defined as "the number of extra pixels to add to each interior edge of a tile". Which means that the final tile size is `s + 2.e`. So to get a 299px tile with a 50% overlap, you need to set s to 149 and e to 75. Also, tile from the edges of the slide will be smaller (since up to two sides have no "interior" edge)
+*  `-e` is overlap, 0 (no overlap between adjacent tiles). Important: the overlap is defined as "the number of extra pixels to add to each interior edge of a tile". Which means that the final tile size is `s + 2.e`. So to get a 299px tile with a 50% overlap, you need to set s to 149 and e to 75. Also, tile from the edges of the slide will be smaller (since up to two sides have no "interior" edge); Note: e must be smaller than s!
 *  `-j` is number of threads: 32 (for a full GPU node on gpu0.q)
 *  `-B` is Max Percentage of Background allowed: 25% (tiles removed if background percentage above this value)
 *  `-o` is the path were the output images must be saved
