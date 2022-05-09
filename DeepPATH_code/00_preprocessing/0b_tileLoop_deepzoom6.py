@@ -1289,6 +1289,7 @@ if __name__ == '__main__':
 			Adj_WindowSize = AllBoxSizes[Best_level]
 			# dz = DeepZoomGenerator(image, Adj_WindowSize, opt.overlap,limit_bounds=opt.limit_bounds)
 			resize_ratio = float(Adj_WindowSize) / float(opts.tile_size)
+			resize_ratio = ((resize_ratio) + (float(int(round(opts.overlap * resize_ratio))) / opts.overlap) )/2
 			opts.overlap = int(round(opts.overlap * resize_ratio))
 			print("info: Objective:" + str(Objective) + "; OrgPixelSizeX" + str(OrgPixelSizeX) + "; Desired_FoV_um: " + str(Desired_FoV_um) +"; Best_level: "+ str(Best_level) + "; resize_ratio: " +str(resize_ratio) + "; Adj_WindowSize:" + str(Adj_WindowSize) + "; self._tile_size: " + str(opts.tile_size),"; opts.overlap:", str(opts.overlap))
 		else:
