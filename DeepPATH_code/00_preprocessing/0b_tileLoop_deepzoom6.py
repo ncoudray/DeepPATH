@@ -116,20 +116,20 @@ class TileWorker(Process):
     def run(self):
         self._slide = open_slide(self._slidepath)
         last_associated = None
-        dz = self._get_dz(None, self._tile_size)
+        dz = self._get_dz(None, self._tile_size, self._overlap)
         while True:
             data = self._queue.get()
             if data is None:
                 self._queue.task_done()
                 break
             #associated, level, address, outfile = data
-            associated, level, address, outfile, format, outfile_bw, PercentMasked, SaveMasks, TileMask, Normalize, isrescale, resize_ratio, Adj_WindowSize = data
+            associated, level, address, outfile, format, outfile_bw, PercentMasked, SaveMasks, TileMask, Normalize, isrescale, resize_ratio, Adj_WindowSize, Adj_overlap = data
             if last_associated != associated:
-                dz = self._get_dz(associated, Adj_WindowSize)
+                dz = self._get_dz(associated, Adj_WindowSize, Adj_overlap)
                 # dz = self._get_dz(associated, self._tile_size)
                 last_associated = associated
             # try:
-            #	dz = self._get_dz(associated, Adj_WindowSize)
+            #	dz = self._get_dz(associated, Adj_WindowSize, Adj_overlap)
             # except Exception as e: 
             #    print("****** ERROR: ")
             #    print(e)
@@ -164,7 +164,7 @@ class TileWorker(Process):
                             if (isrescale) and (resize_ratio != 1):
                                 # tile.save(outfile + '_orig.jpeg', quality=self._quality)
                                 print(tile.width, resize_ratio, tile.height, int(round(tile.width / resize_ratio)), int(round(tile.height / resize_ratio)))
-                                tile = tile.resize(  (min( self._tile_size, int(round(tile.width / resize_ratio)) ), min( self._tile_size, int(round(tile.height / resize_ratio)))))
+                                tile = tile.resize(  (min( (self._tile_size + 2*self._overlap), int(round(tile.width / resize_ratio)) ), min( (self._tile_size+2*self._overlap), int(round(tile.height / resize_ratio)))))
                                 # tile = cv2.resize(tile, (0, 0), fx = 1/resize_ratio, fy = 1/resize_ratio)
                                 # if tile.shape[0] > self._tile_size:
                                 #    tile = tile[:self._tile_size,:,:]
@@ -202,18 +202,20 @@ class TileWorker(Process):
                     print(e)
                     self._queue.task_done()
 
-    def _get_dz(self, associated=None, wsize=299):
+    def _get_dz(self, associated=None, wsize=299, overlap=0):
         if associated is not None:
             image = ImageSlide(self._slide.associated_images[associated])
         else:
             image = self._slide
-        return DeepZoomGenerator(image, wsize, self._overlap, limit_bounds=self._limit_bounds)
+        print("Here :210 -", str(wsize), " ",str(overlap))
+        #return DeepZoomGenerator(image, wsize, self._overlap, limit_bounds=self._limit_bounds)
+        return DeepZoomGenerator(image, wsize, overlap, limit_bounds=self._limit_bounds)
 
 
 class DeepZoomImageTiler(object):
     """Handles generation of tiles and metadata for a single image."""
 
-    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc, ImgExtension, SaveMasks, Mag, normalize, Fieldxml, pixelsize, pixelsizerange, Best_level, resize_ratio, Adj_WindowSize):
+    def __init__(self, dz, basename, format, associated, queue, slide, basenameJPG, xmlfile, mask_type, xmlLabel, ROIpc, ImgExtension, SaveMasks, Mag, normalize, Fieldxml, pixelsize, pixelsizerange, Best_level, resize_ratio, Adj_WindowSize, Adj_overlap):
         self._dz = dz
         self._basename = basename
         self._basenameJPG = basenameJPG
@@ -236,7 +238,7 @@ class DeepZoomImageTiler(object):
         self._Best_level = Best_level
         self._resize_ratio = resize_ratio
         self._Adj_WindowSize = Adj_WindowSize
-
+        self._Adj_overlap = Adj_overlap
     def run(self):
         self._write_tiles()
         self._write_dzi()
@@ -534,10 +536,15 @@ class DeepZoomImageTiler(object):
                         if not os.path.exists(tilename):
                             if self._Best_level == -1:
                                 self._queue.put((self._associated, level, (col, row),
-                                            tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize, False, self._resize_ratio, self._Adj_WindowSize))
+                                            tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize, False, self._resize_ratio, self._Adj_WindowSize, self._Adj_overlap))
+                                # self._queue.put((1, level, (col, row),
+                                #            tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize, False, self._resize_ratio, self._Adj_WindowSize, self._Adj_overlap))
                             else:
                                 self._queue.put((self._associated, level, (col, row),
-                                            tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize, True, self._resize_ratio, self._Adj_WindowSize))
+                                            tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize, True, self._resize_ratio, self._Adj_WindowSize, self._Adj_overlap))
+                                # self._queue.put((1, level, (col, row),
+                                #            tilename, self._format, tilename_bw, PercentMasked, self._SaveMasks, TileMask, self._normalize, True, self._resize_ratio, self._Adj_WindowSize, self._Adj_overlap))
+
                         self._tile_done()
 
     def _tile_done(self):
@@ -906,7 +913,7 @@ class DeepZoomStaticTiler(object):
     """Handles generation of tiles and metadata for all images in a slide."""
 
     def __init__(self, slidepath, basename, format, tile_size, overlap,
-                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type, ROIpc, oLabel, ImgExtension, SaveMasks, Mag, normalize, Fieldxml, pixelsize, pixelsizerange, Adj_WindowSize, resize_ratio, Best_level):
+                limit_bounds, quality, workers, with_viewer, Bkg, basenameJPG, xmlfile, mask_type, ROIpc, oLabel, ImgExtension, SaveMasks, Mag, normalize, Fieldxml, pixelsize, pixelsizerange, Adj_WindowSize, resize_ratio, Best_level, Adj_overlap):
         if with_viewer:
             # Check extra dependency before doing a bunch of work
             import jinja2
@@ -938,10 +945,13 @@ class DeepZoomStaticTiler(object):
         self._resize_ratio = resize_ratio
         self._Best_level = Best_level
         self._Adj_WindowSize = Adj_WindowSize
+        self._Adj_overlap = Adj_overlap
         for _i in range(workers):
-            TileWorker(self._queue, slidepath, self._Adj_WindowSize, overlap,
-                limit_bounds, quality, self._Bkg, self._ROIpc).start()
-            print("worker " + str(workers) + " started")
+            #TileWorker(self._queue, slidepath, self._Adj_WindowSize, overlap,
+            #    limit_bounds, quality, self._Bkg, self._ROIpc).start()
+            TileWorker(self._queue, slidepath, self._Adj_WindowSize, self._Adj_overlap,
+                 limit_bounds, quality, self._Bkg, self._ROIpc).start()
+            print("worker " + str(workers) + " started with " + str(self._Adj_WindowSize), ", " + str(self._Adj_overlap))
         #self._workers = workers
         #self._quality = quality
 
@@ -998,15 +1008,17 @@ class DeepZoomStaticTiler(object):
             Adj_WindowSize = self._tile_size
         '''
         # New:
-        dz = DeepZoomGenerator(image, self._Adj_WindowSize, self._overlap,limit_bounds=self._limit_bounds)
+        # dz = DeepZoomGenerator(image, self._Adj_WindowSize, self._overlap,limit_bounds=self._limit_bounds)
+        dz = DeepZoomGenerator(image, self._Adj_WindowSize, self._Adj_overlap, limit_bounds=self._limit_bounds)
 
+ 
         # for _i in range(self._workers):
         #    TileWorker(self._queue, slidepath, Adj_WindowSize, self._overlap,
         #        self._limit_bounds, self._quality, self._Bkg, self._ROIpc).start()
         #    print("worker " + str(self._workers) + " started")
 
         print("tiler init")
-        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks, self._Mag, self._normalize, self._Fieldxml, self._pixelsize, self._pixelsizerange, self._Best_level, self._resize_ratio, self._Adj_WindowSize)
+        tiler = DeepZoomImageTiler(dz, basename, self._format, associated,self._queue, self._slide, self._basenameJPG, self._xmlfile, self._mask_type, self._xmlLabel, self._ROIpc, self._ImgExtension, self._SaveMasks, self._Mag, self._normalize, self._Fieldxml, self._pixelsize, self._pixelsizerange, self._Best_level, self._resize_ratio, self._Adj_WindowSize, self._Adj_overlap)
         # try:
         print("start tiler")
         import time
@@ -1290,13 +1302,14 @@ if __name__ == '__main__':
 			# dz = DeepZoomGenerator(image, Adj_WindowSize, opt.overlap,limit_bounds=opt.limit_bounds)
 			resize_ratio = float(Adj_WindowSize) / float(opts.tile_size)
 			resize_ratio = ((resize_ratio) + (float(int(round(opts.overlap * resize_ratio))) / opts.overlap) )/2
-			opts.overlap = int(round(opts.overlap * resize_ratio))
-			print("info: Objective:" + str(Objective) + "; OrgPixelSizeX" + str(OrgPixelSizeX) + "; Desired_FoV_um: " + str(Desired_FoV_um) +"; Best_level: "+ str(Best_level) + "; resize_ratio: " +str(resize_ratio) + "; Adj_WindowSize:" + str(Adj_WindowSize) + "; self._tile_size: " + str(opts.tile_size),"; opts.overlap:", str(opts.overlap))
+			Adj_overlap = int(round(opts.overlap * resize_ratio))
+			print("info: Objective:" + str(Objective) + "; OrgPixelSizeX" + str(OrgPixelSizeX) + "; Desired_FoV_um: " + str(Desired_FoV_um) +"; Best_level: "+ str(Best_level) + "; resize_ratio: " +str(resize_ratio) + "; Adj_WindowSize:" + str(Adj_WindowSize) + "; self._tile_size: " + str(opts.tile_size),"; opts.overlap:", str(opts.overlap),"; Adj_overlap:", str(Adj_overlap))
 		else:
 			Best_level = -1
 			resize_ratio = 1
 			# Adj_WindowSize = self._tile_size
 			Adj_WindowSize =  opts.tile_size
+			Adj_overlap = opts.overlap
 
 		#print(filename)
 		opts.basenameJPG = os.path.splitext(os.path.basename(filename))[0]
@@ -1335,7 +1348,7 @@ if __name__ == '__main__':
 			output = os.path.join(opts.basename, opts.basenameJPG)
 
 			try:
-				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level).run()
+				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level, Adj_overlap).run()
 			except Exception as e:
 				print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 				print(e)
@@ -1346,7 +1359,7 @@ if __name__ == '__main__':
 		#		print("Image %s already tiled" % opts.basenameJPG)
 		#		continue
 
-		#	DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level).run()
+		#	DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level, Adj_overlap).run()
 
 		elif opts.xmlfile != '':
 			# Check if Aperio or Qupath annotations
@@ -1399,7 +1412,7 @@ if __name__ == '__main__':
 									os.makedirs(os.path.join(opts.basename, oLabel))
 							if 1:
 							#try:
-								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level).run()
+								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level, Adj_overlap).run()
 							#except:
 							#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						if Nbr_ROIs_ForNegLabel==0:
@@ -1411,7 +1424,7 @@ if __name__ == '__main__':
 								os.makedirs(os.path.join(opts.basename, oLabel+'_inv'))
 							if 1:
 							#try:
-								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level).run()
+								DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level, Adj_overlap).run()
 							#except:
 							#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 
@@ -1422,7 +1435,7 @@ if __name__ == '__main__':
 					if not os.path.exists(os.path.join(opts.basename, oLabel)):
 						os.makedirs(os.path.join(opts.basename, oLabel))
 					try:
-						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level).run()
+						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, oLabel, ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level, Adj_overlap).run()
 					except Exception as e:
 						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						print(e)
@@ -1432,7 +1445,7 @@ if __name__ == '__main__':
 					print("Input image to be tiled is jpg or dcm and not svs - will be treated as such")
 					output = os.path.join(opts.basename, opts.basenameJPG)
 					try:
-						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level).run()
+						DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level, Adj_overlap).run()
 					except Exception as e:
 						print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 						print(e)
@@ -1449,7 +1462,7 @@ if __name__ == '__main__':
 				continue
 			# try:
 			if True:
-				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level).run()
+				DeepZoomStaticTiler(filename, output, opts.format, opts.tile_size, opts.overlap, opts.limit_bounds, opts.quality, opts.workers, opts.with_viewer, opts.Bkg, opts.basenameJPG, opts.xmlfile, opts.mask_type, opts.ROIpc, '', ImgExtension, opts.SaveMasks, opts.Mag, opts.normalize, opts.Fieldxml, opts.pixelsize, opts.pixelsizerange, Adj_WindowSize, resize_ratio, Best_level, Adj_overlap).run()
 			#except Exception as e:
 			#	print("Failed to process file %s, error: %s" % (filename, sys.exc_info()[0]))
 			#	print(e)
