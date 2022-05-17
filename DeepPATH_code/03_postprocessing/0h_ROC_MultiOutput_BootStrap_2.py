@@ -567,9 +567,19 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
     		plt.annotate("f1={0:0.1f}".format(f_score), xy=(0.9, y[45] + 0.02), color='gray', size=6)
 	display = PrecisionRecallDisplay(recall=recall["micro"],precision=precision["micro"],average_precision=average_precision["micro"],)
 	display.plot(ax=ax, name="Micro-average precision-recall", color="red", linewidth=1, linestyle=":",)
+	if os.path.exists(FLAGS.labelFile):
+		text_file = open(FLAGS.labelFile)
+		x = text_file.read().split('\n')
+	else:
+		x = range(n_classes)
+	print("x:")
+	print(x)
+
 	for i, color in zip(range(n_classes), colors):
 		display = PrecisionRecallDisplay(recall=recall[i],precision=precision[i],average_precision=average_precision[i])
-		display.plot(ax=ax, name=f"Precision-recall for class {i}", linewidth=1, color=color)
+		# display.plot(ax=ax, name=f"Precision-recall for class {i}", linewidth=1, color=color)
+		display.plot(ax=ax, name=f"Precision-recall for class {x[i]}", linewidth=1, color=color)
+
 	# add the legend for the iso-f1 curves
 	handles, labels = display.ax_.get_legend_handles_labels()
 	handles.extend([l])
@@ -739,20 +749,31 @@ def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, co
 	    tpr["macro"],
 	    label="macro-average ROC curve (area = {0:0.3f})".format(roc_auc["macro"]),
 	    color="deeppink",
-	    linestyle=":",
+	    linestyle="--",
 	    linewidth=1,
 	)
-
 	# colors = cycle(["aqua", "darkorange", "cornflowerblue"])
 	colors = cycle(FLAGS.color)
-	for i, color in zip(range(n_classes), colors):
-	    plt.plot(
-	        fpr[i],
-	        tpr[i],
-	        color=color,
-	        label="ROC curve of class {0} (area = {1:0.3f})".format(i, roc_auc[i]),
-		linewidth=1
-	    )
+	if os.path.exists(FLAGS.labelFile):
+		text_file = open(FLAGS.labelFile)
+		x = text_file.read().split('\n')
+		for i, color in zip(range(n_classes), colors):
+			plt.plot(
+			   fpr[i],
+			   tpr[i],
+			   color=color,
+			   label="ROC curve of class {0} (area = {1:0.3f})".format(x[i], roc_auc[i]),
+			   linewidth=1
+			)
+	else:
+		for i, color in zip(range(n_classes), colors):
+		    plt.plot(
+		        fpr[i],
+		        tpr[i],
+		        color=color,
+		        label="ROC curve of class {0} (area = {1:0.3f})".format(i, roc_auc[i]),
+			linewidth=1
+		    )
 	
 	# add the legend for the iso-f1 curves
 	handles, labels = ax.get_legend_handles_labels()
@@ -865,7 +886,12 @@ if __name__ == '__main__':
       default='',
       help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1'
   )
-
+  parser.add_argument(
+      '--labelFile',
+      type=str,
+      default='',
+      help="File with label names, 1 per line"
+  )
 
   FLAGS, unparsed = parser.parse_known_args()
   if FLAGS.color == '':
