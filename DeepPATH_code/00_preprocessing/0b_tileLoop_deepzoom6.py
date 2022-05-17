@@ -1292,16 +1292,25 @@ if __name__ == '__main__':
 			Desired_FoV_um = opts.pixelsize * opts.tile_size
 			AllPxSizes = [OrgPixelSizeX * pow(2,nn) for nn in range(0,12)]
 			AllBoxSizes = [round(Desired_FoV_um / (OrgPixelSizeX * pow(2,nn))) for nn in range(0,12)]
-			for nn in range(0,12):
-				if AllBoxSizes[nn] < opts.tile_size:
-					AllBoxSizes[nn] = 2000000
-			# Final_pixel_size_Diff = [abs(AllBoxSizes[x] / opts.tile_size * AllPxSizes[x] - opts.pixelsize) for x in range(0,12)]
-			Final_pixel_size_Diff = [abs(AllBoxSizes[x] / (opts.tile_size + 2 * opts.overlap) * AllPxSizes[x] - opts.pixelsize) for x in range(0,12)]
-			Best_level = [index for index, value in enumerate(Final_pixel_size_Diff) if value == min(Final_pixel_size_Diff)][-1]
+			# Prevent resizing from smaller box size... unless target pixel size if below scanned pixelsize
+			if sum(np.array(AllBoxSizes) > 1196) > 0:
+				for nn in range(0,12):
+					if AllBoxSizes[nn] < opts.tile_size :
+						AllBoxSizes[nn] = 2000000
+				# Final_pixel_size_Diff = [abs(AllBoxSizes[x] / opts.tile_size * AllPxSizes[x] - opts.pixelsize) for x in range(0,12)]
+				# Final_pixel_size_Diff = [abs(AllBoxSizes[x] / (opts.tile_size + 2 * opts.overlap) * AllPxSizes[x] - opts.pixelsize) for x in range(0,12)]
+				Final_pixel_size_Diff = [abs(AllBoxSizes[x] * AllPxSizes[x] - Desired_FoV_um)  for x in range(0,12)]
+				print(AllPxSizes)
+				print(AllBoxSizes)
+				print(Final_pixel_size_Diff)
+				Best_level = [index for index, value in enumerate(Final_pixel_size_Diff) if value == min(Final_pixel_size_Diff)][-1]
+			else:
+				Best_level = 0
 			Adj_WindowSize = AllBoxSizes[Best_level]
 			# dz = DeepZoomGenerator(image, Adj_WindowSize, opt.overlap,limit_bounds=opt.limit_bounds)
 			resize_ratio = float(Adj_WindowSize) / float(opts.tile_size)
-			resize_ratio = ((resize_ratio) + (float(int(round(opts.overlap * resize_ratio))) / opts.overlap) )/2
+			if opts.overlap > 0:
+				resize_ratio = ((resize_ratio) + (float(int(round(opts.overlap * resize_ratio))) / opts.overlap) )/2
 			Adj_overlap = int(round(opts.overlap * resize_ratio))
 			print("info: Objective:" + str(Objective) + "; OrgPixelSizeX" + str(OrgPixelSizeX) + "; Desired_FoV_um: " + str(Desired_FoV_um) +"; Best_level: "+ str(Best_level) + "; resize_ratio: " +str(resize_ratio) + "; Adj_WindowSize:" + str(Adj_WindowSize) + "; self._tile_size: " + str(opts.tile_size),"; opts.overlap:", str(opts.overlap),"; Adj_overlap:", str(Adj_overlap))
 		else:
