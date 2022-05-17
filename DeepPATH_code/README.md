@@ -899,6 +899,26 @@ same options as above, without the "color" one.
 
 
 
+## Sensitivity / Specificity 
+
+```shell
+TEST_OUTPUT="test_output/test_100000k/"
+THRESH=`ls $TEST_OUTPUT | grep out1_roc_data_AvP | sed -e 's/_/ /g' | sed -e 's/.txt/ /g' | awk '{print $NF}' | grep t | sed -e 's/t/ /g'`
+LABEL_FILE="labels.txt"
+PatientID=12
+OUTFILENAMEUNIQ="out_filename_Stats.txt"
+
+python 03_postprocessing/0i_Sensitivity_Specificity.py --threshold=$THRESH --labelFile $LABEL_FILE --PatientID $PatientID --files_stats $OUTFILENAMEUNIQ --outputPath=$TEST_OUTPUT
+```
+
+options:
+* ```threshold```: comma separated string with threshold to use instead of default (default being class with highest probability); can be extracted from optimal threshold suggested during ROC calculation (as in example above)
+* ```labelFile```: text file with name for each class (1 name per row. Same order as before TFRecord conversion)
+* ```PatientID```: number of characters in the svs used to code tthe patient ID
+* ```files_stats```: "out_filename_Stats.txt" 
+* ```outputPath```: folder to save outputs
+
+
 ## Code in 03_postprocessing/multiClasses for  probability distributions (mutation analysis):
 
 
@@ -906,6 +926,12 @@ Generate probability distribution with means for each class for each slide:
 ```shell
 python 0f_ProbHistogram.py --output_dir='result folder' --tiles_stats='out_filename_Statsout_filename_Stats.txt' --ctype='Lung3Classes'
 ```
+
+
+
+
+
+
 
 # 4 - Other scripts:
 

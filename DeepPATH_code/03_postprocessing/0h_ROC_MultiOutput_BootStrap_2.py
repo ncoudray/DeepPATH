@@ -567,8 +567,8 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
     		plt.annotate("f1={0:0.1f}".format(f_score), xy=(0.9, y[45] + 0.02), color='gray', size=6)
 	display = PrecisionRecallDisplay(recall=recall["micro"],precision=precision["micro"],average_precision=average_precision["micro"],)
 	display.plot(ax=ax, name="Micro-average precision-recall", color="red", linewidth=1, linestyle=":",)
-	if os.path.exists(FLAGS.labelFile):
-		text_file = open(FLAGS.labelFile)
+	if os.path.exists(FLAGS.labels_names):
+		text_file = open(FLAGS.labels_names)
 		x = text_file.read().split('\n')
 	else:
 		x = range(n_classes)
@@ -754,8 +754,8 @@ def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, co
 	)
 	# colors = cycle(["aqua", "darkorange", "cornflowerblue"])
 	colors = cycle(FLAGS.color)
-	if os.path.exists(FLAGS.labelFile):
-		text_file = open(FLAGS.labelFile)
+	if os.path.exists(FLAGS.labels_names):
+		text_file = open(FLAGS.labels_names)
 		x = text_file.read().split('\n')
 		for i, color in zip(range(n_classes), colors):
 			plt.plot(
@@ -885,12 +885,6 @@ if __name__ == '__main__':
       type=str,
       default='',
       help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1'
-  )
-  parser.add_argument(
-      '--labelFile',
-      type=str,
-      default='',
-      help="File with label names, 1 per line"
   )
 
   FLAGS, unparsed = parser.parse_known_args()
