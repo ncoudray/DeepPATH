@@ -78,6 +78,8 @@ import sys
 import threading
 import cv2
 from scipy.ndimage import rotate
+import scipy.interpolate as interp
+
 
 import numpy as np
 import tensorflow as tf
@@ -101,6 +103,10 @@ tf.app.flags.DEFINE_integer('num_threads', 8,
 
 tf.app.flags.DEFINE_integer('MaxNbImages', -1,
                             'Maximum number of images in each class - Will be taken randomly if >0, otherwise, all images are taken (may help in unbalanced datasets: undersample oneof the datasets) - if MaxNbImages>number of tiles, data augmentation will be done (rotation, mirroring, leading to possibility to increase dataset 8 fold)')
+
+tf.app.flags.DEFINE_integer('rescale', 0,
+			    'If you want the images to be rescaled to a certain dimension (299 for example), write the target size in rescale')
+
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
@@ -223,12 +229,20 @@ def _process_image(filename, coder, flipRot):
   print("flipRot:")
   print(flipRot)
   # Rot_Mir = False
+  # image = coder.decode_jpeg(image_data)
   if flipRot > 0:
     image = coder.decode_jpeg(image_data)
     rotate_img = rotate(image, 90 * (flipRot%4))
     if flipRot > 3:
       rotate_img = np.flipud(rotate_img)
-    image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
+      image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
+  if FLAGS.rescale > 0:
+    image = coder.decode_jpeg(image_data)
+    Factor = max(image.shape[0], image.shape[1]) / FLAGS.rescale;
+    x = int(image.shape[1] / Factor);
+    y = int(image.shape[0] / Factor);
+    res = np.resize(image, (int(y),int(x),3))
+    image_data = cv2.imencode('.jpg', res)[1].tostring()    
 
 
   # Decode the RGB JPEG.

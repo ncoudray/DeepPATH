@@ -163,8 +163,11 @@ class TileWorker(Process):
 
                             if (isrescale) and (resize_ratio != 1):
                                 # tile.save(outfile + '_orig.jpeg', quality=self._quality)
-                                print(tile.width, resize_ratio, tile.height, int(round(tile.width / resize_ratio)), int(round(tile.height / resize_ratio)))
-                                tile = tile.resize(  (min( (self._tile_size + 2*self._overlap), int(round(tile.width / resize_ratio)) ), min( (self._tile_size+2*self._overlap), int(round(tile.height / resize_ratio)))))
+                                print(self._tile_size, tile.width, resize_ratio, tile.height, int(round(tile.width / resize_ratio)), int(round(tile.height / resize_ratio)), min( (self._tile_size + 2*self._overlap), int(round(tile.width / resize_ratio)) ),  min( (self._tile_size+2*self._overlap), int(round(tile.height / resize_ratio))))
+                                if resize_ratio > 1:
+                                    tile = tile.resize(  (min( (self._tile_size + 2*self._overlap), int(round(tile.width / resize_ratio)) ), min( (self._tile_size+2*self._overlap), int(round(tile.height / resize_ratio)))))
+                                else:
+                                    tile = tile.resize(  (int(round(tile.width / resize_ratio)), int(round(tile.height / resize_ratio)) ) )
                                 # tile = cv2.resize(tile, (0, 0), fx = 1/resize_ratio, fy = 1/resize_ratio)
                                 # if tile.shape[0] > self._tile_size:
                                 #    tile = tile[:self._tile_size,:,:]

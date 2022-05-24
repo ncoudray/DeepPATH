@@ -52,6 +52,11 @@ tf.app.flags.DEFINE_boolean('one_FT_per_Tile', False,
 tf.app.flags.DEFINE_string('ImageSet_basename', 'test',
                             'test, train or valid')
 
+tf.app.flags.DEFINE_integer('rescale', 0,
+                            'If you want the images to be rescaled to a certain dimension (299 for example), write the target size in rescale')
+
+
+
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
 #   dog
@@ -170,6 +175,14 @@ def _process_image(filename, coder):
   #  image_data = coder.png_to_jpeg(image_data)
 
   print(filename)
+
+  if FLAGS.rescale > 0:
+    image = coder.decode_jpeg(image_data)
+    Factor = max(image.shape[0], image.shape[1]) / FLAGS.rescale;
+    x = int(image.shape[1] / Factor);
+    y = int(image.shape[0] / Factor);
+    res = np.resize(image, (int(y),int(x),3))
+    image_data = cv2.imencode('.jpg', res)[1].tostring()
 
   # Decode the RGB JPEG.
   image = coder.decode_jpeg(image_data)
