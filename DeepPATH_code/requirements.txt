@@ -242,7 +242,7 @@ traits==5.0.0
 transformers==2.4.1
 typing==3.6.4
 typing-extensions==3.7.4.2
-ujson==1.35
+ujson==5.2.0
 umap==0.1.1
 umap-learn==0.5.1
 Unidecode==1.0.22
