@@ -615,6 +615,7 @@ def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, co
 	tpr = dict()
 	thresholds = dict()
 	opt_thresh = dict()
+	opt_Youden_thresh = dict()
 	roc_auc = dict()
 	fpr_PcSel = dict()
 	tpr_PcSel = dict()
@@ -635,6 +636,9 @@ def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, co
 		fpr_PcSel[i], tpr_PcSel[i], _ = roc_curve(y_ref[:, i], y_score_PcSelect[:, i])
 		roc_auc_PcSel[i] = auc(fpr_PcSel[i], tpr_PcSel[i])
 		euc_dist = []
+
+		idx = np.argmax(tpr[i] - fpr[i])
+		opt_Youden_thresh[i] = thresholds[i][idx]
 		try:
 			for jj in range(len(fpr[i])):
 				euc_dist.append( euclidean_distances([[0, 1]], [[fpr[i][jj], tpr[i][jj]]]) )
@@ -690,7 +694,7 @@ def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, co
 	# print(fpr)
 	# print(tpr)
 	for i in range(n_classes):
-		output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_CIs_' + str("%.4f" % confidence_low_avg[i]) + "_" + str("%.4f" % confidence_up_avg[i]) + '_t' + str("%.6f" % opt_thresh[i]) + '.txt'),'w')
+		output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_roc_data_AvPb_c' + str(i+1)+ 'auc_' + str("%.4f" % roc_auc[i]) + '_CIs_' + str("%.4f" % confidence_low_avg[i]) + "_" + str("%.4f" % confidence_up_avg[i]) + '_J' + str("%6f" % opt_Youden_thresh[i]) + '_t' + str("%.6f" % opt_thresh[i]) + '.txt'),'w')
 		for kk in range(len(tpr[i])):
 			output.write("%f\t%f\n" % (fpr[i][kk], tpr[i][kk]) )
 		output.close()

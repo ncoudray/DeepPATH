@@ -242,6 +242,7 @@ def _process_image(filename, coder, flipRot):
     x = int(image.shape[1] / Factor);
     y = int(image.shape[0] / Factor);
     res = np.resize(image, (int(y),int(x),3))
+    print(image.shape, int(y),int(x))
     image_data = cv2.imencode('.jpg', res)[1].tostring()    
 
 

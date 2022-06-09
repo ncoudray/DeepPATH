@@ -26,6 +26,7 @@ import os
 import random
 import sys
 import threading
+import cv2
 
 import numpy as np
 import tensorflow as tf
@@ -181,6 +182,7 @@ def _process_image(filename, coder):
     Factor = max(image.shape[0], image.shape[1]) / FLAGS.rescale;
     x = int(image.shape[1] / Factor);
     y = int(image.shape[0] / Factor);
+    print(image.shape, int(y),int(x))
     res = np.resize(image, (int(y),int(x),3))
     image_data = cv2.imencode('.jpg', res)[1].tostring()
 
