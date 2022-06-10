@@ -146,13 +146,15 @@ class TileWorker(Process):
                     # A single tile is being read
                     #check the percentage of the image with "information". Should be above 50%
                     gray = tile.convert('L')
+                    img_grey = cv2.cvtColor(np.asarray(tile), cv2.COLOR_BGR2GRAY)
+                    St = img_grey.std()
                     bw = gray.point(lambda x: 0 if x<230 else 1, 'F')
                     arr = np.array(np.asarray(bw))
                     avgBkg = np.average(bw)
                     bw = gray.point(lambda x: 0 if x<230 else 1, '1')
                     # check if the image is mostly background
-                    #print("res: " + outfile + " is " + str(avgBkg))
-                    if avgBkg <= (self._Bkg / 100.0):
+                    print("res: " + outfile + " is " + str(avgBkg*100) + " and std " + str(St))
+                    if avgBkg <= (self._Bkg / 100.0) and St >= 10:
                         # print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
                         if PercentMasked >= (self._ROIpc / 100.0):
@@ -210,7 +212,7 @@ class TileWorker(Process):
             image = ImageSlide(self._slide.associated_images[associated])
         else:
             image = self._slide
-        print("Here :210 -", str(wsize), " ",str(overlap))
+        print("wsize and overlap: ", str(wsize), " ",str(overlap))
         #return DeepZoomGenerator(image, wsize, self._overlap, limit_bounds=self._limit_bounds)
         return DeepZoomGenerator(image, wsize, overlap, limit_bounds=self._limit_bounds)
 
