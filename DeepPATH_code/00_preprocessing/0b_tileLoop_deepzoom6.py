@@ -1186,8 +1186,8 @@ if __name__ == '__main__':
 		type='float', default=50,
 		help='Max background threshold [50]; percentager of background allowed')
 	parser.add_option('-D', '--Deviation', metavar='PIXELS', dest='Std',
-		type='float', default=10,
-		help='Alernate way to remove background tile based on standard deviation of the average grey level. If the Std if below this value, the tile is not saved')
+		type='float', default=0,
+		help='Alernate way to remove background tile based on standard deviation of the average grey level. If the Std if below this value, the tile is not saved (10 recommended)')
 	parser.add_option('-x', '--xmlfile', metavar='NAME', dest='xmlfile',
 		help='path to xml file from Aperio annotation; json for QuPath')
 	parser.add_option('-F', '--Fieldxml', metavar='{Name|Value}', dest='Fieldxml',
