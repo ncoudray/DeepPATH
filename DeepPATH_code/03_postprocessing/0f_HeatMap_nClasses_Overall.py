@@ -208,7 +208,13 @@ def get_inference_from_file(lineProb_st):
 			else:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('yellow')])
-	
+		elif FLAGS.project == '05_binary':
+			if oClass == 1:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('blue')])
+			elif oClass == 2:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('red')])
 		elif FLAGS.project == '03_OAS':
 			if oClass == 1:
 				cmap = plt.get_cmap('binary')
@@ -362,7 +368,13 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [1.0, 1.0, 1.0]
 			class_rgb[3] = [0.0, 1.0, 0]
 			class_rgb[4] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
-
+		elif FLAGS.project == '05_binary':
+			class_rgb = {}
+			class_rgb[0] = [0, 0, 1.0]
+			class_rgb[1] = [1.0, 0.0, 0]
+			class_rgb[2] = [0, 0, 0]
+			class_rgb[3] = [0, 0, 0]
+			class_rgb[4] = [0, 0, 0]
 
 		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0])
 		cl1 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1])
@@ -436,6 +448,11 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				fields = ['imageName', 'Invasive_scc','Normal epidermus','SCCIS']
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl0,1)),str(round(cl1,1)),str(round(cl3,1))]]
+			elif FLAGS.project == '05_binary':
+				fields = ['imageName','Normal tissue or class 1','Tumor or class2']
+				csvwriter.writerow(fields)
+				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1))]]
+
 			csvwriter.writerows(rows)       
 
 		# filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + dir_name + "_bin_" + str(int(cgreen)) + "_" + str(int(cblue)) + "_" + str(int(cred)) + ".jpg")
@@ -452,8 +469,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		print(filename_tmp)
 		if os.path.exists(filename_tmp):
 			os.remove(filename_tmp)
-
-
+		filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_slide.jpg")
+		imsave(filename,np.swapaxes(WholeSlide_0,0,1))
 	skip = False
 	return skip
 
@@ -697,7 +714,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN.'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary.'
   )
   parser.add_argument(
       '--combine',

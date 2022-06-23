@@ -195,6 +195,7 @@ Mandatory parameters:
 *  `-e` is overlap, 0 (no overlap between adjacent tiles). Important: the overlap is defined as "the number of extra pixels to add to each interior edge of a tile". Which means that the final tile size is `s + 2.e`. So to get a 299px tile with a 50% overlap, you need to set s to 149 and e to 75. Also, tile from the edges of the slide will be smaller (since up to two sides have no "interior" edge); Note: e must be smaller than s!
 *  `-j` is number of threads: 32 (for a full GPU node on gpu0.q)
 *  `-B` is Max Percentage of Background allowed: 25% (tiles removed if background percentage above this value)
+*  `-D` is the minimum standard deviation of gray level allowed. Will remove all tiles with std below this value (not contrasted enough - an alternate way to remove background tiles). For a tile to be saved, it needs to be fulfill both -B and -D conditions
 *  `-o` is the path were the output images must be saved
 *  The final mandatory parameter is the path to all svs images.
 Optional parameters when regions have been selected with Aperio:
