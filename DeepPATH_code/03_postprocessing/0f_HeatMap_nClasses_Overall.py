@@ -215,6 +215,24 @@ def get_inference_from_file(lineProb_st):
 			elif oClass == 2:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('red')])
+		elif FLAGS.project == '06_TNBC_6folds':
+			if oClass == 1:
+				cmap = plt.get_cmap('binary')
+			elif oClass == 2:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('red')])
+			elif oClass == 3:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('orange')])
+			elif oClass == 4:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('green')])
+			elif oClass == 5:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('blue')])
+			elif oClass == 6:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('yellow')])				
 		elif FLAGS.project == '03_OAS':
 			if oClass == 1:
 				cmap = plt.get_cmap('binary')
@@ -330,6 +348,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			ImBin[:,:,2] = HeatMap_bin[:,:,2] == Tmax
 			ImBin[:,:,3] = HeatMap_bin[:,:,3] == Tmax
 			ImBin[:,:,4] = HeatMap_bin[:,:,4] == Tmax
+			ImBin[:,:,5] = HeatMap_bin[:,:,5] == Tmax
 
 		if FLAGS.project == '00_Adjacency':
 			class_rgb = {}
@@ -338,6 +357,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [1., 1., 0.]
 			class_rgb[3] = [0, 1., 0.]
 			class_rgb[4] = [0., 0., 1.]
+			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '01_METbrain':
 			class_rgb = {}
 			class_rgb[0] = [0, 0, 0]
@@ -345,6 +365,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [1.0, 165.0/255.0, 0]
 			class_rgb[3] = [0, 0, 1.0]
 			class_rgb[4] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
+			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '02_METliver':
 			class_rgb = {}
 			# class_rgb[0] = [1.0, 0, 0]
@@ -354,6 +375,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
 			class_rgb[3] = [1,0,0]
 			class_rgb[4] = [1, 1, 1]
+			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '03_OAS':
 			class_rgb = {}
 			class_rgb[0] = [0, 0, 0]
@@ -361,6 +383,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [0, 0.0, 1.0]
 			class_rgb[3] = [1.0, 0, 0.0]
 			class_rgb[4] = [1, 1, 1]
+			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '04_HN':
 			class_rgb = {}
 			class_rgb[0] = [1, 0, 0]
@@ -368,6 +391,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [1.0, 1.0, 1.0]
 			class_rgb[3] = [0.0, 1.0, 0]
 			class_rgb[4] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
+			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '05_binary':
 			class_rgb = {}
 			class_rgb[0] = [0, 0, 1.0]
@@ -375,12 +399,22 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[2] = [0, 0, 0]
 			class_rgb[3] = [0, 0, 0]
 			class_rgb[4] = [0, 0, 0]
+			class_rgb[5] = [0, 0, 0]
+		elif FLAGS.project == '06_TNBC_6folds':
+			class_rgb = {}
+			class_rgb[0] = [0, 0, 0]
+			class_rgb[1] = [1, 0, 0]
+			class_rgb[2] = [1.0, 165.0/255.0, 0]
+			class_rgb[3] = [0.0, 1.0, 0]
+			class_rgb[4] = [0, 0.0, 1.0]
+			class_rgb[5] = [1, 1, 0]
 
 		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0])
 		cl1 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1])
 		cl2 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,2])
 		cl3 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,3]) 
 		cl4 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,4])
+		cl5 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,5])
 
 
 		# HeatMap_divider_p = np.zeros([ImBin.shape[0],ImBin.shape[1], 3])
@@ -390,7 +424,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		
 		ImBinf = np.zeros([ImBin.shape[0],ImBin.shape[1], 3])
 		for rgb in [0,1,2]:
-			ImBinf[:,:,rgb] = ImBin[:,:,0] * class_rgb[0][rgb] + ImBin[:,:,1] * class_rgb[1][rgb] + ImBin[:,:,2] * class_rgb[2][rgb] + ImBin[:,:,3] * class_rgb[3][rgb] + ImBin[:,:,4] * class_rgb[4][rgb] 
+			ImBinf[:,:,rgb] = ImBin[:,:,0] * class_rgb[0][rgb] + ImBin[:,:,1] * class_rgb[1][rgb] + ImBin[:,:,2] * class_rgb[2][rgb] + ImBin[:,:,3] * class_rgb[3][rgb] + ImBin[:,:,4] * class_rgb[4][rgb]  +  ImBin[:,:,5] * class_rgb[5][rgb] 
 
 		# ImBinf[HeatMap_divider_p==0] = 1
 		ImBinf[HeatMap_divider_p0[:,:,0:3]==0] = 1
@@ -452,6 +486,11 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				fields = ['imageName','Normal tissue or class 1','Tumor or class2']
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1))]]
+			elif FLAGS.project == '06_TNBC_6folds':
+				fields = ['imageName','Art','DCIS','Inv','Nec','Other','Str']
+				csvwriter.writerow(fields)
+				rows = [[cTileRootName, str(round(cl0,1)),str(round(cl1,1)), str(round(cl2,1)), str(round(cl3,1)), str(round(cl4,1)), str(round(cl5,1))]]
+
 
 			csvwriter.writerows(rows)       
 
@@ -537,8 +576,8 @@ def main():
 			req_yLength = int(req_yLength / FLAGS.resample_factor + 1)
 		WholeSlide_0 = np.zeros([req_xLength, req_yLength, 3])
 		HeatMap_0 = np.zeros([req_xLength, req_yLength, 3])
-		HeatMap_bin = np.zeros([req_xLength, req_yLength, 5])
-		HeatMap_divider = np.zeros([req_xLength, req_yLength, 5])
+		HeatMap_bin = np.zeros([req_xLength, req_yLength, 6])
+		HeatMap_divider = np.zeros([req_xLength, req_yLength, 6])
 		print("Checking slide " + slide)
 		print(req_xLength, req_yLength)
 		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, slide, NewSlide, dir_name, HeatMap_bin)
@@ -714,7 +753,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary.'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds.'
   )
   parser.add_argument(
       '--combine',
