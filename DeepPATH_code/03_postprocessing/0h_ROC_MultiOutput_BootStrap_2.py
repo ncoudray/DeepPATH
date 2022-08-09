@@ -35,12 +35,10 @@ from sklearn.metrics import accuracy_score
 
 FLAGS = None
 
-def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
-	#if True:
-	#	return 0, 0
-	# initialization by bootstraping
-	#n_bootstraps = 2000
-	n_bootstraps = 3
+
+def BootStrap(y_true, y_pred, isMacro,  n_classes = 1, isPR = False):
+	n_bootstraps = 1000
+	#n_bootstraps = 3
 	rng_seed = 42  # control reproducibility
 	bootstrapped_scores = []
 	# print(y_true)
@@ -64,8 +62,13 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 			else:
 				y_true2 = dict()
 				y_pred2 = dict()
-				for n in range(n_classes):
-					y_true2[n], y_pred2[n], _ = roc_curve(y_true[indices, n], y_pred[indices, n])
+				if isPR:
+					for n in range(n_classes):
+						#y_true2[n], y_pred2[n] = precision_recall_curve(y_true[indices, n], y_pred[indices, n])
+						y_pred2[n], y_true2[n] = precision_recall_curve(y_true[indices, n], y_pred[indices, n])
+				else:
+					for n in range(n_classes):
+						y_true2[n], y_pred2[n], _ = roc_curve(y_true[indices, n], y_pred[indices, n])
 				# Then interpolate all ROC curves at this points
 				all_f = np.unique(np.concatenate([y_true2[n]for n in range(n_classes)]))
 				mean_tpr = np.zeros_like(all_f)
@@ -94,7 +97,12 @@ def BootStrap(y_true, y_pred, isMacro,  n_classes = 1):
 				#print("We need at least one positive and one negative sample for ROC AUC")
 				continue
 			else:
-				score = roc_auc_score(y_true[indices], y_pred[indices])
+				if isPR:
+					precision, recall, _ = precision_recall_curve(y_true[indices], y_pred[indices])
+					# average_precision = average_precision_score(y_true[indices], y_pred[indices])
+					score =  auc(recall, precision)
+				else:
+					score = roc_auc_score(y_true[indices], y_pred[indices])
 				bootstrapped_scores.append(score)
 				#print("score: %f" % score)
 	sorted_scores = np.array(bootstrapped_scores)
@@ -524,23 +532,33 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
 	precision = dict()
 	recall = dict()
 	average_precision = dict()
+	confidence_low_avg = dict()
+	confidence_up_avg = dict()
+	auprc = dict()
+	baseline = dict()
 	for i in range(n_classes):
 		precision[i], recall[i], _ = precision_recall_curve(y_ref[:, i], y_score[:, i])
 		average_precision[i] = average_precision_score(y_ref[:, i], y_score[:, i])
+		auprc[i] =  auc(recall[i], precision[i])
+		baseline[i] = float(sum(y_ref[:, i])) / float(len(y_ref[:, i]))
+		confidence_low_avg[i], confidence_up_avg[i] = BootStrap(y_ref[:, i], y_score[:, i], False, 1, True)
 
 	# A "micro-average": quantifying score on all classes jointly
 	precision["micro"], recall["micro"], _ = precision_recall_curve(y_ref.ravel(), y_score.ravel())
 	average_precision["micro"] = average_precision_score(y_ref, y_score, average="micro")
+	auprc["micro"] = auc(recall["micro"], precision["micro"])
+	baseline["micro"] = float(sum(y_ref.ravel())) / float(len(y_ref.ravel()))
+	confidence_low_avg["micro"], confidence_up_avg["micro"] = BootStrap(y_ref.ravel(), y_score.ravel(), False)
 
 	# save data
 	print("******* Precision / Recall")
 	for i in range(n_classes):
-		output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data_AvPb_c' + str(i+1)+ '_AP_' + str("%.4f" % average_precision[i]) + '.txt'),'w')
+		output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data_AvPb_c' + str(i+1) + 'AUPRC_' + str("%.4f" % auprc[i]) + '_CIs_' + str("%.4f" % confidence_low_avg[i]) + "_" + str("%.4f" % confidence_up_avg[i]) + '_baseline_' + str("%.4f" % baseline[i]) + '_AP_' + str("%.4f" % average_precision[i]) + '.txt'),'w')
 		for kk in range(len(precision[i])):
 			output.write("%f\t%f\n" % (recall[i][kk], precision[i][kk]) )
 		output.close()
 
-	output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data_AvPb_cmicro_AP_' + str("%.4f" % average_precision["micro"]) + '.txt'),'w')
+	output = open(os.path.join(FLAGS.output_dir, corr + save_basename + '_PrecRec_data_AvPb_cmicro_AUPRC_' + str("%.4f" % auprc[i]) + '_CIs_' + str("%.4f" % confidence_low_avg["micro"]) + "_" + str("%.4f" % confidence_up_avg["micro"]) + '_baseline_' + str("%.4f" % baseline["micro"]) + '_AP_' + str("%.4f" % average_precision["micro"]) + '.txt'),'w')
 	for kk in range(len(precision["micro"])):
 		output.write("%f\t%f\n" % (recall["micro"][kk], precision["micro"][kk]) )
 	output.close()
@@ -566,7 +584,7 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
     		(l,) = plt.plot(x[y >= 0], y[y >= 0], color="gray", alpha=0.2, linewidth=1)
     		plt.annotate("f1={0:0.1f}".format(f_score), xy=(0.9, y[45] + 0.02), color='gray', size=6)
 	display = PrecisionRecallDisplay(recall=recall["micro"],precision=precision["micro"],average_precision=average_precision["micro"],)
-	display.plot(ax=ax, name="Micro-average precision-recall", color="red", linewidth=1, linestyle=":",)
+	display.plot(ax=ax, name="Micro-average precision-recall", color="red", linewidth=1, linestyle="--",)
 	if os.path.exists(FLAGS.labels_names):
 		text_file = open(FLAGS.labels_names)
 		x = text_file.read().split('\n')
@@ -584,6 +602,10 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
 	handles, labels = display.ax_.get_legend_handles_labels()
 	handles.extend([l])
 	labels.extend(["iso-f1 curves"])
+	colors = cycle(FLAGS.color)
+	for i, color in zip(range(n_classes), colors):
+		plt.plot([0, 1], [baseline[i], baseline[i]],  linewidth=0.5, color=color, linestyle=":")
+
 	# set the legend and the axes
 	ax.set_xlim([-0.05, 1.05])
 	ax.set_ylim([-0.05, 1.05])
@@ -594,9 +616,13 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
 	# ax.set_title("Extension of Precision-Recall curve to multi-class")
 	# ax.get_legend().remove()
 
+	#for i, color in zip(range(n_classes), colors):
+	#	plt.plot([0, 1], [baseline[i], baseline[i]],  linewidth=0.5, color=color, linestyle=":")
+
 	x_locator = FixedLocator([0, 0.25, 0.5, 0.75, 1])
 	ax.xaxis.set_major_locator(x_locator)
 	ax.yaxis.set_major_locator(x_locator)
+
 	
 	# plt.show()
 	# figure = plt.gcf()

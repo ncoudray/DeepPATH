@@ -184,7 +184,11 @@ def _process_image(filename, coder):
     y = int(image.shape[0] / Factor);
     print(image.shape, int(y),int(x))
     res = np.resize(image, (int(y),int(x),3))
-    image_data = cv2.imencode('.jpg', res)[1].tostring()
+    if int(y)>0 and int(x)>0: 
+      image_data = cv2.imencode('.jpg', res)[1].tostring()
+    else:
+      print("0 size detected")
+      return 0, int(y),int(x)
 
   # Decode the RGB JPEG.
   image = coder.decode_jpeg(image_data)
@@ -238,6 +242,10 @@ def _process_image_files_batch_test(coder, thread_index, ranges, name, filenames
     label = labels[i]
     text = texts[i]
     image_buffer, height, width = _process_image(filename, coder)
+
+    if height==0 or width==0:
+      print("continue - " + str(height) + " / " + str(width))
+      continue
 
     next_file_root = _get_slide_name(filename, name)
     if rootname == next_file_root:
@@ -321,6 +329,9 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
 #        print(e)
 #        print('SKIPPED: Unexpected eror while decoding %s.' % filename)
 #        continue
+
+      if height==0 or width==0:
+        continue
 
       example = _convert_to_example(filename, image_buffer, label,
                                     text, height, width)
