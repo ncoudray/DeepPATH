@@ -27,6 +27,7 @@ import numpy as np
 import glob
 import time
 import cv2
+import csv 
 
 import matplotlib
 matplotlib.use('Agg')
@@ -211,10 +212,10 @@ def get_inference_from_file(lineProb_st):
 		elif FLAGS.project == '05_binary':
 			if oClass == 1:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('blue')])
+				cmap = make_colormap([c('white'), c('yellow')])
 			elif oClass == 2:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('red')])
+				cmap = make_colormap([c('white'), c('darkviolet')])
 		elif FLAGS.project == '06_TNBC_6folds':
 			if oClass == 1:
 				cmap = plt.get_cmap('binary')
@@ -263,6 +264,15 @@ def get_inference_from_file(lineProb_st):
 				cmap = make_colormap([c('white'), c('green')])
 			else:
 				cmap = plt.get_cmap('Purples')
+		elif  FLAGS.project == '07_Melanoma_Johannet':
+			if oClass == 1:
+				cmap = plt.get_cmap('binary')
+			elif oClass == 2:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('blue')])
+			elif oClass == 3:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('orange')])
 
 
 
@@ -271,8 +281,54 @@ def get_inference_from_file(lineProb_st):
 	class_allC = [class_all[k] for k in range(len(class_all))]
 	return oClass, cmap, (current_score-score_correction)/(1.0-score_correction), class_allC
 
-			
 
+def Get_Binary_stats(bin_im):
+	print(bin_im)
+	imsave('bin_im.jpeg',bin_im)
+	print(np.array(np.uint8(bin_im)))
+	imsave('bin_imA8.jpeg',np.uint8(bin_im))
+	# t, b_tmp= cv2.threshold(np.array(np.uint8(bin_im)),1,255,cv2.THRESH_BINARY_INV)
+	t, b_tmp= cv2.threshold(np.uint8(bin_im)*255,128,255,cv2.THRESH_BINARY)
+	imsave('b_tmp.jpeg',b_tmp)
+	a, contours,b = cv2.findContours(b_tmp,cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+	Each_Tumor_Area = []
+	Each_Tumor_Mean_Dia = []
+	nIt = 0
+	ImBin1 = np.ascontiguousarray(bin_im)
+	for eachT in contours:
+		nIt += 1
+		# Each_Tumor_Area.append( (cv2.contourArea(eachT)+len(eachT)) * FLAGS.resample_factor * FLAGS.resample_factor)
+		if len(eachT>2):
+			Each_Tumor_Area.append(cv2.contourArea(eachT) * FLAGS.resample_factor * FLAGS.resample_factor)
+		else:
+			Each_Tumor_Area.append( len(eachT) * FLAGS.resample_factor * FLAGS.resample_factor)
+		if len(eachT) >= 5:
+			ellipse = cv2.fitEllipse(eachT)
+			MinAx = min(ellipse[1]) * FLAGS.resample_factor
+			MaxAx = max(ellipse[1]) * FLAGS.resample_factor
+			Each_Tumor_Mean_Dia.append( (MinAx + MaxAx) / 2 )
+		else:
+			Each_Tumor_Mean_Dia.append(np.sqrt( Each_Tumor_Area[-1] / np.pi) )
+		M= cv2.moments(eachT)
+		if M["m00"] != 0:
+			cx= int(M['m10']/M['m00'])
+			cy= int(M['m01']/M['m00'])
+		else:
+			cx = 0
+			cy = 0
+		ImBin1 = cv2.putText(ImBin1, text = str(nIt), org=(cx, cy),  fontFace= cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=(255,211,25), thickness=4, lineType=cv2.LINE_AA)
+	Nb_Tumor = len(Each_Tumor_Area)
+	'''
+	with open(filename, 'w', newline='') as csvfile:
+		csvwriter = csv.writer(csvfile)
+		fields = ['imageName', 'Percent_Tumor', 'Avg_Tumor_Prob', 'Nb_tumors', 'Nb_tumors_1000px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'Tumor_areas', 'Tumor_avg_diam'] 
+		csvwriter.writerow(fields)
+		rows = [[cTileRootName, str(round(c1/(c1+c3)*100,2)), str(round(Avg_Prob_Class1*100, 2)), str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Area), str(Each_Tumor_Mean_Dia)]]
+		csvwriter.writerows(rows)       
+	'''
+	fields = ['Nb_tumors', 'Nb_tumors_1000px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'Tumor_areas', 'Tumor_avg_diam'] 
+	rows = [str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Area), str(Each_Tumor_Mean_Dia)]
+	return fields, rows, sum(Each_Tumor_Area)
 
 def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide, dir_name, HeatMap_bin_or):
 	# HeatMap_0_p: heatmap coded
@@ -394,8 +450,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '05_binary':
 			class_rgb = {}
-			class_rgb[0] = [0, 0, 1.0]
-			class_rgb[1] = [1.0, 0.0, 0]
+			class_rgb[0] = [0, 1.0, 1.0]
+			class_rgb[1] = [0.41, 0.0, 0.59]
 			class_rgb[2] = [0, 0, 0]
 			class_rgb[3] = [0, 0, 0]
 			class_rgb[4] = [0, 0, 0]
@@ -408,6 +464,15 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[3] = [0.0, 1.0, 0]
 			class_rgb[4] = [0, 0.0, 1.0]
 			class_rgb[5] = [1, 1, 0]
+		elif FLAGS.project == '07_Melanoma_Johannet':
+			class_rgb = {}
+			class_rgb[0] = [0, 0, 0]
+			class_rgb[1] = [0, 0, 1.0]
+			class_rgb[2] = [255.0/255.0, 215.0/255.0, 0]
+			class_rgb[3] = [0, 0, 0]
+			class_rgb[4] = [0, 0, 0]
+			class_rgb[5] = [0, 0, 0]
+
 
 		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0])
 		cl1 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1])
@@ -463,7 +528,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				rows = [rows]
 			elif FLAGS.project == '01_METbrain':
 				if '2' and '3'  in FLAGS.combine.split(','):
-					fields = ['imageName', 'Tumor','Non tumor']
+					fields = ['imageName', 'Tumor','Non_tumor']
 					csvwriter.writerow(fields)
 					rows = [[cTileRootName, str(round(cl1,1)+round(cl2,1)),str(round(cl3,1))]]
 				else:
@@ -471,9 +536,22 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 					csvwriter.writerow(fields)
 					rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1))]]
 			elif FLAGS.project == '02_METliver':
-				fields = ['imageName', 'Tumor','Normal tissue']
+				Indx_Tumor = 3
+				Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
+				# fields2, rows2, TumorArea2 = Get_Binary_stats(HeatMap_bin_or[:,:,Indx_Tumor])
+				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
+				fields2, rows2, TumorArea2 = Get_Binary_stats(ImStat)
+				# ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor]
+				fields = ['imageName', 'Tumor_area1','Non_tumor_area','Percent_tumor', 'Avg_Tumor_Prob']
+				fields.extend(fields2)
 				csvwriter.writerow(fields)
-				rows = [[cTileRootName, str(round(cl3,1)),str(round(cl1,1))]]
+				if (cl3+cl1) == 0:
+					cl3p1 = 1
+				else:
+					cl3p1 = cl3 + cl1
+				rows = [cTileRootName, str(round(cl3,1)),str(round(cl1,1)), str(round(100*cl3/cl3p1,2)), str(round(Avg_Prob_Class1*100, 2))]
+				rows.extend(rows2)
+				rows = [rows]
 			elif FLAGS.project == '03_OAS':
 				fields = ['imageName', 'Necrotic tumor','Normal tissue','Viable Tumor']
 				csvwriter.writerow(fields)
@@ -490,7 +568,10 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				fields = ['imageName','Art','DCIS','Inv','Nec','Other','Str']
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl0,1)),str(round(cl1,1)), str(round(cl2,1)), str(round(cl3,1)), str(round(cl4,1)), str(round(cl5,1))]]
-
+			elif FLAGS.project == '07_Melanoma_Johannet':
+				fields = ['imageName','Tumor','lymphocyte-rich','other']
+				csvwriter.writerow(fields)
+				rows = [[cTileRootName, str(round(cl2,1)),str(round(cl1,1)), str(round(cl0,1))]]
 
 			csvwriter.writerows(rows)       
 
@@ -636,8 +717,8 @@ def main():
 			if FLAGS.resample_factor > 0:
 				# print("old / new r&cTile")
 				# print(rTile, cTile, xTile, yTile)
-				rTile = int(rTile / FLAGS.resample_factor)
-				cTile = int(cTile / FLAGS.resample_factor)
+				rTile = int(round(float(rTile) / FLAGS.resample_factor, 0))
+				cTile = int(round(float(cTile) / FLAGS.resample_factor, 0))
 				if rTile<=0:
 					im2s = im2
 				elif cTile<=0:
@@ -646,8 +727,8 @@ def main():
 					im2s = np.array(Image.fromarray(im2).resize((cTile, rTile)))
 					rTile = im2s.shape[1]
 					cTile = im2s.shape[0]
-					xTile = int(xTile / FLAGS.resample_factor)
-					yTile = int(yTile / FLAGS.resample_factor)
+					xTile = int(round(float(xTile) / FLAGS.resample_factor, 0))
+					yTile = int(round(float(yTile) / FLAGS.resample_factor, 0))
 					req_xLength = xTile + rTile
 					req_yLength = yTile + cTile
 					# print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
@@ -709,7 +790,7 @@ if __name__ == '__main__':
   )
   parser.add_argument(
       '--resample_factor',
-      type=int,
+      type=float,
       default=1,
       help='reduce the size of the output by this factor.'
   )
@@ -753,7 +834,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds.'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet.'
   )
   parser.add_argument(
       '--combine',

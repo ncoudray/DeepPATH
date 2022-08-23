@@ -204,7 +204,7 @@ def main(args):
 	print("************* PER PATIENT  *************")
 	compute_stats(TPN_matrix_Pat, y_true_perPat, y_pred_perPat, lineProb, stats_dict, nthreshold, t_TPN_matrix_Pat, t_y_true_perPat, t_y_pred_perPat, 'out3', args.labelFile, args.outputPath)
 
-def plot_Confusion(TPN_matrix, labelFile, save_basename, Info):
+def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass):
 	font = {'family' : 'Times New Roman',
 	'weight' : 'medium',
 	'size'   : 8}
@@ -222,7 +222,11 @@ def plot_Confusion(TPN_matrix, labelFile, save_basename, Info):
 			ax.text(i, j, str(c), va='center', ha='center')
 	if os.path.exists(labelFile):
 		text_file = open(labelFile)
-		x = text_file.read().split('\n')[0:len(TPN_matrix)]
+		x = text_file.read().split('\n')
+		if nClass >= 0:
+			x = [x[nClass], "all_other_classes"] 
+		else:
+			x = x[0:len(TPN_matrix)]
 		default_x_ticks = range(len(TPN_matrix))
 		plt.xticks(default_x_ticks, x)
 		plt.yticks(default_x_ticks, x)
@@ -238,71 +242,157 @@ def plot_Confusion(TPN_matrix, labelFile, save_basename, Info):
 
 
 def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, t_TPN_matrix, t_y_true, t_y_pred, save_basename, labelFile, outputPath):
-	TPN_matrix = np.array(TPN_matrix)
-	nspecificity = TPN_matrix[1,1] / sum(TPN_matrix[1,:])
-	naccuracy = (TPN_matrix[0,0]  + TPN_matrix[1,1] ) / sum(sum(TPN_matrix))
-	nprecision  = (TPN_matrix[0,0]) / sum(TPN_matrix[:,0])
-	# print(y_pred[0])
-	nRecall_sensitivity = TPN_matrix[0,0] / sum(TPN_matrix[0,:])
-	F1score = 2 * (nprecision * nRecall_sensitivity) / (nprecision + nRecall_sensitivity)
-	FbalAcc = balanced_accuracy_score(y_true[0],y_pred[0])
+	TPN_matrix_full = np.array(TPN_matrix)
+	t_TPN_matrix_full = np.array(t_TPN_matrix)
+	nspecificity_avg =  0
+	naccuracy_avg = 0
+	nprecision_avg = 0
+	nRecall_sensitivity_avg = 0
+	F1score_avg = 0
+	FbalAcc_avg = 0
 
-	print("**default threshold**")
-	print("specificity: " + str(round(nspecificity,4)))
-	print("accuracy: " + str(round(naccuracy,4)))
-	print("precision: " + str(round(nprecision,4)))
-	print("recall/sensitivity: " + str(round(nRecall_sensitivity,4)))
-	print("F1score: " + str(round(F1score,4)))
-	print("balanced accuracy: " + str(round(FbalAcc,4)))
+	nspecificity_avg_norm = 0
+	naccuracy_avg_norm =  0
+	nprecision_avg_norm = 0
+	nRecall_sensitivity_avg_norm = 0
+	F1score_avg_norm = 0
+	FbalAcc_avg_norm = 0
+	for nCl in range(np.size(TPN_matrix_full,1)):
+		TPN_matrix = np.array([[0,0],[0,0]])
+		TPN_matrix[0,0] = TPN_matrix_full[nCl,nCl]
+		TPN_matrix[0,1] = sum(TPN_matrix_full[nCl,:]) - TPN_matrix[0,0]
+		TPN_matrix[1,0] = sum(TPN_matrix_full[:,nCl]) - TPN_matrix[0,0] 
+		TPN_matrix[1,1] = sum(sum(TPN_matrix_full)) -  sum(TPN_matrix[0,:]) - TPN_matrix[1,0]
+		TPN_matrix
+		nspecificity = TPN_matrix[1,1] / sum(TPN_matrix[1,:])
+		naccuracy = (TPN_matrix[0,0]  + TPN_matrix[1,1] ) / sum(sum(TPN_matrix))
+		nprecision  = (TPN_matrix[0,0]) / sum(TPN_matrix[:,0])
+		# print(y_pred[0])
+		nRecall_sensitivity = TPN_matrix[0,0] / sum(TPN_matrix[0,:])
+		F1score = 2 * (nprecision * nRecall_sensitivity) / (nprecision + nRecall_sensitivity)
+		FbalAcc = balanced_accuracy_score(y_true[0],y_pred[0])
+	
+		nspecificity_avg += nspecificity
+		naccuracy_avg += naccuracy
+		nprecision_avg += nprecision
+		nRecall_sensitivity_avg += nRecall_sensitivity
+		F1score_avg  += F1score
+		FbalAcc_avg += FbalAcc
 
-	nInfo = "specificity: " + str(round(nspecificity,4)) + "\n" +\
-		"accuracy: " + str(round(naccuracy,4))  + "\n" +\
-		"precision: " + str(round(nprecision,4)) + "\n" +\
-		"recall/sensitivity: " + str(round(nRecall_sensitivity,4)) + "\n" +\
-		"F1score: " + str(round(F1score,4)) + "\n" +\
-		"balanced accuracy: " + str(round(FbalAcc,4))
+		print("*** Class " + str(nCl+1) + "***")
+		print("**default threshold**")
+		print("specificity: " + str(round(nspecificity,4)))
+		print("accuracy: " + str(round(naccuracy,4)))
+		print("precision: " + str(round(nprecision,4)))
+		print("recall/sensitivity: " + str(round(nRecall_sensitivity,4)))
+		print("F1score: " + str(round(F1score,4)))
+		print("balanced accuracy: " + str(round(FbalAcc,4)))
+
+		nInfo = "specificity: " + str(round(nspecificity,4)) + "\n" +\
+			"accuracy: " + str(round(naccuracy,4))  + "\n" +\
+			"precision: " + str(round(nprecision,4)) + "\n" +\
+			"recall/sensitivity: " + str(round(nRecall_sensitivity,4)) + "\n" +\
+			"F1score: " + str(round(F1score,4)) + "\n" +\
+			"balanced accuracy: " + str(round(FbalAcc,4))
 
 
-	plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_ConfusionMat.png"), nInfo)
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat.png"), nInfo, nCl)
 
-	TPN_matrix = np.true_divide(TPN_matrix, TPN_matrix.sum(axis=1, keepdims=True))*100
-	TPN_matrix = TPN_matrix.round(decimals=2)
-	plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_ConfusionMat_percent.png"), nInfo)
+		TPN_matrix = np.true_divide(TPN_matrix, TPN_matrix.sum(axis=1, keepdims=True))*100
+		TPN_matrix = TPN_matrix.round(decimals=2)
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_percent.png"), nInfo, nCl)
 	
 
-	TPN_matrix = t_TPN_matrix
-	y_true = t_y_true
-	y_pred = t_y_pred
-	# print(y_pred[0])
-	TPN_matrix = np.array(TPN_matrix)
-	nspecificity = TPN_matrix[1,1] / sum(TPN_matrix[1,:])
-	naccuracy = (TPN_matrix[0,0]  + TPN_matrix[1,1] ) / sum(sum(TPN_matrix))
-	nprecision  = (TPN_matrix[0,0]) / sum(TPN_matrix[:,0])
-	nRecall_sensitivity = TPN_matrix[0,0] / sum(TPN_matrix[0,:])
-	F1score = 2 * (nprecision * nRecall_sensitivity) / (nprecision + nRecall_sensitivity)
-	FbalAcc = balanced_accuracy_score(y_true[0],y_pred[0])
+		#TPN_matrix = t_TPN_matrix
+		t_TPN_matrix = np.array([[0,0],[0,0]])
+		t_TPN_matrix[0,0] = t_TPN_matrix_full[nCl,nCl]
+		t_TPN_matrix[0,1] = sum(t_TPN_matrix_full[nCl,:]) - t_TPN_matrix[0,0]
+		t_TPN_matrix[1,0] = sum(t_TPN_matrix_full[:,nCl]) - t_TPN_matrix[0,0]
+		t_TPN_matrix[1,1] = sum(sum(t_TPN_matrix_full)) -  sum(t_TPN_matrix[0,:]) - t_TPN_matrix[1,0]
+		TPN_matrix = t_TPN_matrix
 
-	print("**chosen threshold**")
-	print("specificity: " + str(round(nspecificity,4)))
-	print("accuracy: " + str(round(naccuracy,4)))
-	print("precision: " + str(round(nprecision,4)))
-	print("recall/sensitivity: " + str(round(nRecall_sensitivity,4)))
-	print("F1score: " + str(round(F1score,4)))
-	print("balanced accuracy: " + str(round(FbalAcc,4)))
+		y_true = t_y_true
+		y_pred = t_y_pred
+		# print(y_pred[0])
+		TPN_matrix = np.array(TPN_matrix)
+		nspecificity = TPN_matrix[1,1] / sum(TPN_matrix[1,:])
+		naccuracy = (TPN_matrix[0,0]  + TPN_matrix[1,1] ) / sum(sum(TPN_matrix))
+		nprecision  = (TPN_matrix[0,0]) / sum(TPN_matrix[:,0])
+		nRecall_sensitivity = TPN_matrix[0,0] / sum(TPN_matrix[0,:])
+		F1score = 2 * (nprecision * nRecall_sensitivity) / (nprecision + nRecall_sensitivity)
+		FbalAcc = balanced_accuracy_score(y_true[0],y_pred[0])
 
-	nInfo = "specificity: " + str(round(nspecificity,4)) + "\n" +\
-		"accuracy: " + str(round(naccuracy,4))  + "\n" +\
-		"precision: " + str(round(nprecision,4)) + "\n" +\
-		"recall/sensitivity: " + str(round(nRecall_sensitivity,4)) + "\n" +\
-		"F1score: " + str(round(F1score,4)) + "\n" +\
-		"balanced accuracy: " + str(round(FbalAcc,4))
+                
+		nspecificity_avg_norm += nspecificity
+		naccuracy_avg_norm += naccuracy
+		nprecision_avg_norm += nprecision
+		nRecall_sensitivity_avg_norm += nRecall_sensitivity
+		F1score_avg_norm  += F1score
+		FbalAcc_avg_norm += FbalAcc
+
+		print("**chosen threshold**")
+		print("specificity: " + str(round(nspecificity,4)))
+		print("accuracy: " + str(round(naccuracy,4)))
+		print("precision: " + str(round(nprecision,4)))
+		print("recall/sensitivity: " + str(round(nRecall_sensitivity,4)))
+		print("F1score: " + str(round(F1score,4)))
+		print("balanced accuracy: " + str(round(FbalAcc,4)))
+
+		nInfo = "specificity: " + str(round(nspecificity,4)) + "\n" +\
+			"accuracy: " + str(round(naccuracy,4))  + "\n" +\
+			"precision: " + str(round(nprecision,4)) + "\n" +\
+			"recall/sensitivity: " + str(round(nRecall_sensitivity,4)) + "\n" +\
+			"F1score: " + str(round(F1score,4)) + "\n" +\
+			"balanced accuracy: " + str(round(FbalAcc,4))
+
+	
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_Normalized.png"), nInfo, nCl)
+	
+		TPN_matrix = np.true_divide(TPN_matrix, TPN_matrix.sum(axis=1, keepdims=True))*100
+		TPN_matrix = TPN_matrix.round(decimals=1)
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_Normalized_percent.png"), nInfo, nCl)
+
+	nspecificity_avg = nspecificity_avg / np.size(TPN_matrix_full,1)
+	nspecificity_avg_norm =  nspecificity_avg_norm / np.size(TPN_matrix_full,1)
+	naccuracy_avg = naccuracy_avg /  np.size(TPN_matrix_full,1)
+	naccuracy_avg_norm = naccuracy_avg_norm  /  np.size(TPN_matrix_full,1)
+	nprecision_avg = nprecision_avg / np.size(TPN_matrix_full,1)
+	nprecision_avg_norm = nprecision_avg_norm / np.size(TPN_matrix_full,1)
+	nRecall_sensitivity_avg = nRecall_sensitivity_avg  / np.size(TPN_matrix_full,1)
+	nRecall_sensitivity_avg_norm =  nRecall_sensitivity_avg_norm / np.size(TPN_matrix_full,1)
+	F1score_avg   =  F1score_avg /   np.size(TPN_matrix_full,1)
+	F1score_avg_norm  = F1score_avg_norm /  np.size(TPN_matrix_full,1)
+	FbalAcc_avg = FbalAcc_avg  / np.size(TPN_matrix_full,1)
+	FbalAcc_avg_norm = FbalAcc_avg_norm /  np.size(TPN_matrix_full,1)
+
+	nInfo = "specificity: " + str(round(nspecificity_avg,4)) + "\n" +\
+		"accuracy: " + str(round(naccuracy_avg,4))  + "\n" +\
+		"precision: " + str(round(nprecision_avg,4)) + "\n" +\
+		"recall/sensitivity: " + str(round(nRecall_sensitivity_avg,4)) + "\n" +\
+		"F1score: " + str(round(F1score_avg,4)) + "\n" +\
+		"balanced accuracy: " + str(round(FbalAcc_avg,4))
+
+	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat.png"), nInfo, -1)
+	TPN_matrix_full = np.true_divide(TPN_matrix_full, TPN_matrix_full.sum(axis=1, keepdims=True))*100
+	TPN_matrix_full = TPN_matrix_full.round(decimals=1)
+	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat_percent.png"), nInfo, -1)
 
 
-	plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_ConfusionMat_Normalized.png"), nInfo)
 
-	TPN_matrix = np.true_divide(TPN_matrix, TPN_matrix.sum(axis=1, keepdims=True))*100
-	TPN_matrix = TPN_matrix.round(decimals=1)
-	plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_ConfusionMat_Normalized_percent.png"), nInfo)
+	nInfo = "specificity: " + str(round(nspecificity_avg_norm,4)) + "\n" +\
+		"accuracy: " + str(round(naccuracy_avg_norm,4))  + "\n" +\
+		"precision: " + str(round(nprecision_avg_norm,4)) + "\n" +\
+		"recall/sensitivity: " + str(round(nRecall_sensitivity_avg_norm,4)) + "\n" +\
+		"F1score: " + str(round(F1score_avg_norm,4)) + "\n" +\
+		"balanced accuracy: " + str(round(FbalAcc_avg_norm,4))
+	
+	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm__ConfusionMat_Normalized.png"), nInfo, -1)
+	t_TPN_matrix_full = np.true_divide(t_TPN_matrix_full, t_TPN_matrix_full.sum(axis=1, keepdims=True))*100
+	t_TPN_matrix_full = t_TPN_matrix_full.round(decimals=1)
+	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized_percent.png"), nInfo, -1)
+
+
+
 
 
 if __name__ == '__main__':
