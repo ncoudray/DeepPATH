@@ -807,6 +807,11 @@ python 0f_ProbHistogram.py --output_dir='result folder' --tiles_stats='out_filen
 ```shell
 python ./00_preprocessing/0e_jpgtoHDF.py --input_path <input_folder> --output hdf5_TCGA_he_train.h5 --chunks 80 --sub_chunks 20 --wSize 224 --mode 0 --subset='combined' --mag 20 --label PAAD
 ```
+Requirements:
+* python 3.6.5
+* h5py 2.10
+* hdf5 1.10.8
+* openmpi/3.1.0-mt
 
 Options:
 * `mode`: Define what the `input_path` format is like:

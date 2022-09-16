@@ -172,40 +172,40 @@ def get_inference_from_file(lineProb_st):
 				cmap = make_colormap([c('white'), c('black')])
 			elif oClass == 2:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('red')])
+				cmap = make_colormap([c('white'), c('#FFB000')])
 			elif oClass == 3:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('orange')])
+				cmap = make_colormap([c('white'), c('#FE6100')])
 				# cmap = plt.get_cmap('Blues')
 			elif oClass == 4:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('blue')])
+				cmap = make_colormap([c('white'), c('cornflowerblue')])
 				# cmap = plt.get_cmap('Oranges')
 			elif oClass ==5:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('mediumorchid')])
+				cmap = make_colormap([c('white'), c('#DC267F')])
 			else:
 				cmap = plt.get_cmap('Greens')
 		elif FLAGS.project == '02_METliver':
 			if oClass == 1:
 				if len(class_all) == 2:
 					c = mcolors.ColorConverter().to_rgb
-					cmap = make_colormap([c('white'), c('red')])
+					cmap = make_colormap([c('white'), c('#FFB000')])
 				else:
 					cmap = plt.get_cmap('binary')
 			elif oClass == 2:
 				if len(class_all) == 2:
 					c = mcolors.ColorConverter().to_rgb
-					cmap = make_colormap([c('white'), c('blue')])
+					cmap = make_colormap([c('white'), c('cornflowerblue')])
 				else:
 					c = mcolors.ColorConverter().to_rgb
-					cmap = make_colormap([c('white'), c('blue')])
+					cmap = make_colormap([c('white'), c('cornflowerblue')])
 			elif oClass == 3:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('mediumorchid')])
+				cmap = make_colormap([c('white'), c('#DC267F')])
 			elif oClass == 4:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('red')])
+				cmap = make_colormap([c('white'), c('#FFB000')])
 			else:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('yellow')])
@@ -326,8 +326,13 @@ def Get_Binary_stats(bin_im):
 		rows = [[cTileRootName, str(round(c1/(c1+c3)*100,2)), str(round(Avg_Prob_Class1*100, 2)), str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Area), str(Each_Tumor_Mean_Dia)]]
 		csvwriter.writerows(rows)       
 	'''
-	fields = ['Nb_tumors', 'Nb_tumors_1000px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'Tumor_areas', 'Tumor_avg_diam'] 
-	rows = [str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Area), str(Each_Tumor_Mean_Dia)]
+
+
+	#fields = ['Nb_tumors', 'Nb_tumors_500px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'Tumor_areas', 'Tumor_avg_diam'] 
+	#rows = [str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 500).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Area), str(Each_Tumor_Mean_Dia)]
+	fields = ['Nb_tumors', 'Nb_tumors_500px_Dia_or_more', 'Nb_tumors_1000px_Dia_or_more', 'Nb_tumors_2000px_Dia_or_more', 'Nb_tumors_3000px_Dia_or_more', 'Nb_tumors_4000px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'Tumor_avg_diam', 'Tumor_areas']
+	rows = [str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 500).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 2000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 3000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 4000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Mean_Dia), str(Each_Tumor_Area)]
+
 	return fields, rows, sum(Each_Tumor_Area)
 
 def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide, dir_name, HeatMap_bin_or):
@@ -417,19 +422,19 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		elif FLAGS.project == '01_METbrain':
 			class_rgb = {}
 			class_rgb[0] = [0, 0, 0]
-			class_rgb[1] = [1.0, 0, 0]
-			class_rgb[2] = [1.0, 165.0/255.0, 0]
-			class_rgb[3] = [0, 0, 1.0]
-			class_rgb[4] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
+			class_rgb[1] = [255.0/255.0, 176.0/255.0, 0]
+			class_rgb[2] = [254.0/255.0, 97.0/255.0, 0]
+			class_rgb[3] = [100.0/255.0, 143.0/255.0, 1.0]
+			class_rgb[4] = [220.0/255.0, 38.0/255.0, 127.0/255.0]
 			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '02_METliver':
 			class_rgb = {}
 			# class_rgb[0] = [1.0, 0, 0]
 			# class_rgb[1] = [0, 0.0, 1.0]
 			class_rgb[0] = [0.0, 0, 0]
-			class_rgb[1] = [0, 0.0, 1.0]
-			class_rgb[2] = [186.0/255.0, 85.0/255.0, 211.0/255.0]
-			class_rgb[3] = [1,0,0]
+			class_rgb[1] = [100.0/255.0, 143.0/255.0, 1.0]
+			class_rgb[2] = [220.0/255.0, 38.0/255.0, 127.0/255.0]
+			class_rgb[3] = [255.0/255.0, 176.0/255.0, 0]
 			class_rgb[4] = [1, 1, 1]
 			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '03_OAS':
@@ -527,14 +532,34 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				rows.extend([str(x) for x in fields_val])
 				rows = [rows]
 			elif FLAGS.project == '01_METbrain':
-				if '2' and '3'  in FLAGS.combine.split(','):
-					fields = ['imageName', 'Tumor','Non_tumor']
-					csvwriter.writerow(fields)
-					rows = [[cTileRootName, str(round(cl1,1)+round(cl2,1)),str(round(cl3,1))]]
+				Indx_Tumor = 1
+				Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
+				ImStat1 = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
+				Indx_Tumor = 2
+				Avg_Prob_Class2 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
+				ImStat2 = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
+				Avg_Prob_Class12 = Avg_Prob_Class1 + Avg_Prob_Class2
+				fields2, rows2, TumorArea2 = Get_Binary_stats(ImStat1 + ImStat2)
+				if (cl1+cl2+cl3) == 0:
+					cl3p1 = 1
 				else:
-					fields = ['imageName', 'Intraparaenchymal','Leptomeningeal','Non tumor']
+					cl3p1 = cl1 + cl2 + cl3
+
+
+				if '2' and '3'  in FLAGS.combine.split(','):
+					fields = ['imageName', 'Tumor_area','Non_tumor_area','Percent_tumor', 'Avg_Tumor_Prob']
+					fields.extend(fields2)
 					csvwriter.writerow(fields)
-					rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1))]]
+					rows = [cTileRootName, str(round(cl1,0)+round(cl2,0)),str(round(cl3,1)),str(round(100*(cl1+cl2)/cl3p1,2)),str(round(Avg_Prob_Class12*100, 2))]
+					rows.extend(rows2)
+					rows = [rows]
+				else:
+					fields = ['imageName', 'Intraparaenchymal_area','Leptomeningeal_area','Non_tumor_area','Percent_tumor', 'Avg_Tumor_Prob']
+					fields.extend(fields2)
+					csvwriter.writerow(fields)
+					rows = [cTileRootName, str(round(cl1,0)),str(round(cl2,0)),str(round(cl3,1)),str(round(100*(cl1+cl2)/cl3p1,2)),str(round(Avg_Prob_Class12*100, 2))]
+					rows.extend(rows2)
+					rows = [rows]
 			elif FLAGS.project == '02_METliver':
 				Indx_Tumor = 3
 				Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
@@ -549,7 +574,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 					cl3p1 = 1
 				else:
 					cl3p1 = cl3 + cl1
-				rows = [cTileRootName, str(round(cl3,1)),str(round(cl1,1)), str(round(100*cl3/cl3p1,2)), str(round(Avg_Prob_Class1*100, 2))]
+				rows = [cTileRootName, str(round(cl3,0)),str(round(cl1,0)), str(round(100*cl3/cl3p1,2)), str(round(Avg_Prob_Class1*100, 2))]
 				rows.extend(rows2)
 				rows = [rows]
 			elif FLAGS.project == '03_OAS':
@@ -590,6 +615,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		if os.path.exists(filename_tmp):
 			os.remove(filename_tmp)
 		filename = os.path.join(heatmap_path,"heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_slide.jpg")
+		WholeSlide_0[HeatMap_divider_p0[:,:,0:3]==0] = 255
 		imsave(filename,np.swapaxes(WholeSlide_0,0,1))
 	skip = False
 	return skip

@@ -183,15 +183,15 @@ def _process_image(filename, coder):
     x = int(image.shape[1] / Factor);
     y = int(image.shape[0] / Factor);
     print(image.shape, int(y),int(x))
-    res = np.resize(image, (int(y),int(x),3))
-    if int(y)>0 and int(x)>0: 
-      image_data = cv2.imencode('.jpg', res)[1].tostring()
-    else:
-      print("0 size detected")
-      return 0, int(y),int(x)
-
-  # Decode the RGB JPEG.
-  image = coder.decode_jpeg(image_data)
+    image = np.resize(image, (int(y),int(x),3))
+    #if int(y)>0 and int(x)>0: 
+    #  image_data = cv2.imencode('.jpg', res)[1].tostring()
+    #else:
+    #  print("0 size detected")
+    #  return 0, int(y),int(x)
+  else:
+    # Decode the RGB JPEG.
+    image = coder.decode_jpeg(image_data)
 
   # Check that image converted to RGB
   assert len(image.shape) == 3

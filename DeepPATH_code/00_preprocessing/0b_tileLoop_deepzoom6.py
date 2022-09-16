@@ -1251,8 +1251,8 @@ if __name__ == '__main__':
             
 
 
-
-	# get  images from the data/ file.
+	print(slidepath)
+	# get  mages from the data/ file.
 	files = glob(slidepath)  
 	#ImgExtension = os.path.splitext(slidepath)[1]
 	ImgExtension = slidepath.split('.')[-1]
@@ -1261,8 +1261,8 @@ if __name__ == '__main__':
 	# print(args)
 	# print(args[0])
 	# print(slidepath)
-	# print(files)
-	# print("***********************")
+	print(files)
+	print("***********************")
 
 	'''
 	dz_queue = JoinableQueue()

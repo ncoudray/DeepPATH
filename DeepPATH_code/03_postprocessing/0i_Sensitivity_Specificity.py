@@ -386,7 +386,7 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 		"F1score: " + str(round(F1score_avg_norm,4)) + "\n" +\
 		"balanced accuracy: " + str(round(FbalAcc_avg_norm,4))
 	
-	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm__ConfusionMat_Normalized.png"), nInfo, -1)
+	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized.png"), nInfo, -1)
 	t_TPN_matrix_full = np.true_divide(t_TPN_matrix_full, t_TPN_matrix_full.sum(axis=1, keepdims=True))*100
 	t_TPN_matrix_full = t_TPN_matrix_full.round(decimals=1)
 	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized_percent.png"), nInfo, -1)

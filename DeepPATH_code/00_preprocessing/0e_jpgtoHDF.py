@@ -272,11 +272,14 @@ for j in range(0,sub_chunks):
        try:
            print(img, image.shape[0], pattern)
        except:
-           print("error:" + img)
+           print("error 1:" + img)
            # print(ImageList[sub_start:sub_end])
        if max(image.shape[0]/float(WIDTH), image.shape[1]/float(HEIGHT)) > 1:  
            nfac = 1./max(image.shape[0]/float(WIDTH), image.shape[1]/float(HEIGHT))
-           image = cv2.resize(image, (0,0), fx=nfac, fy=nfac)
+           try:
+                image = cv2.resize(image, (0,0), fx=nfac, fy=nfac)
+           except:
+                print("error 2:" + img + " " + str(nfac) + " " + str(image.shape[0]) + " " + str(image.shape[1]))
        if image.shape[0] > WIDTH:
            image = image[:WIDTH,:,:]
        if image.shape[1] > HEIGHT:
