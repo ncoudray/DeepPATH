@@ -147,7 +147,8 @@ class TileWorker(Process):
                     #check the percentage of the image with "information". Should be above 50%
                     gray = tile.convert('L')
                     img_grey = cv2.cvtColor(np.asarray(tile), cv2.COLOR_BGR2GRAY)
-                    St = img_grey.std()
+                    #St = img_grey.std()
+                    St = cv2.Canny(img_grey,1,255).std()
                     bw = gray.point(lambda x: 0 if x<230 else 1, 'F')
                     arr = np.array(np.asarray(bw))
                     avgBkg = np.average(bw)
@@ -1187,7 +1188,7 @@ if __name__ == '__main__':
 		help='Max background threshold [50]; percentager of background allowed')
 	parser.add_option('-D', '--Deviation', metavar='PIXELS', dest='Std',
 		type='float', default=0,
-		help='Alernate way to remove background tile based on standard deviation of the average grey level. If the Std if below this value, the tile is not saved (10 recommended)')
+		help='Alernate way to remove background tile based on standard deviation of the average grey level on the edge image. If the Std if below this value, the tile is not saved (5 to 20 recommended)')
 	parser.add_option('-x', '--xmlfile', metavar='NAME', dest='xmlfile',
 		help='path to xml file from Aperio annotation; json for QuPath')
 	parser.add_option('-F', '--Fieldxml', metavar='{Name|Value}', dest='Fieldxml',
@@ -1261,6 +1262,7 @@ if __name__ == '__main__':
 	# print(args)
 	# print(args[0])
 	# print(slidepath)
+	print("list of files:")
 	print(files)
 	print("***********************")
 

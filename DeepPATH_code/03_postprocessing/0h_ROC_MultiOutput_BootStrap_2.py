@@ -151,9 +151,15 @@ def main():
 		classesIDstr = FLAGS.combine.split(',')
 		classesID = [int(x) for x in classesIDstr]
 		classesID = sorted(classesID, reverse = True)
-		for nCl in classesID[:-1]:
-			unique_labels.pop(nCl-1)
+		#for nCl in classesID[:-1]:
+		#	unique_labels.pop(nCl-1)
 		# print(unique_labels)
+		NewID = ''
+		for nCl in classesID[:-1]:
+			NewID = NewID + '_' + unique_labels[nCl-1]
+			unique_labels.pop(nCl-1)
+		NewID = NewID + '_' + unique_labels[classesID[-1]-1]
+		unique_labels[classesID[-1]-1] = NewID
 
 
 	ref_file_data = {}
@@ -275,8 +281,8 @@ def main():
 			if FLAGS.combine is not '':
 				# print("combine classes - ")
 				# print(ExpectedProb)
-				#classesIDstr = FLAGS.combine.split(',')
-				#classesID = [int(x) for x in classesIDstr]
+				classesIDstr = FLAGS.combine.split(',')
+				classesID = [int(x) for x in classesIDstr]
 				classesID = sorted(classesID, reverse = False)
 				for nCl in classesID[1:]:
 					ExpectedProb[classesID[0]] = ExpectedProb[classesID[0]] + ExpectedProb[nCl]
@@ -588,6 +594,16 @@ def PrecisionRecall(y_score_in, y_ref_in, save_basename, n_classes, corr):
 	if os.path.exists(FLAGS.labels_names):
 		text_file = open(FLAGS.labels_names)
 		x = text_file.read().split('\n')
+		if FLAGS.combine is not '':
+			classesIDstr = FLAGS.combine.split(',')
+			classesID = [int(x) for x in classesIDstr]
+			classesID = sorted(classesID, reverse = True)
+			NewID = ''
+			for nCl in classesID[:-1]:
+				NewID = NewID + '_' + x[nCl-1]
+				x.pop(nCl-1)
+			NewID = NewID + '_' +x[classesID[-1]-1]
+			x[classesID[-1]-1] = NewID
 	else:
 		x = range(n_classes)
 	print("x:")
@@ -787,6 +803,16 @@ def ROCs(y_score_in, y_score_PcSelect_in, y_ref_in, save_basename, n_classes, co
 	if os.path.exists(FLAGS.labels_names):
 		text_file = open(FLAGS.labels_names)
 		x = text_file.read().split('\n')
+		if FLAGS.combine is not '':
+			classesIDstr = FLAGS.combine.split(',')
+			classesID = [int(x) for x in classesIDstr]
+			classesID = sorted(classesID, reverse = True)
+			NewID = ''
+			for nCl in classesID[:-1]:
+				NewID = NewID + '_' + x[nCl-1]
+				x.pop(nCl-1)
+			NewID = NewID + '_' + x[classesID[-1]-1]
+			x[classesID[-1]-1] = NewID
 		for i, color in zip(range(n_classes), colors):
 			plt.plot(
 			   fpr[i],

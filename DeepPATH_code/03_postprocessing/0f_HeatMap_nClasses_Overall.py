@@ -166,26 +166,30 @@ def get_inference_from_file(lineProb_st):
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('black')])
 		elif FLAGS.project == '01_METbrain':
-			if oClass == 1:
-				# cmap = plt.get_cmap('binary')
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('black')])
-			elif oClass == 2:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('#FFB000')])
-			elif oClass == 3:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('#FE6100')])
-				# cmap = plt.get_cmap('Blues')
-			elif oClass == 4:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('cornflowerblue')])
-				# cmap = plt.get_cmap('Oranges')
-			elif oClass ==5:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('#DC267F')])
-			else:
-				cmap = plt.get_cmap('Greens')
+			if True:
+				if oClass == 1:
+					# cmap = plt.get_cmap('binary')
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('black')])
+				elif oClass == 2:
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('#FFB000')])
+				elif oClass == 3:
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('#FE6100')])
+					# cmap = plt.get_cmap('Blues')
+				elif oClass == 4:
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('cornflowerblue')])
+					# cmap = plt.get_cmap('Oranges')
+					# which is #6495ED
+				elif oClass ==5:
+					c = mcolors.ColorConverter().to_rgb
+					cmap = make_colormap([c('white'), c('#785EF0')])
+					# #DC267F
+					# or Candy grape fizz #785EF0
+				else:
+					cmap = plt.get_cmap('Greens')
 		elif FLAGS.project == '02_METliver':
 			if oClass == 1:
 				if len(class_all) == 2:
@@ -202,7 +206,7 @@ def get_inference_from_file(lineProb_st):
 					cmap = make_colormap([c('white'), c('cornflowerblue')])
 			elif oClass == 3:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('#DC267F')])
+				cmap = make_colormap([c('white'), c('#785EF0')])
 			elif oClass == 4:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('#FFB000')])
@@ -283,13 +287,13 @@ def get_inference_from_file(lineProb_st):
 
 
 def Get_Binary_stats(bin_im):
-	print(bin_im)
-	imsave('bin_im.jpeg',bin_im)
-	print(np.array(np.uint8(bin_im)))
-	imsave('bin_imA8.jpeg',np.uint8(bin_im))
+	#print(bin_im)
+	#imsave('bin_im.jpeg',bin_im)
+	#print(np.array(np.uint8(bin_im)))
+	#imsave('bin_imA8.jpeg',np.uint8(bin_im))
 	# t, b_tmp= cv2.threshold(np.array(np.uint8(bin_im)),1,255,cv2.THRESH_BINARY_INV)
 	t, b_tmp= cv2.threshold(np.uint8(bin_im)*255,128,255,cv2.THRESH_BINARY)
-	imsave('b_tmp.jpeg',b_tmp)
+	#imsave('b_tmp.jpeg',b_tmp)
 	a, contours,b = cv2.findContours(b_tmp,cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 	Each_Tumor_Area = []
 	Each_Tumor_Mean_Dia = []
@@ -329,8 +333,8 @@ def Get_Binary_stats(bin_im):
 
 
 	#fields = ['Nb_tumors', 'Nb_tumors_500px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'Tumor_areas', 'Tumor_avg_diam'] 
-	#rows = [str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 500).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Area), str(Each_Tumor_Mean_Dia)]
-	fields = ['Nb_tumors', 'Nb_tumors_500px_Dia_or_more', 'Nb_tumors_1000px_Dia_or_more', 'Nb_tumors_2000px_Dia_or_more', 'Nb_tumors_3000px_Dia_or_more', 'Nb_tumors_4000px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'Tumor_avg_diam', 'Tumor_areas']
+	#rows = [str(Nb_Tumor), str((np.asarray(Eiach_Tumor_Mean_Dia) > 500).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Area), str(Each_Tumor_Mean_Dia)]
+	fields = ['Nb_tumors', 'Nb_tumors_500px_Dia_or_more', 'Nb_tumors_1000px_Dia_or_more', 'Nb_tumors_2000px_Dia_or_more', 'Nb_tumors_3000px_Dia_or_more', 'Nb_tumors_4000px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'List_of_tumor_diameter', 'List_of_tumor_areas']
 	rows = [str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 500).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 2000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 3000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 4000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Mean_Dia), str(Each_Tumor_Area)]
 
 	return fields, rows, sum(Each_Tumor_Area)
@@ -425,7 +429,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[1] = [255.0/255.0, 176.0/255.0, 0]
 			class_rgb[2] = [254.0/255.0, 97.0/255.0, 0]
 			class_rgb[3] = [100.0/255.0, 143.0/255.0, 1.0]
-			class_rgb[4] = [220.0/255.0, 38.0/255.0, 127.0/255.0]
+			# class_rgb[4] = [220.0/255.0, 38.0/255.0, 127.0/255.0]
+			class_rgb[4] = [120.0/255.0, 94.0/255.0, 240.0/255.0]
 			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '02_METliver':
 			class_rgb = {}
@@ -433,7 +438,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			# class_rgb[1] = [0, 0.0, 1.0]
 			class_rgb[0] = [0.0, 0, 0]
 			class_rgb[1] = [100.0/255.0, 143.0/255.0, 1.0]
-			class_rgb[2] = [220.0/255.0, 38.0/255.0, 127.0/255.0]
+			class_rgb[2] = [120.0/255.0, 94.0/255.0, 240.0/255.0]
+			#class_rgb[2] = [220.0/255.0, 38.0/255.0, 127.0/255.0]
 			class_rgb[3] = [255.0/255.0, 176.0/255.0, 0]
 			class_rgb[4] = [1, 1, 1]
 			class_rgb[5] = [0, 0, 0]
@@ -547,14 +553,14 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 
 
 				if '2' and '3'  in FLAGS.combine.split(','):
-					fields = ['imageName', 'Tumor_area','Non_tumor_area','Percent_tumor', 'Avg_Tumor_Prob']
+					fields = ['imageName', 'Tumor_area','Non_tumor_area','Tumor_percentage', 'Tumor_avg_probability']
 					fields.extend(fields2)
 					csvwriter.writerow(fields)
 					rows = [cTileRootName, str(round(cl1,0)+round(cl2,0)),str(round(cl3,1)),str(round(100*(cl1+cl2)/cl3p1,2)),str(round(Avg_Prob_Class12*100, 2))]
 					rows.extend(rows2)
 					rows = [rows]
 				else:
-					fields = ['imageName', 'Intraparaenchymal_area','Leptomeningeal_area','Non_tumor_area','Percent_tumor', 'Avg_Tumor_Prob']
+					fields = ['imageName', 'Intraparaenchymal_area','Leptomeningeal_area','Non_tumor_area','Tumor_percentage', 'Tumor_avg_probability']
 					fields.extend(fields2)
 					csvwriter.writerow(fields)
 					rows = [cTileRootName, str(round(cl1,0)),str(round(cl2,0)),str(round(cl3,1)),str(round(100*(cl1+cl2)/cl3p1,2)),str(round(Avg_Prob_Class12*100, 2))]
@@ -567,7 +573,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
 				fields2, rows2, TumorArea2 = Get_Binary_stats(ImStat)
 				# ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor]
-				fields = ['imageName', 'Tumor_area1','Non_tumor_area','Percent_tumor', 'Avg_Tumor_Prob']
+				fields = ['imageName', 'Tumor_area','Non_tumor_area','Tumor_percentage', 'Tumor_avg_probability']
 				fields.extend(fields2)
 				csvwriter.writerow(fields)
 				if (cl3+cl1) == 0:

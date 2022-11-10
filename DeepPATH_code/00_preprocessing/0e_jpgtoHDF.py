@@ -72,6 +72,11 @@ parser.add_argument("--mag", type=float, default=2.016,
                         help="magnification to use (mode 0 and 1 only)")
 parser.add_argument("--label", type=str, default='',
                         help="label to use (mode 0 only); either a string or a filepath with labels")
+parser.add_argument("--slideID", type=int, default='23',
+                        help="number of characters to use for the slide ID")
+parser.add_argument("--sampleID", type=int, default='14',
+                        help="number of characters to use for the sample (or patient) ID")
+
 
 
 
@@ -189,6 +194,8 @@ dset4 = f.create_dataset(args.subset+'_tiles', (len(ImageList), ),
 dset5 = f.create_dataset(args.subset+'_labels', (len(ImageList), ))
 dset6 = f.create_dataset(args.subset+'_hist_subtype', (len(ImageList), ),
                          dtype = 'S37')
+dset7 = f.create_dataset(args.subset+'_samples', (len(ImageList), ),
+                         dtype = 'S23')
 
 
 # size of the chunks
@@ -239,6 +246,7 @@ for j in range(0,sub_chunks):
    loadedSlides = []
    loadedTiles = []
    loadedLabels = []
+   loadedSamples = []
    for i, img in enumerate(ImageList[sub_start:sub_end]):
        #print(img)
        #print(os.stat(img).st_size)
@@ -285,6 +293,8 @@ for j in range(0,sub_chunks):
        if image.shape[1] > HEIGHT:
            image =image[:,:HEIGHT,:]
        image = np.uint8(image)
+       sample = slide[:args.sampleID]
+       slide = slide[:args.slideID]
        #print("shape:")
        #print(image.shape[0], WIDTH, image.shape[1], HEIGHT)
        if image.shape[0] == WIDTH and image.shape[1] == HEIGHT:
@@ -292,6 +302,7 @@ for j in range(0,sub_chunks):
            loadedPatterns.append(pattern)
            loadedSlides.append(slide)
            loadedTiles.append(tile)
+           loadedSamples.append(sample)
            try:
               loadedLabels.append(patterns1.index(pattern))
            except:
@@ -318,6 +329,8 @@ for j in range(0,sub_chunks):
            loadedSlides.append(slide)
            loadedTiles.append(tile)
            loadedLabels.append(patterns1.index(pattern))
+           loadedSamples.append(sample)
+
    print("***********" + str(rank) + "; " + str(sub_chunks) + "; "  + str(j) + "; "  + str(sub_chunk_size) + " to " + str(len(loadedImages)))
    # print(sub_chunks)
    # print(j)
@@ -330,6 +343,7 @@ for j in range(0,sub_chunks):
    #tile_stack =  np.stack(loadedTiles, axis=0).astype('S9')
    tile_stack =  np.stack(loadedTiles, axis=0).astype('S16')
    labels_stack = np.stack(loadedLabels, axis=0)
+   sample_stack = np.stack(loadedSamples, axis=0).astype('S23')
 
 
    dset[sub_start:sub_end, ...] = image_stack
@@ -338,6 +352,7 @@ for j in range(0,sub_chunks):
    dset4[sub_start:sub_end, ...] = tile_stack
    dset5[sub_start:sub_end, ...] = labels_stack
    dset6[sub_start:sub_end, ...] = pattern_stack
+   dset7[sub_start:sub_end, ...] = sample_stack
 
 # print("closing:")
 # len(dset)

@@ -241,9 +241,10 @@ def _process_image(filename, coder, flipRot):
     Factor = max(image.shape[0], image.shape[1]) / FLAGS.rescale;
     x = int(image.shape[1] / Factor);
     y = int(image.shape[0] / Factor);
-    res = np.resize(image, (int(y),int(x),3))
+    # res = np.resize(image, (int(y),int(x),3))
     print(image.shape, int(y),int(x))
-    image_data = cv2.imencode('.jpg', res)[1].tostring()    
+    # image_data = cv2.imencode('.jpg', res)[1].tostring()    
+    image = np.resize(image, (int(y),int(x),3))
 
 
   # Decode the RGB JPEG.

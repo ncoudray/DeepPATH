@@ -54,6 +54,18 @@ def main(args):
                                 lineProb = lineProb.split(']')[0]
                                 lineProb = lineProb.split()
                                 lineProb = [float(x) for x in lineProb]
+                                if args.combine is not '':
+                                	#print("***")
+                                	#print(lineProb)
+                                	classesIDstr = args.combine.split(',')
+                                	classesID = [int(x) for x in classesIDstr]
+                                	classesID = sorted(classesID, reverse = False)
+                                	for nCl in classesID[1:]:
+                                		lineProb[classesID[0]] = lineProb[classesID[0]] + lineProb[nCl]
+                                	classesID = sorted(classesID, reverse = True)
+                                	for nCl in classesID[:-1]:
+                                		lineProb.pop(nCl)
+                                	#print(lineProb)
                                 stats_dict[cTileRootName]['tiles'][tilename] = [str(ixTile), str(iyTile), lineProb, lineProb.index(max(lineProb)), int(line2[-1])]
 
 #balanced_accuracy_score(y_true = , y_pred= )
@@ -107,7 +119,13 @@ def main(args):
 			PerPatientData[nslide[:PatientID]]['Sum_Labels'] = [0 for x in range(len(lineProb))]
 		sum_Labels = [0 for x in range(len(lineProb))]
 		for ntile in stats_dict[nslide]['tiles'].keys():
-			true_label = stats_dict[nslide]['tiles'][ntile][-1] - 1 
+			print("***")
+			true_label = stats_dict[nslide]['tiles'][ntile][-1] - 1
+			print(true_label)
+			if args.combine is not '':
+				true_label = true_label - (np.asarray(classesID[:-1])<=true_label).sum()
+			print(true_label)
+
 			assigned_label = stats_dict[nslide]['tiles'][ntile][-3]
 			for nkk in range(len(lineProb)):
 				sum_Labels[nkk] = sum_Labels[nkk] + assigned_label[nkk]
@@ -133,8 +151,8 @@ def main(args):
 				t_assigned_label =    stats_dict[nslide]['tiles'][ntile][-2]-1
 
 			assigned_label = assigned_label.index(max(assigned_label)) - 1
-			# print(true_label, assigned_label, t_assigned_label)
-			# print(TPN_matrix_Til)
+			#print(true_label, assigned_label, t_assigned_label)
+			#print(TPN_matrix_Til)
 			TPN_matrix_Til[true_label][assigned_label] = TPN_matrix_Til[true_label][assigned_label] + 1
 			y_true_perTil[0].append( true_label )
 			y_pred_perTil[0].append( assigned_label )
@@ -198,13 +216,13 @@ def main(args):
 #balanced_accuracy_score(y_true = , y_pred= )
 
 	print("************* PER TILE *************")
-	compute_stats(TPN_matrix_Til, y_true_perTil, y_pred_perTil, lineProb, stats_dict, nthreshold, t_TPN_matrix_Til, t_y_true_perTil, t_y_pred_perTil, 'out1', args.labelFile, args.outputPath)
+	compute_stats(TPN_matrix_Til, y_true_perTil, y_pred_perTil, lineProb, stats_dict, nthreshold, t_TPN_matrix_Til, t_y_true_perTil, t_y_pred_perTil, 'out1', args.labelFile, args.outputPath, args.combine)
 	print("************* PER SLIDE *************")
-	compute_stats(TPN_matrix_Sli, y_true_perSli, y_pred_perSli, lineProb, stats_dict, nthreshold, t_TPN_matrix_Sli, t_y_true_perSli, t_y_pred_perSli, 'out2', args.labelFile, args.outputPath)
+	compute_stats(TPN_matrix_Sli, y_true_perSli, y_pred_perSli, lineProb, stats_dict, nthreshold, t_TPN_matrix_Sli, t_y_true_perSli, t_y_pred_perSli, 'out2', args.labelFile, args.outputPath, args.combine)
 	print("************* PER PATIENT  *************")
-	compute_stats(TPN_matrix_Pat, y_true_perPat, y_pred_perPat, lineProb, stats_dict, nthreshold, t_TPN_matrix_Pat, t_y_true_perPat, t_y_pred_perPat, 'out3', args.labelFile, args.outputPath)
+	compute_stats(TPN_matrix_Pat, y_true_perPat, y_pred_perPat, lineProb, stats_dict, nthreshold, t_TPN_matrix_Pat, t_y_true_perPat, t_y_pred_perPat, 'out3', args.labelFile, args.outputPath, args.combine)
 
-def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass):
+def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass,  combine):
 	font = {'family' : 'Times New Roman',
 	'weight' : 'medium',
 	'size'   : 8}
@@ -223,6 +241,16 @@ def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass):
 	if os.path.exists(labelFile):
 		text_file = open(labelFile)
 		x = text_file.read().split('\n')
+		if combine is not '':
+			classesIDstr = combine.split(',')
+			classesID = [int(x) for x in classesIDstr]
+			classesID = sorted(classesID, reverse = True)
+			NewID = ''
+			for nCl in classesID[:-1]:
+				NewID = NewID + '_' + x[nCl-1]
+				x.pop(nCl-1)
+			NewID = NewID + '_' + x[classesID[-1]-1]
+			x[classesID[-1]-1] = NewID
 		if nClass >= 0:
 			x = [x[nClass], "all_other_classes"] 
 		else:
@@ -241,7 +269,7 @@ def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass):
 
 
 
-def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, t_TPN_matrix, t_y_true, t_y_pred, save_basename, labelFile, outputPath):
+def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, t_TPN_matrix, t_y_true, t_y_pred, save_basename, labelFile, outputPath, combine):
 	TPN_matrix_full = np.array(TPN_matrix)
 	t_TPN_matrix_full = np.array(t_TPN_matrix)
 	nspecificity_avg =  0
@@ -296,11 +324,11 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 			"balanced accuracy: " + str(round(FbalAcc,4))
 
 
-		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat.png"), nInfo, nCl)
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat.png"), nInfo, nCl, combine)
 
 		TPN_matrix = np.true_divide(TPN_matrix, TPN_matrix.sum(axis=1, keepdims=True))*100
 		TPN_matrix = TPN_matrix.round(decimals=2)
-		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_percent.png"), nInfo, nCl)
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_percent.png"), nInfo, nCl, combine)
 	
 
 		#TPN_matrix = t_TPN_matrix
@@ -346,11 +374,11 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 			"balanced accuracy: " + str(round(FbalAcc,4))
 
 	
-		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_Normalized.png"), nInfo, nCl)
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_Normalized.png"), nInfo, nCl, combine)
 	
 		TPN_matrix = np.true_divide(TPN_matrix, TPN_matrix.sum(axis=1, keepdims=True))*100
 		TPN_matrix = TPN_matrix.round(decimals=1)
-		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_Normalized_percent.png"), nInfo, nCl)
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_Normalized_percent.png"), nInfo, nCl, combine)
 
 	nspecificity_avg = nspecificity_avg / np.size(TPN_matrix_full,1)
 	nspecificity_avg_norm =  nspecificity_avg_norm / np.size(TPN_matrix_full,1)
@@ -372,10 +400,10 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 		"F1score: " + str(round(F1score_avg,4)) + "\n" +\
 		"balanced accuracy: " + str(round(FbalAcc_avg,4))
 
-	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat.png"), nInfo, -1)
+	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat.png"), nInfo, -1, combine)
 	TPN_matrix_full = np.true_divide(TPN_matrix_full, TPN_matrix_full.sum(axis=1, keepdims=True))*100
 	TPN_matrix_full = TPN_matrix_full.round(decimals=1)
-	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat_percent.png"), nInfo, -1)
+	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat_percent.png"), nInfo, -1, combine)
 
 
 
@@ -386,10 +414,10 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 		"F1score: " + str(round(F1score_avg_norm,4)) + "\n" +\
 		"balanced accuracy: " + str(round(FbalAcc_avg_norm,4))
 	
-	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized.png"), nInfo, -1)
+	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized.png"), nInfo, -1, combine)
 	t_TPN_matrix_full = np.true_divide(t_TPN_matrix_full, t_TPN_matrix_full.sum(axis=1, keepdims=True))*100
 	t_TPN_matrix_full = t_TPN_matrix_full.round(decimals=1)
-	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized_percent.png"), nInfo, -1)
+	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized_percent.png"), nInfo, -1, combine)
 
 
 
@@ -426,6 +454,12 @@ if __name__ == '__main__':
       type=str,
       default='',
       help="Path to save output files"
+  )
+  parser.add_argument(
+      '--combine',
+      type=str,
+      default='',
+      help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1'
   )
 
 

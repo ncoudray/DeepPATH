@@ -5,6 +5,7 @@ import argparse
 import matplotlib.image as mpimg
 import glob
 from matplotlib import cm
+import numpy as np
 
 parser = argparse.ArgumentParser()
 
@@ -38,6 +39,12 @@ parser.add_argument(
       default='',
       help="Path to tiled svs"
 )
+parser.add_argument(
+      '--combine',
+      type=str,
+      default='',
+      help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1'
+)
 args = parser.parse_args()
 
 
@@ -54,6 +61,18 @@ print(AllLabels)
 if AllLabels[-1]=='':
 	AllLabels = AllLabels[:-1]
 
+if args.combine is not '':
+	classesIDstr = args.combine.split(',')
+	classesID = [int(x)+1 for x in classesIDstr]
+	classesID = sorted(classesID, reverse = True)
+	NewID = ''
+	for nCl in classesID[:-1]:
+		NewID = NewID + '_' + AllLabels[nCl-1]
+		AllLabels.pop(nCl-1)
+	NewID = NewID + '_' + AllLabels[classesID[-1]-1]
+	AllLabels[classesID[-1]-1] = NewID
+print(AllLabels)
+	
 slideN = []
 TileN = []
 SlideTileN = []
@@ -84,6 +103,17 @@ with open(tiles_stats) as f:
 			slideN.extend([cTileRootName])
 			TileN.extend([str(ixTile) + "_" + str(iyTile)])			
 			SlideTileN.extend([tilename])
+			# print(lineProb)
+			if args.combine is not '':
+				classesIDstr = args.combine.split(',')
+				classesID = [int(x) for x in classesIDstr]
+				classesID = sorted(classesID, reverse = False)
+				for nCl in classesID[1:]:
+					lineProb[classesID[0]] = str(float(lineProb[classesID[0]]) + float(lineProb[nCl]))
+				classesID = sorted(classesID, reverse = True)
+				for nCl in classesID[:-1]:
+					lineProb.pop(nCl)
+				# print(lineProb)
 			for kk in range(len(AllLabels)):
 			        Probs[kk].append(float(lineProb[kk]))
 			#Probs[0].append(float(lineProb[0]))
@@ -91,7 +121,12 @@ with open(tiles_stats) as f:
 			#Probs[2].append(float(lineProb[2]))
 			#Probs[3].append(float(lineProb[3]))
 			#Probs[4].append(float(lineProb[4]))
-			TrueLabel.append(int(line2[-1]))
+			if args.combine is not '':
+				true_label = int(line2[-1])
+				true_label = true_label - (np.asarray(classesID[:-1])<=true_label).sum()
+				TrueLabel.append(int(true_label))
+			else:
+				TrueLabel.append(int(line2[-1]))
 
 
 
@@ -138,6 +173,7 @@ for RefLabel in range(1, len(AllLabels)):
 			tilename = os.path.join(imagePath,  slidename + '_files', Mag,  tileNumber + '.jpeg')
 			if  not os.path.exists(tilename):
 				tilename = os.path.join(imagePath, '*',  slidename + '_files', Mag,  tileNumber + '.jpeg')
+				print(tilename)
 				tilename = glob.glob(tilename)[0]
 			#print(tilename)
 			SProb = df_sorted[eachLabel][row]
@@ -146,7 +182,7 @@ for RefLabel in range(1, len(AllLabels)):
 				SlideCount[slidename] = SlideCount[slidename] + 1
 			else:
 				SlideCount[slidename] = 1
-			if SlideCount[slidename] > 6:
+			if SlideCount[slidename] > 10:
 				continue
 			elif  os.path.exists(tilename):
 				image_datas[ImgNb] = mpimg.imread(tilename)

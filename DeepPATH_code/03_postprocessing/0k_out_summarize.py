@@ -34,7 +34,19 @@ def main(args):
 			for eachline in line:
 				if len(eachline)>0:
 					unique_labels.append(eachline)
-
+	if args.combine is not '':
+		classesIDstr = args.combine.split(',')
+		classesID = [int(x) for x in classesIDstr]
+		classesID = sorted(classesID, reverse = True)
+		NewID = ''
+		for nCl in classesID[:-1]:
+			NewID = NewID + '_' + unique_labels[nCl-1]
+			unique_labels.pop(nCl-1)
+		NewID = NewID + '_' + unique_labels[classesID[-1]-1]
+		unique_labels[classesID[-1]-1] = NewID
+		Labadd = 'comb' + ''.join(args.combine.split(','))
+	else:
+		Labadd = ''
 	input_folders = args.input_folders
 	nOut = args.out
 	allIn = glob.glob(input_folders)
@@ -141,7 +153,7 @@ def main(args):
 		ax2 = plt.subplot(2, 1,2)
 		plt.axis('off')
 		ax2.legend(handles=handles, labels=labels,  loc="lower right", fontsize=6)
-		plt.savefig(os.path.join(args.out + "_" + input_folders.replace("*", "_") + 'avg_roc_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
+		plt.savefig(os.path.join(Labadd + "_" + args.out + "_" + input_folders.replace("*", "_") + 'avg_roc_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
 		fig = plt.figure(figsize=(3, 6))
 		ax = plt.subplot(2, 1,1)
 		colors = cycle(["black", "black", "gray", "gray","lightgray"])
@@ -185,7 +197,7 @@ def main(args):
 		ax2 = plt.subplot(2, 1,2)
 		plt.axis('off')
 		ax2.legend(handles=handles, labels=labels,  loc="lower right", fontsize=6)
-		plt.savefig(os.path.join(args.out + "_" + input_folders.replace("*", "_") + 'avg_PR_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
+		plt.savefig(os.path.join(Labadd + "_" + args.out + "_" + input_folders.replace("*", "_") + 'avg_PR_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
 
 
 
@@ -216,6 +228,13 @@ if __name__ == '__main__':
       default=None,
       help='Selected iteration (max by default)'
   )
+  parser.add_argument(
+      '--combine',
+      type=str,
+      default='',
+      help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1 - to be used IF classes were already combined in the input directories (only the labels will be combined here)'
+  )
+
 
   args = parser.parse_args()
   main(args)
