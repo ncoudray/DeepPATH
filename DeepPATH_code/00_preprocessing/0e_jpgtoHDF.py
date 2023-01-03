@@ -270,7 +270,8 @@ for j in range(0,sub_chunks):
        if args.mode == 2:
            pattern = img.split("/")[-2]
            slide_tmp = img.split("/")[-1]
-           slide = slide_tmp.split("_")[1]
+           #slide = slide_tmp.split("_")[1]
+           slide = "_".join(slide_tmp.split("_")[1:-2])
            tile = "_".join(slide_tmp.split("_")[-2:])
        side = slide + "_" + pattern
        #pattern = img.split("/")[9]

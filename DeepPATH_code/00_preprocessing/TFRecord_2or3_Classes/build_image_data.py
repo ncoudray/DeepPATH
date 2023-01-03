@@ -79,7 +79,8 @@ import threading
 import cv2
 from scipy.ndimage import rotate
 import scipy.interpolate as interp
-
+from skimage.color import rgb2hed, hed2rgb
+from fractions import gcd
 
 import numpy as np
 import tensorflow as tf
@@ -107,6 +108,16 @@ tf.app.flags.DEFINE_integer('MaxNbImages', -1,
 tf.app.flags.DEFINE_integer('rescale', 0,
 			    'If you want the images to be rescaled to a certain dimension (299 for example), write the target size in rescale')
 
+tf.app.flags.DEFINE_float('hed', 0,
+                         'Color augmentation if hed > 0')
+
+tf.app.flags.DEFINE_float('hed_pc', 0.5,
+                         'Proportion of tiles for which color augmentation should be applied')
+
+tf.app.flags.DEFINE_integer('version', 0,
+                            'replace with 1 for projects before December 2022; put 2 otherwise for new projects (prevent tenforflow from reading image as BGR instead of RGB')
+
+
 
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
@@ -119,6 +130,30 @@ tf.app.flags.DEFINE_integer('rescale', 0,
 
 
 FLAGS = tf.app.flags.FLAGS
+FLAGS_div = gcd(100,round(FLAGS.hed_pc*100))
+
+def random_color(image):
+  # inspired from https://www.biorxiv.org/content/10.1101/2022.05.17.492245v1.full
+  nlim = FLAGS.hed
+  nmult = [random.uniform(-nlim, nlim), random.uniform(-nlim, nlim), random.uniform(-nlim, nlim)]
+  nadd = [random.uniform(-nlim, nlim), random.uniform(-nlim, nlim), random.uniform(-nlim, nlim)]
+  ihc_hed = rgb2hed(image)
+  # Augment the Haematoxylin channel.
+  ihc_hed[:, :, 0] *= 1.0 + nmult[0]
+  ihc_hed[:, :, 0] += nadd[0]
+  # Augment the Eosin channel.
+  ihc_hed[:, :, 1] *= 1.0 + nmult[1]
+  ihc_hed[:, :, 1] += nadd[1]
+  #  Augment the DAB channel.
+  ihc_hed[:, :, 2] *= 1.0 + nmult[2]
+  ihc_hed[:, :, 2] += nadd[2]
+  # Convert back to RGB color coding.
+  patch_rgb = hed2rgb(hed=ihc_hed)
+  patch_transformed = np.clip(a=patch_rgb, a_min=0.0, a_max=1.0)
+  patch_transformed *= 255.0
+  patch_transformed = patch_transformed.astype(dtype=np.uint8)
+  # cv2.imwrite(str(kk)+"bright.jpg",patch_transformed)
+  return patch_transformed
 
 
 def _int64_feature(value):
@@ -189,7 +224,17 @@ class ImageCoder(object):
                            feed_dict={self._decode_jpeg_data: image_data})
     assert len(image.shape) == 3
     assert image.shape[2] == 3
-    return image
+
+    if FLAGS.version == 1:
+      return image
+    elif FLAGS.version == 2:
+       return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    else:
+       print("ERROR: version flag must be explicetely set to 1 or 2")
+       return "error"
+    #return image
+    # return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    #tf2 swaps channels colors....
 
 
 def _is_png(filename):
@@ -204,7 +249,7 @@ def _is_png(filename):
   return '.png' in filename
 
 
-def _process_image(filename, coder, flipRot):
+def _process_image(filename, coder, flipRot, indx):
   """Process a single image file.
 
   Args:
@@ -225,9 +270,9 @@ def _process_image(filename, coder, flipRot):
   #  print('Converting PNG to JPEG for %s' % filename)
   #  image_data = coder.png_to_jpeg(image_data)
 
-  print(filename)
-  print("flipRot:")
-  print(flipRot)
+  #print(filename)
+  #print("flipRot:")
+  #print(flipRot)
   # Rot_Mir = False
   # image = coder.decode_jpeg(image_data)
   if flipRot > 0:
@@ -235,7 +280,7 @@ def _process_image(filename, coder, flipRot):
     rotate_img = rotate(image, 90 * (flipRot%4))
     if flipRot > 3:
       rotate_img = np.flipud(rotate_img)
-      image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
+    image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
   if FLAGS.rescale > 0:
     image = coder.decode_jpeg(image_data)
     Factor = max(image.shape[0], image.shape[1]) / FLAGS.rescale;
@@ -245,7 +290,12 @@ def _process_image(filename, coder, flipRot):
     print(image.shape, int(y),int(x))
     # image_data = cv2.imencode('.jpg', res)[1].tostring()    
     image = np.resize(image, (int(y),int(x),3))
-
+    image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
+  #gcd(100,round(FLAGS.hed_pc*100))
+  if (FLAGS.hed > 0)  & ( (indx%(100/FLAGS_div)) < (FLAGS.hed_pc*100/FLAGS_div)):
+    image = coder.decode_jpeg(image_data)
+    image = random_color(image)
+    image_data = cv2.imencode('.jpg', image)[1].tostring()
 
   # Decode the RGB JPEG.
   image = coder.decode_jpeg(image_data)
@@ -305,7 +355,7 @@ def _process_image_files_batch(coder, thread_index, ranges, name, filenames,
 #      image_buffer = tf.gfile.FastGFile(filename, 'r').read()
 #      height, width = image_reader.read_image_dims(tf.Session(''), image_buffer)
 
-      image_buffer, height, width = _process_image(filename, coder, flipRoti)
+      image_buffer, height, width = _process_image(filename, coder, flipRoti, i)
 #      try:
 #        image_buffer, height, width = _process_image(filename, coder)
 #      except Exception as e:

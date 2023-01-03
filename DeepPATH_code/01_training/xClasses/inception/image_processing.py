@@ -41,6 +41,9 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import random
+from skimage.color import rgb2hed, hed2rgb
+
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -56,6 +59,10 @@ tf.app.flags.DEFINE_integer('num_readers', 4,
 
 tf.app.flags.DEFINE_string('mode', '0_softmax',
                             """0_softmax or 1_sigmoid.""")
+
+
+tf.app.flags.DEFINE_float('hed', '0',
+                            """HED color augmentation to 0 to not do it; value to apply otherwise.""")
 
 # Images are preprocessed asynchronously using multiple threads specified by
 # --num_preprocss_threads and the resulting processed images are stored in a
@@ -219,6 +226,32 @@ def distort_image(image, height, width, bbox, thread_id=0, scope=None):
   """
   with tf.name_scope(values=[image, height, width, bbox], name=scope,
                      default_name='distort_image'):
+    """
+    # HED color normalization
+    if FLAGS.hed > 0:
+      # inspired from https://www.biorxiv.org/content/10.1101/2022.05.17.492245v1.full
+      nlim = float(FLAGS.hed)
+      nmult = [random.uniform(-nlim, nlim), random.uniform(-nlim, nlim), random.uniform(-nlim, nlim)]
+      nadd = [random.uniform(-nlim, nlim), random.uniform(-nlim, nlim), random.uniform(-nlim, nlim)]
+      ihc_hed = rgb2hed(image)
+      # Augment the Haematoxylin channel.
+      ihc_hed[:, :, 0] *= 1.0 + nmult[0]
+      ihc_hed[:, :, 0] += nadd[0]
+      # Augment the Eosin channel.
+      ihc_hed[:, :, 1] *= 1.0 + nmult[1]
+      ihc_hed[:, :, 1] += nadd[1]
+      #  Augment the DAB channel.
+      #ihc_hed[:, :, 2] *= 1.0 + nmult[2]
+      #ihc_hed[:, :, 2] += nadd[2]
+      # Convert back to RGB color coding.
+      patch_rgb = hed2rgb(hed=ihc_hed)
+      patch_transformed = np.clip(a=patch_rgb, a_min=0.0, a_max=1.0)
+      patch_transformed *= 255.0
+      image = patch_transformed.astype(dtype=np.uint8)
+      print("HED Normalization")
+      # cv2.imwrite(str(kk)+"bright.jpg",patch_transformed)
+    """
+
     # Each bounding box has shape [1, num_boxes, box coords] and
     # the coordinates are ordered [ymin, xmin, ymax, xmax].
 

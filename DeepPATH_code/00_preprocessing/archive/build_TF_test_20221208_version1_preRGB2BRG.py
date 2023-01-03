@@ -56,11 +56,6 @@ tf.app.flags.DEFINE_string('ImageSet_basename', 'test',
 tf.app.flags.DEFINE_integer('rescale', 0,
                             'If you want the images to be rescaled to a certain dimension (299 for example), write the target size in rescale')
 
-tf.app.flags.DEFINE_integer('version', 0,
-                            'replace with 1 for projects before December 2022; put 2 otherwise for new projects (prevent tenforflow from reading image as BGR instead of RGB')
-
-
-
 
 
 # The labels file contains a list of valid labels are held in this file.
@@ -144,14 +139,8 @@ class ImageCoder(object):
                            feed_dict={self._decode_jpeg_data: image_data})
     assert len(image.shape) == 3
     assert image.shape[2] == 3
-    #return image
-    if FLAGS.version == 1: 
-      return image
-    elif FLAGS.version == 2: 
-       return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    else:
-       print("ERROR: version flag must be explicetely set to 1 or 2")
-       return "error"
+    return image
+
 
 def _is_png(filename):
   """Determine if a file contains a PNG format image.

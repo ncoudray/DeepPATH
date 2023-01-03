@@ -198,6 +198,9 @@ def main(args):
 		plt.axis('off')
 		ax2.legend(handles=handles, labels=labels,  loc="lower right", fontsize=6)
 		plt.savefig(os.path.join(Labadd + "_" + args.out + "_" + input_folders.replace("*", "_") + 'avg_PR_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
+		print(curLabel)
+		print(Xauc, Yauc)
+		print(Xpr, Ypr)
 
 
 

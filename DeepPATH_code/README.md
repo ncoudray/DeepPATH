@@ -352,7 +352,7 @@ For the whole training set, the following code can be to convert JPEG to TFRecor
 module load cuda/8.0
 module load python/3.5.3
 
-python build_image_data.py --directory='jpeg_label_directory' --output_directory='outputfolder' --train_shards=1024  --validation_shards=128 --num_threads=4
+python build_image_data.py --directory='jpeg_label_directory' --output_directory='outputfolder' --train_shards=1024  --validation_shards=128 --num_threads=4 --version=2
 ```
 
 
@@ -379,11 +379,15 @@ optinal parameter: `MaxNbImages`: (default: -1); Maximum number of images in eac
 
 The same was done for the test and valid set with this slightly modified script:
 ```shell
-python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_test' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test'
+python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_test' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test' --version=2
 
-python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_valid' build_TF_test --one_FT_per_Tile=False --ImageSet_basename='valid'
+python  build_TF_test.py --directory='jpeg_tile_directory'  --output_directory='output_dir_for_valid' build_TF_test --one_FT_per_Tile=False --ImageSet_basename='valid' --version=2
 
 ```
+
+mandatory parameter:
+* ```--version``` must be set to 1 for projects before Dec 2022, 2 for new projects.  Version 2 now deals with TFRecord reading images as BRG instead of RGB
+
 
 Known bug: On many systems, it is better to always use `--num_threads=1`. Corrupted TFRecords can be generated when multi-threading is used.
 
@@ -391,9 +395,12 @@ The difference is that for the train set, the tiles are randomly assigned to the
 
 For the training, the option `MaxNbImages` can be used to threshold the maximum number of images in each class. Tiles will be randomly selected if the number of tiles available is higher (may be useful to downsample and balance datasets). If the `MaxNbImages` is at most 8 times larger than the number of tiles available, tiles will be augmented by randomly rotating and/or mirroring them. If it's much higher, tiles will be missing and the program won't be able to generate `MaxNbImages` tiles per class (it will not generate an output, just take all images available - you can double-check in the log files how many tiles are finally done). 
 
+mandatory parameter:
+* ```--version``` must be set to 1 for projects before Dec 2022, 2 for new projects.  Version 2 now deals with TFRecord reading images as BRG instead of RGB
 
-
-An optional parameter ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
+Optional parameter:
+*   ```--ImageSet_basename='test'``` can be used to run it on 'test' (default), 'valid' or 'train' dataset
+* apply color augmentation using process from [Otalora et al.](https://www.biorxiv.org/content/10.1101/2022.05.17.492245v1.full).   ```--hed``` can be set to the variation desired on the sigma and the biad (0.05 advised). ```--hed_pc``` will correspond to the porportion (between 0 and 1) of tiles to which the color augmentation should be applied. Note: tiles will be replaced by their color augmented equivalent. 
 
 Also, by default, it creates 1 TFRecord for all files having the same basename (ignore the last two fields assumed to be the X,Y coordinates of the tile). If you want some other kind of aggregates (useful for dcm), you will use the  `PatientID` arguments to specify the number of characters in the filename that should be used as the basename. 
 

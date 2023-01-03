@@ -153,9 +153,12 @@ class TileWorker(Process):
                     arr = np.array(np.asarray(bw))
                     avgBkg = np.average(bw)
                     bw = gray.point(lambda x: 0 if x<230 else 1, '1')
+                    # do not save non-square tiles nearr the edges
+                    print(tile.height, tile.width, self._tile_size + 2*self._overlap)
+                    NbPx = (tile.height * tile.width)  - (self._tile_size + 2*self._overlap) * (self._tile_size + 2*self._overlap)
                     # check if the image is mostly background
                     print("res: " + outfile + " is " + str(avgBkg*100) + " and std " + str(St))
-                    if avgBkg <= (self._Bkg / 100.0) and St >= self._Std:
+                    if avgBkg <= (self._Bkg / 100.0) and St >= self._Std and NbPx == 0:
                         # print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
                         if PercentMasked >= (self._ROIpc / 100.0):
@@ -262,7 +265,8 @@ class DeepZoomImageTiler(object):
             # print(self._basename + " - Obj information found")
         except:
             try:
-                for nfields in slide.properties['tiff.ImageDescription'].split('|'):
+                #for nfields in slide.properties['tiff.ImageDescription'].split('|'):
+                for nfields in _slide.properties['tiff.ImageDescription'].split('|'):
                     if 'AppMag' in nfields:
                         Objective = float(nfields.split(' = ')[1])
             except:
@@ -412,7 +416,7 @@ class DeepZoomImageTiler(object):
                         file_out.write(self._basenameJPG + "\t" + str(OrgPixelSizeX*pow(2,IndxX)) + "\t" + str(OrgPixelSizeX*pow(2,IndxX) * self._resize_ratio) + "\n")
  
 
-
+            print( range(self._dz.level_count-1,-1,-1) )
             for level in range(self._dz.level_count-1,-1,-1):
                 ThisMag = Available[0]/pow(2,self._dz.level_count-(level+1))
                 if self._Mag > 0:
