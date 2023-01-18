@@ -56,7 +56,7 @@ tf.app.flags.DEFINE_string('ImageSet_basename', 'test',
 tf.app.flags.DEFINE_integer('rescale', 0,
                             'If you want the images to be rescaled to a certain dimension (299 for example), write the target size in rescale')
 
-tf.app.flags.DEFINE_integer('version', 0,
+tf.app.flags.DEFINE_integer('version', 1,
                             'replace with 1 for projects before December 2022; put 2 otherwise for new projects (prevent tenforflow from reading image as BGR instead of RGB')
 
 

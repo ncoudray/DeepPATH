@@ -336,8 +336,7 @@ Vahadane's method is described in  Vahadane, Abhishek, et al. "Structure-preserv
 Notes:
 * This code was adapted from [awslabs' deeplearning-benchmark code](https://github.com/awslabs/deeplearning-benchmark/blob/master/tensorflow/inception/inception/data/build_image_data.py)
 
-
-Check code in subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at classifying 2 or 3 different classes.
+Check code in subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at classifying 2 or more classes, where each  image can be assigned one class only.
 
 For the whole training set, the following code can be to convert JPEG to TFRecord:
 ```shell
@@ -407,10 +406,11 @@ Also, by default, it creates 1 TFRecord for all files having the same basename (
 expected processing time for this step: a few seconds to a few minutes. Once done, check inside the resulting directory that the images have been properly linked.
 
 
-## 0.3b Convert the JPEG tiles into TFRecord format for a multi-ouput prediction (example mutations)
+## 0.3b Convert the JPEG tiles into TFRecord format for a multi-ouput prediction
+[This approach now belongs to the legacy code and may no longer be compatible with the subsequent analysis steps]
 
+Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at multi-output classsification where images can be assigned to several classes:
 
-Check subfolder 00_preprocessing/TFRecord_2or3_Classes/ if it aimed at multi-output classsification with 10 possibly concurent sclasses:
 
 For the training and validation sets:
 ```shell
@@ -445,13 +445,13 @@ For the test set:
 python  build_TF_test_multiClass.py --directory='jpeg_tile_directory'  --output_directory='output_dir' --num_threads=1 --one_FT_per_Tile=False --ImageSet_basename='test' --labels_names=label_names.txt --labels=labels_files.txt  --PatientID=12
 ```
 
-
 expected processing time for this step: a few seconds to a few minutes. Check the output log files and the resulting directory (check that the sizes of the created TFRecord files make sense)
 
 #### Note on mutation file:
 There are different ways of dealing with mutations. The sigmoid approach was used to identify several mutations than can occur at the same time. In this particular case, the label is associated to each tile during the conversion fro jpeg to TFRecord (otherwise, when using the softmax approach, jpg are classified in different folders and the folder name is used as the label). Thaty's why the label files need to be submitted in the parameters above. 
 
 When working with the TCGA dataset from the GDC Data portal, the mutations can be found by looking for `Data Type == "Masked Somatic Mutations"`. The `Data Category` is "Simple Nucleotide Variation". Filtering based on that, 4 files per cancer type/project will be found (one for each mutation caller). We used mutect for our paper. A gzipped file can be downloaded and inside that there is a (gzipped also) maf file (a maf file is just a tab-separated file with specific columns).The fist column should be the Hugo Symbol and there should also be a column Tumor_Sample_Barcode with the patient/sample id. Silent mutations can also be filtered out if needed.
+
 
 
 # 1 - Training
@@ -509,7 +509,7 @@ bazel-bin/inception/imagenet_train --num_gpus=1 --batch_size=30 --train_dir='out
 ```
 
 Notes on options and modifications in original inception code:
-* The ```mode``` option has been added and must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible)
+* The ```mode``` option has been added and must be set to either ```0_softmax``` (original inception - only one ouput label possible) or ```1_sigmoid``` (several output labels possible - the heatmap and ROC analysis code is no longer compatible with this option. If used, you may need to write your own code to analyse the generated output)
 * Other options available:
 - ```num_epochs_per_decay```: Epochs after which learning rate decays
 - ```learning_rate_decay_factor```: factor of the rate decay
