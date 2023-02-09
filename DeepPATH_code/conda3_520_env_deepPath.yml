@@ -1,4 +1,4 @@
-name: /gpfs/data/coudraylab/NN/env/env_deepPath
+name: env_deepPath
 channels:
   - lukepfister
   - bioconda/label/cf201901
@@ -153,5 +153,5 @@ dependencies:
   - pip:
     - mako==1.0.4
     - pycuda==2017.1
-prefix: /gpfs/data/coudraylab/NN/env/env_deepPath
+prefix: env_deepPath
 

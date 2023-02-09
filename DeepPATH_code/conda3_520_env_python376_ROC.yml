@@ -1,4 +1,4 @@
-name: /gpfs/data/coudraylab/NN/env/env_deepPath_4_376
+name: env_deepPath_4_376
 channels:
   - conda-forge/label/cf202003
   - conda-forge
@@ -144,5 +144,5 @@ dependencies:
   - zipp=3.7.0=pyhd3eb1b0_0
   - zlib=1.2.11=h7f8727e_4
   - zstd=1.4.9=haebb681_0
-prefix: /gpfs/data/coudraylab/NN/env/env_deepPath_4_376
+prefix: env_deepPath_4_376
 
