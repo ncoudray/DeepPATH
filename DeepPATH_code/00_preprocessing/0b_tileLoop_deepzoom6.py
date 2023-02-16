@@ -157,7 +157,7 @@ class TileWorker(Process):
                     print(tile.height, tile.width, self._tile_size + 2*self._overlap)
                     NbPx = (tile.height * tile.width)  - (self._tile_size + 2*self._overlap) * (self._tile_size + 2*self._overlap)
                     # check if the image is mostly background
-                    print("res: " + outfile + " is " + str(avgBkg*100) + " and std " + str(St))
+                    print("res: " + outfile + " is " + str(avgBkg) + " and std " + str(St) + " (threshold: " + str(self._Bkg / 100.0) + " and " + str(self._Std) + " and " + str(NbPx) + ") PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                     if avgBkg <= (self._Bkg / 100.0) and St >= self._Std and NbPx == 0:
                         # print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
@@ -335,6 +335,9 @@ class DeepZoomImageTiler(object):
             elif  os.path.isfile(os.path.join(self._xmlfile, ImgID + '.tif')):
                xmldir = os.path.join(self._xmlfile, ImgID + '.tif')
                AnnotationMode = 'ImageJ'
+            elif os.path.isfile(os.path.join(self._xmlfile, ImgID + '.geojson')):
+               xmldir = os.path.join(self._xmlfile, ImgID + '.geojson')
+               AnnotationMode = 'QuPath_orig'
             else:
                AnnotationMode = 'None'
 
@@ -494,6 +497,11 @@ class DeepZoomImageTiler(object):
                             # print(startIndY_current_level_conv[row], endIndY_current_level_conv[row], startIndX_current_level_conv[col], endIndX_current_level_conv[col])
 
                             Dlocation, Dlevel, Dsize = self._dz.get_tile_coordinates(level,(col, row))
+                            if self._ImgExtension == 'mrxs':
+                                print(Dlocation, Dlevel, Dsize, level, col, row)
+                                aa, bb, cc = self._dz.get_tile_coordinates(level,(0, 0))
+                                Dlocation = tuple(map(lambda i, j: i - j, Dlocation, aa))
+                                print(Dlocation, Dlevel, Dsize, level, col, row)
                             Ddimension = tuple([pow(2,(self._dz.level_count - 1 - level)) * x for x in self._dz.get_tile_dimensions(level,(col, row))])
                             startIndY_current_level_conv = (int((Dlocation[1]) / Img_Fact))
                             endIndY_current_level_conv = (int((Dlocation[1] + Ddimension[1]) / Img_Fact))
@@ -809,6 +817,44 @@ class DeepZoomImageTiler(object):
 
                           #xy_a = np.array(xy[regionID])
         ## End Aperio
+        elif AnnotationMode == 'QuPath_orig':
+          print("QuPath geojson annotation file detected")
+          xmlcontent = json.load(open(xmldir))
+          xml_valid = True
+          xy = {}
+          xy_neg = {}
+          NbRg = 0
+          # json
+          # featurecoll
+          if 'features' in xmlcontent.keys():
+            for eachR in range(len(xmlcontent['features'])):
+              labeltag = 'unlabelled'
+              if 'properties' in xmlcontent['features'][eachR].keys():
+                if 'classification' in xmlcontent['features'][eachR]['properties'].keys():
+                  if 'name' in xmlcontent['features'][eachR]['properties']['classification'].keys():
+                    labeltag = xmlcontent['features'][eachR]['properties']['classification']['name']
+              if (Attribute_Name==[]) | (Attribute_Name==''):
+                isLabelOK = True
+              elif (Attribute_Name == labeltag):
+                isLabelOK = True
+              elif Attribute_Name == "non_selected_regions":
+                isLabelOK = True
+              else:
+                isLabelOK = False
+              if isLabelOK: 
+                if 'geometry' in xmlcontent['features'][eachR].keys():
+                  xmlcontent['features'][eachR]['geometry']['coordinates']
+                  # coordinates
+                  vertices = []
+                  for eachv in range(len(xmlcontent['features'][eachR]['geometry']['coordinates'])):
+                    for eachXY in range(len(xmlcontent['features'][eachR]['geometry']['coordinates'][eachv])): 
+                      vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachXY][0] )
+                      vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachXY][1] )
+                  regionID = str(NbRg)
+                  xy[regionID] =  [ii / NewFact for ii in vertices]
+                  NbRg += 1
+              
+
         elif AnnotationMode == 'QuPath':
           print("QuPath annotation file detected")
           xmlcontent = json.load(open(xmldir))
@@ -900,6 +946,8 @@ class DeepZoomImageTiler(object):
             mask[y_max-y_start:,:] = 255
 
 
+        #if ImgExt == 'mrxs':
+        #  mask = np.rot90(mask)
         if ImgExt == 'scn' and AnnotationMode == 'Aperio':
                 # mask = mask.transpose()
                 mask = np.rot90(mask)
@@ -1125,6 +1173,21 @@ def xml_read_labels(xmldir, Fieldxml, AnnotationMode):
           if xml_labels==[]:
               xml_labels = ['']
           # print(xml_labels)
+        elif AnnotationMode == 'QuPath_orig':
+          data = json.load(open(xmldir))
+          xml_labels = []
+          xml_valid = False
+          if 'features' in data.keys():
+            for eachR in range(len(data['features'])):
+              labeltag = 'unlabelled'
+              if 'properties' in data['features'][eachR].keys():
+                if 'classification' in data['features'][eachR]['properties'].keys():
+                  if 'name' in data['features'][eachR]['properties']['classification'].keys():
+                    labeltag = data['features'][eachR]['properties']['classification']['name']
+              xml_labels.append( labeltag )
+          xml_labels = np.unique(xml_labels)
+          if len(xml_labels) > 0:
+            xml_valid = True
         elif AnnotationMode == 'QuPath':
           data = json.load(open(xmldir))
           xml_labels = []
@@ -1394,9 +1457,10 @@ if __name__ == '__main__':
 			jsondir = os.path.join(opts.xmlfile, opts.basenameJPG + '.json')
 			csvdir  = os.path.join(opts.xmlfile, opts.basenameJPG + '.csv')
 			tifdir = os.path.join(opts.xmlfile, opts.basenameJPG + '.tif')
+			geojsondir = os.path.join(opts.xmlfile, opts.basenameJPG + '.geojson')
 			# print("xml:")
 			# print(xmldir)
-			if os.path.isfile(xmldir) | os.path.isfile(jsondir) | os.path.isfile(csvdir) | os.path.isfile(tifdir) :
+			if os.path.isfile(xmldir) | os.path.isfile(jsondir) | os.path.isfile(csvdir) | os.path.isfile(tifdir) | os.path.isfile(geojsondir):
 				if os.path.isfile(xmldir):
 					AnnotationMode = 'Aperio'
 				elif os.path.isfile(jsondir):
@@ -1408,6 +1472,9 @@ if __name__ == '__main__':
 				elif os.path.isfile(tifdir):
 					AnnotationMode = 'ImageJ'
 					xmldir = tifdir
+				elif os.path.isfile(geojsondir):
+					AnnotationMode = 'QuPath_orig'
+					xmldir = geojsondir
 				if (opts.mask_type==1) or (opts.oLabelref!=''):
 					# either mask inside ROI, or mask outside but a reference label exist
 					xml_labels, xml_valid = xml_read_labels(xmldir, opts.Fieldxml, AnnotationMode)

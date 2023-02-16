@@ -172,7 +172,7 @@ Notes on the different version history:
 * In 0b_tileLoop_deepzoom6.jpg,  we added:
   - the possibility to rescale the tiles at a given pixelsize: If '-Mag -1'  and '-pixelsize' is >0, the tiles will rescaled at that pixelsize.
   - taking into account annotations from Omero (csv format, with label name in the "Label" field) 
-
+  - QuPath annotations (saved in geojson format from QuPath 0.1.2) and mrxs formats now implemented
 
 
 Example on a slurm cluster (should work with CPU nodes as well):
