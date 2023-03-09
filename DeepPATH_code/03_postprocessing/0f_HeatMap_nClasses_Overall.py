@@ -277,7 +277,16 @@ def get_inference_from_file(lineProb_st):
 			elif oClass == 3:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('orange')])
+		elif  FLAGS.project == '08_Melanoma_binary':
+			if oClass == 1:
+				c = mcolors.ColorConverter().to_rgb				
+				cmap = make_colormap([c('white'), c('yellow')])
+			elif oClass == 2:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('darkviolet')])
 
+				
+				
 
 
 	# print(lineProb)
@@ -483,6 +492,16 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[3] = [0, 0, 0]
 			class_rgb[4] = [0, 0, 0]
 			class_rgb[5] = [0, 0, 0]
+		elif FLAGS.project == '08_Melanoma_binary':
+			class_rgb = {}
+			#class_rgb[0] = [0, 1.0, 1.0]
+			#class_rgb[1] = [0.41, 0.0, 0.59]
+			class_rgb[0] = [0.41, 0.0, 0.59]
+			class_rgb[1] = [0.98, 1.0, 0.3125]
+			class_rgb[2] = [0, 0, 0]
+			class_rgb[3] = [0, 0, 0]
+			class_rgb[4] = [0, 0, 0]
+			class_rgb[5] = [0, 0, 0]
 
 
 		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0])
@@ -594,7 +613,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			elif FLAGS.project == '05_binary':
 				fields = ['imageName','Normal tissue or class 1','Tumor or class2']
 				csvwriter.writerow(fields)
-				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1))]]
+				rows = [[cTileRootName, str(round(cl0,1)),str(round(cl1,1))]]
 			elif FLAGS.project == '06_TNBC_6folds':
 				fields = ['imageName','Art','DCIS','Inv','Nec','Other','Str']
 				csvwriter.writerow(fields)
@@ -603,6 +622,22 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				fields = ['imageName','Tumor','lymphocyte-rich','other']
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl2,1)),str(round(cl1,1)), str(round(cl0,1))]]
+			elif FLAGS.project == '08_Melanoma_binary':
+				Indx_Tumor = 0
+				Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
+				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
+				fields2, rows2, TumorArea2 = Get_Binary_stats(ImStat)
+				fields = ['imageName','Tumor_area','Non_tumor_area','tumor_percentage','Tumor_avg_probability']
+				fields.extend(fields2)
+				csvwriter.writerow(fields)
+				if (cl0+cl1) == 0:
+					cl0p1 = 1
+				else:
+					cl0p1 = cl0 + cl1
+				rows = [cTileRootName, str(round(cl1,0)),str(round(cl0,0)), str(round(100*cl1/cl0p1,2)), str(round(Avg_Prob_Class1*100, 2))]
+				rows.extend(rows2)
+				rows = [rows]
+
 
 			csvwriter.writerows(rows)       
 
@@ -866,7 +901,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet.'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet, 08_Melanoma_binary.'
   )
   parser.add_argument(
       '--combine',
