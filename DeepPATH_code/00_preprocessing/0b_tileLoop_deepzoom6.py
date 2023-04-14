@@ -1349,8 +1349,9 @@ if __name__ == '__main__':
 	for imgNb in range(len(files)):
 		filename = files[imgNb]
 		## New WindowSize
-		slide = open_slide(filename)
+		#slide = open_slide(filename)
 		if (opts.Mag <= 0) and (opts.pixelsizerange < 0):
+			slide = open_slide(filename)
 			# calculate the best window size before rescaling to reach desired final pizelsize
 			try:
 				Objective = float(slide.properties[openslide.PROPERTY_NAME_OBJECTIVE_POWER])

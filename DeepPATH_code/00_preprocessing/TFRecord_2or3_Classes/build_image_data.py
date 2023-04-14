@@ -109,7 +109,7 @@ tf.app.flags.DEFINE_integer('rescale', 0,
 			    'If you want the images to be rescaled to a certain dimension (299 for example), write the target size in rescale')
 
 tf.app.flags.DEFINE_float('hed', 0,
-                         'Color augmentation if hed > 0')
+                         'Color augmentation if hed > 0 (lim)')
 
 tf.app.flags.DEFINE_float('hed_pc', 0.5,
                          'Proportion of tiles for which color augmentation should be applied')
@@ -226,7 +226,7 @@ class ImageCoder(object):
     assert image.shape[2] == 3
 
     if FLAGS.version == 1:
-      return image
+       return image
     elif FLAGS.version == 2:
        return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     else:
