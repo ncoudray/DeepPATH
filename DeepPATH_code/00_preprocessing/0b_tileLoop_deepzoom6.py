@@ -1275,6 +1275,9 @@ if __name__ == '__main__':
 		help='set to yes if you want to save ALL masks for ALL tiles (will be saved in same directory with <mask> suffix)')
 	parser.add_option('-t', '--tmp_dcm', metavar='NAME', dest='tmp_dcm',
 		help='base name of output folder to save intermediate dcm images converted to jpg (we assume the patient ID is the folder name in which the dcm images are originally saved)')
+	parser.add_option('-H', '--srh', metavar='COUNT', dest='srh',
+                type='int', default=0,
+                help='set to 1 for srh images')
 	parser.add_option('-M', '--Mag', metavar='PIXELS', dest='Mag',
 		type='float', default=-1,
 		help='Magnification at which tiling should be done; if Mag=-1 and pixelsize=-1, they will be tiles at all magnifications; if Mag=-1 and pixelsize>0, it will be tiled at a certain pixelsize')
@@ -1423,10 +1426,26 @@ if __name__ == '__main__':
 			minVal = float(im1.min())
 			height = im1.shape[0]
 			width = im1.shape[1]
-			image = np.zeros((height,width,3), 'uint8')
-			image[...,0] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
-			image[...,1] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
-			image[...,2] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+			depth = im1.shape[2]
+			print(height, width, depth, minVal, maxVal)
+			if opts.srh == 1 :
+				print(filename)
+				imgn = os.path.splitext(os.path.basename(filename))[0].split('_')[0]
+				foldname1 = filename.split('/')[-2]
+				foldname2 = filename.split('/')[-3]
+				opts.basenameJPG = foldname2 + "_" + imgn + "_" + foldname1
+				image = np.zeros((width,depth,3), 'uint8')
+				print(im1[0,:,:].min(), im1[0,:,:].max(),im1[1,:,:].min(), im1[1,:,:].max(),im1[2,:,:].min(), im1[2,:,:].max())
+				image[...,0] = im1[0,:,:] #((im1[0,:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+				image[...,1] = im1[1,:,:] #((im1[1,:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+				image[...,2] = im1[2,:,:] #((im1[2,:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+				image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
+			else:
+				image = np.zeros((height,width,3), 'uint8')
+				image[...,0] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+				image[...,1] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+				image[...,2] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
+
 			# dcm_ID = os.path.basename(os.path.dirname(filename))
 			# opts.basenameJPG = dcm_ID + "_" + opts.basenameJPG
 			filename = os.path.join(opts.tmp_dcm, opts.basenameJPG + ".jpg")
