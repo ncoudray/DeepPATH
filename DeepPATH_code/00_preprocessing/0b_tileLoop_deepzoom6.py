@@ -32,7 +32,8 @@ from multiprocessing import Process, JoinableQueue
 import time
 import os
 import sys
-import dicom
+#import dicom
+import pydicom as dicom
 # from scipy.misc import imsave
 from imageio import imwrite as imsave
 # from scipy.misc import imread
@@ -1435,11 +1436,7 @@ if __name__ == '__main__':
 				foldname2 = filename.split('/')[-3]
 				opts.basenameJPG = foldname2 + "_" + imgn + "_" + foldname1
 				image = np.zeros((width,depth,3), 'uint8')
-				print(im1[0,:,:].min(), im1[0,:,:].max(),im1[1,:,:].min(), im1[1,:,:].max(),im1[2,:,:].min(), im1[2,:,:].max())
-				image[...,0] = im1[0,:,:] #((im1[0,:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
-				image[...,1] = im1[1,:,:] #((im1[1,:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
-				image[...,2] = im1[2,:,:] #((im1[2,:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)
-				image = cv2.cvtColor(image, cv2.COLOR_HSV2RGB)
+				image = im1  
 			else:
 				image = np.zeros((height,width,3), 'uint8')
 				image[...,0] = ((im1[:,:].astype(float) - minVal)  / (maxVal - minVal) * 255.0).astype(int)

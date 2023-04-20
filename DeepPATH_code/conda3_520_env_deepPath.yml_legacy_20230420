@@ -1,9 +1,9 @@
 name: env_deepPath
 channels:
-  - anaconda
   - lukepfister
   - bioconda/label/cf201901
   - intel
+  - anaconda
   - conda-forge
   - bioconda
   - defaults
@@ -17,9 +17,9 @@ dependencies:
   - blas=1.0=mkl
   - bzip2=1.0.8=h7b6447c_0
   - c-ares=1.15.0=h7b6447c_1001
-  - ca-certificates=2022.9.24=ha878542_0
+  - ca-certificates=2020.10.14=0
   - cairo=1.14.12=h8948797_3
-  - certifi=2021.5.30=py36h5fab9bb_0
+  - certifi=2020.6.20=py36_0
   - cloudpickle=2.0.0=pyhd3eb1b0_0
   - cudatoolkit=9.0=h13b8566_0
   - cudnn=7.6.5=cuda9.0_0
@@ -98,7 +98,7 @@ dependencies:
   - openjpeg=2.3.0=h05c96fa_1
   - openslide=3.4.1=2
   - openslide-python=1.1.1=py36h470a237_0
-  - openssl=1.0.2u=h516909a_0
+  - openssl=1.0.2u=h7b6447c_0
   - packaging=21.0=pyhd3eb1b0_0
   - pandas=1.0.5=py36h0573a6f_0
   - pcre=8.44=he6710b0_0
@@ -109,7 +109,7 @@ dependencies:
   - protobuf=3.12.3=py36he6710b0_0
   - py=1.10.0=pyhd3eb1b0_0
   - py-opencv=3.4.2=py36hb342d67_1
-  - pydicom=2.3.1=pyh1a96a4e_0
+  - pydicom=0.9.9=py36_0
   - pyparsing=2.4.7=py_0
   - pyqt=5.9.2=py36h05f1152_2
   - pytest=6.2.4=py36h06a4308_2

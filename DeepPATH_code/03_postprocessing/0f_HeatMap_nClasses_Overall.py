@@ -238,7 +238,7 @@ def get_inference_from_file(lineProb_st):
 			elif oClass == 6:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('yellow')])				
-		elif FLAGS.project == '03_OAS':
+		elif FLAGS.project == '03_OSA':
 			if oClass == 1:
 				cmap = plt.get_cmap('binary')
 			elif oClass == 2:
@@ -452,7 +452,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[3] = [255.0/255.0, 176.0/255.0, 0]
 			class_rgb[4] = [1, 1, 1]
 			class_rgb[5] = [0, 0, 0]
-		elif FLAGS.project == '03_OAS':
+		elif FLAGS.project == '03_OSA':
 			class_rgb = {}
 			class_rgb[0] = [0, 0, 0]
 			class_rgb[1] = [0, 1.0, 0]
@@ -602,7 +602,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				rows = [cTileRootName, str(round(cl3,0)),str(round(cl1,0)), str(round(100*cl3/cl3p1,2)), str(round(Avg_Prob_Class1*100, 2))]
 				rows.extend(rows2)
 				rows = [rows]
-			elif FLAGS.project == '03_OAS':
+			elif FLAGS.project == '03_OSA':
 				fields = ['imageName', 'Necrotic tumor','Normal tissue','Viable Tumor']
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1))]]
