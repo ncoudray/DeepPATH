@@ -109,12 +109,12 @@ tf.app.flags.DEFINE_integer('rescale', 0,
 			    'If you want the images to be rescaled to a certain dimension (299 for example), write the target size in rescale')
 
 tf.app.flags.DEFINE_float('hed', 0,
-                         'Color augmentation if hed > 0 (lim)')
-
+                         'Color augmentation if hed > 0 (lim) and < 1')
+ 
 tf.app.flags.DEFINE_float('hed_pc', 0.5,
                          'Proportion of tiles for which color augmentation should be applied')
 
-tf.app.flags.DEFINE_integer('version', 0,
+tf.app.flags.DEFINE_integer('version', 1,
                             'replace with 1 for projects before December 2022; put 2 otherwise for new projects (prevent tenforflow from reading image as BGR instead of RGB')
 
 

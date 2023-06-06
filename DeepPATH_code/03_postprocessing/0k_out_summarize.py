@@ -51,15 +51,41 @@ def main(args):
 	nOut = args.out
 	allIn = glob.glob(input_folders)
 	allIn.sort()
+	print(unique_labels)
+	unique_labels.append('micro')
+	unique_labels.append('macro')
+	print(unique_labels)
+
 	for idxL, curLabel in enumerate(unique_labels):
 		AUC = {}
 		AUCavg = {}
 		PR = {}
 		PRavg = {}
 		PRref = {}
+		print(curLabel)
 		for kk in allIn:
-			EachIterAUC = glob.glob(kk + "/test_*/" + nOut + "_roc_data_AvPb_c" + str(idxL+1) + "a*")
-			EachIterPR = glob.glob(kk + "/test_*/" + nOut + "_PrecRec_data_AvPb_c" + str(idxL+1) + "A*")
+			if curLabel=='micro':
+				EachIterAUC = glob.glob(kk + "/test_*/" + nOut + "_roc_data_AvPb_micro_a*")
+				EachIterPR = glob.glob(kk + "/test_*/" + nOut + "_PrecRec_data_AvPb_cmicro_A*")
+				uPos = 4
+				ustep = 6
+				ustep2 = 8
+				#print(EachIterAUC)
+				#print(EachIterPR)
+			elif curLabel=='macro':
+				EachIterAUC = glob.glob(kk + "/test_*/" + nOut + "_roc_data_AvPb_macro_a*")
+				EachIterPR = [] # glob.glob(kk + "/test_*/" + nOut + "_PrecRec_data_AvPb_cmacro_A*")
+				uPos = 4
+				ustep = 6
+				ustep2 = 8
+				print(EachIterAUC)
+				print(EachIterPR)
+			else:
+				EachIterAUC = glob.glob(kk + "/test_*/" + nOut + "_roc_data_AvPb_c" + str(idxL+1) + "a*")
+				EachIterPR = glob.glob(kk + "/test_*/" + nOut + "_PrecRec_data_AvPb_c" + str(idxL+1) + "A*")
+				uPos = 6
+				ustep = 5
+				ustep2 = 5
 			AUC[kk] = {}
 			AUC[kk]['value'] = []
 			AUC[kk]['iter'] = []
@@ -68,30 +94,38 @@ def main(args):
 			PR[kk]['iter'] = []
 			PR[kk]['ref'] = []
 			for nIter in EachIterAUC:
-				AUC[kk]['value'].append(float(nIter.split("_")[-6]))
-				iterV = int(nIter.split("_")[-11].split('k/out')[0])
+				print(nIter)
+				print(nIter.split("_")[-uPos])
+				AUC[kk]['value'].append(float(nIter.split("_")[-uPos]))
+				iterV = int(nIter.split("_")[-uPos-ustep].split('k/out')[0])
 				AUC[kk]['iter'].append(iterV)
 				if iterV in AUCavg.keys():
-					AUCavg[iterV].append(float(nIter.split("_")[-6]))
+					AUCavg[iterV].append(float(nIter.split("_")[-uPos]))
 				else:
 					AUCavg[iterV] = {}
-					AUCavg[iterV] = [float(nIter.split("_")[-6])]
+					AUCavg[iterV] = [float(nIter.split("_")[-uPos])]
 			nIndx = sorted(range(len(AUC[kk]['iter'])),key=AUC[kk]['iter'] .__getitem__)
 			list1, list2 = (list(t) for t in zip(*sorted(zip(AUC[kk]['iter'], AUC[kk]['value']))))
 			AUC[kk]['iter']  = list1
 			AUC[kk]['value'] = list2
 			for nIter in EachIterPR:
-				PR[kk]['value'].append(float(nIter.split("_")[-8]))
-				iterV = int(nIter.split("_")[-13].split('k/out')[0])
+				print(nIter)
+				print(nIter.split("_")[-uPos-2])
+				PR[kk]['value'].append(float(nIter.split("_")[-uPos-2]))
+				iterV = int(nIter.split("_")[-uPos-2-ustep2].split('k/out')[0])
 				PR[kk]['iter'].append(iterV)
 				PR[kk]['ref'].append(float(nIter.split("_")[-3]))
 				if iterV in PRavg.keys():
-					PRavg[iterV].append(float(nIter.split("_")[-8]))
+					PRavg[iterV].append(float(nIter.split("_")[-uPos-2]))
 				else:
 					PRavg[iterV] = {}
-					PRavg[iterV] = [float(nIter.split("_")[-8])]
+					PRavg[iterV] = [float(nIter.split("_")[-uPos-2])]
 			nIndx = sorted(range(len(PR[kk]['iter'])),key=PR[kk]['iter'] .__getitem__)
-			list1, list2 = (list(t) for t in zip(*sorted(zip(PR[kk]['iter'], PR[kk]['value']))))
+			if curLabel=='macro':
+				list1 = []
+				list2 = []
+			else: 
+				list1, list2 = (list(t) for t in zip(*sorted(zip(PR[kk]['iter'], PR[kk]['value']))))
 			PR[kk]['iter']  = list1
 			PR[kk]['value'] = list2
 		Xauc = []
@@ -109,9 +143,16 @@ def main(args):
 			Xpr.append(mm)
 			Ypr.append(np.average(PRavg[mm]))
 			XYprstd.append(np.std(PRavg[mm], ddof=1) / np.sqrt(np.size(PRavg[mm])))
-		Xpr, Ypr, XYprstd = (list(t) for t in zip(*sorted(zip(Xpr, Ypr, XYprstd))))
+		if curLabel=='macro':
+			Xpr = []
+			Ypr = []
+			XYprstd = []
+		else:
+			Xpr, Ypr, XYprstd = (list(t) for t in zip(*sorted(zip(Xpr, Ypr, XYprstd))))
 		fig = plt.figure(figsize=(3, 6))
+		FS = 8
 		ax = plt.subplot(2, 1,1)
+		ax.tick_params(labelsize=FS)
 		colors = cycle(["black", "black", "gray", "gray","lightgray"])
 		types = cycle(["solid","dashed","dotted","dashed","solid"])
 		for i, color, type, img in zip(AUC.keys(), colors, types, allIn):
@@ -121,30 +162,32 @@ def main(args):
     	                       AUC[i]['value'],
     	                       color=color,
     	                       label=(img),
-    	                       linewidth=1,
+    	                       linewidth=0.5,
     	                       linestyle=type
     	                    )
 		if args.OptIter is None:
 			OptIndx = np.argmax(np.array(Yauc))
 		else:
-			OptIndx = np.where(np.array(Xpr) == args.OptIter)[0][0]
+			#OptIndx = np.where(np.array(Xpr) == args.OptIter)[0][0]
+			OptIndx = np.where(np.array(Xauc) == args.OptIter)[0][0]
+
 		plt.plot(
     	                       Xauc,
     	                       Yauc,
     	                       color='red',
     	                       label=("average AUC (" + str(round(Yauc[OptIndx],4)) + " at " + str(Xauc[OptIndx]) + ")"),
-    	                       linewidth=1,
+    	                       linewidth=1.2,
     	                       linestyle='solid'
     	                    )
 		plt.plot(
-                                                        [Xpr[0], Xpr[-1]],
+                                                [Xauc[0], Xauc[-1]],
                                                 [0.5, 0.5],
                                                 color='blue',
                                                 label=('baseline=0.5'),
                                                 linewidth=1,
                                                 linestyle='dotted')
-		plt.xlabel("Iterations")
-		plt.ylabel("AUC")
+		plt.xlabel("Iterations", fontsize=FS)
+		plt.ylabel("AUC", fontsize=FS)
 		plt.fill_between(np.array(Xauc), np.array(Yauc) - np.array(XYstd), np.array(Yauc) + np.array(XYstd),
     	             color='lightcoral', alpha=0.2)
 		plt.title(curLabel)
@@ -156,6 +199,7 @@ def main(args):
 		plt.savefig(os.path.join(Labadd + "_" + args.out + "_" + input_folders.replace("*", "_") + 'avg_roc_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
 		fig = plt.figure(figsize=(3, 6))
 		ax = plt.subplot(2, 1,1)
+		ax.tick_params(labelsize=FS)
 		colors = cycle(["black", "black", "gray", "gray","lightgray"])
 		types = cycle(["solid","dashed","dotted","dashed","solid"])
 		for i, color, type, img in zip(PR.keys(), colors, types, allIn):
@@ -165,7 +209,7 @@ def main(args):
     	                       PR[i]['value'],
     	                       color=color,
     	                       label=(img),
-    	                       linewidth=1,
+    	                       linewidth=0.5,
     	                       linestyle=type
     	                    )
 		if args.OptIter is None:
@@ -177,18 +221,18 @@ def main(args):
     	                       Ypr,
     	                       color='red',
     	                       label=("average PR (" + str(round(Ypr[OptIndx],4)) + " at " + str(Xpr[OptIndx]) + ")"),
-    	                       linewidth=1,
+    	                       linewidth=1.2,
     	                       linestyle='solid'
     	                    )
 		plt.plot(
-							[Xpr[0], Xpr[-1]],
+						[Xpr[0], Xpr[-1]],
     						[PR[kk]['ref'][0], PR[kk]['ref'][0]],
     						color='blue',
     						label=('baseline='+str(round(PR[kk]['ref'][0],4))),
     						linewidth=1,
     						linestyle='dotted')
-		plt.xlabel("Iterations")
-		plt.ylabel("PR")
+		plt.xlabel("Iterations", fontsize=FS)
+		plt.ylabel("PR", fontsize=FS)
 		plt.fill_between(np.array(Xpr), np.array(Ypr) - np.array(XYprstd), np.array(Ypr) + np.array(XYprstd),
     	             color='lightcoral', alpha=0.2)
 		plt.title(curLabel)
