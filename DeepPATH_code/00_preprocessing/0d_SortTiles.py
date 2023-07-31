@@ -367,7 +367,7 @@ if __name__ == '__main__':
                             tmpT = tmpT.split(',')
                             tmpL = tmpL.split(',')
                             for nL in range(len(tmpL)):
-                                # print(ExpectedProb[ int(tmpL[nL]) ], float(tmpT[nL]))
+                                print(ExpectedProb[ int(tmpL[nL]) ], float(tmpT[nL]))
                                 if ExpectedProb[ int(tmpL[nL]) ] >= float(tmpT[nL]):
                                     tmpR = 'True'
                             outFilenameStats_dict[basename] = tmpR

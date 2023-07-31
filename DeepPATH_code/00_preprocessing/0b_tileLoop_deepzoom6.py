@@ -326,6 +326,9 @@ class DeepZoomImageTiler(object):
                # If path exists, Aperio assumed
                xmldir = os.path.join(self._xmlfile, ImgID + '.xml')
                AnnotationMode = 'Aperio'
+            elif os.path.isfile(os.path.join(self._xmlfile, ImgID + '.geojson')):
+               xmldir = os.path.join(self._xmlfile, ImgID + '.geojson')
+               AnnotationMode = 'QuPath_orig'
             elif os.path.isfile(os.path.join(self._xmlfile, ImgID + '.json')):               
                # QuPath assumed
                xmldir = os.path.join(self._xmlfile, ImgID + '.json')
@@ -336,9 +339,6 @@ class DeepZoomImageTiler(object):
             elif  os.path.isfile(os.path.join(self._xmlfile, ImgID + '.tif')):
                xmldir = os.path.join(self._xmlfile, ImgID + '.tif')
                AnnotationMode = 'ImageJ'
-            elif os.path.isfile(os.path.join(self._xmlfile, ImgID + '.geojson')):
-               xmldir = os.path.join(self._xmlfile, ImgID + '.geojson')
-               AnnotationMode = 'QuPath_orig'
             else:
                AnnotationMode = 'None'
 

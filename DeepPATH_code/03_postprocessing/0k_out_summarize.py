@@ -51,10 +51,11 @@ def main(args):
 	nOut = args.out
 	allIn = glob.glob(input_folders)
 	allIn.sort()
+	print(allIn)
 	print(unique_labels)
 	unique_labels.append('micro')
 	unique_labels.append('macro')
-	print(unique_labels)
+	# print(unique_labels)
 
 	for idxL, curLabel in enumerate(unique_labels):
 		AUC = {}
@@ -89,25 +90,36 @@ def main(args):
 			AUC[kk] = {}
 			AUC[kk]['value'] = []
 			AUC[kk]['iter'] = []
+			AUC[kk]['epoch'] = []
 			PR[kk] = {}
 			PR[kk]['value'] = []
 			PR[kk]['iter'] = []
 			PR[kk]['ref'] = []
+			PR[kk]['epoch'] = []
 			for nIter in EachIterAUC:
 				print(nIter)
 				print(nIter.split("_")[-uPos])
 				AUC[kk]['value'].append(float(nIter.split("_")[-uPos]))
 				iterV = int(nIter.split("_")[-uPos-ustep].split('k/out')[0])
 				AUC[kk]['iter'].append(iterV)
-				if iterV in AUCavg.keys():
-					AUCavg[iterV].append(float(nIter.split("_")[-uPos]))
-				else:
-					AUCavg[iterV] = {}
-					AUCavg[iterV] = [float(nIter.split("_")[-uPos])]
+				#if iterV in AUCavg.keys():
+				#	AUCavg[iterV].append(float(nIter.split("_")[-uPos]))
+				#else:
+				#	AUCavg[iterV] = {}
+				#	AUCavg[iterV] = [float(nIter.split("_")[-uPos])]
 			nIndx = sorted(range(len(AUC[kk]['iter'])),key=AUC[kk]['iter'] .__getitem__)
 			list1, list2 = (list(t) for t in zip(*sorted(zip(AUC[kk]['iter'], AUC[kk]['value']))))
 			AUC[kk]['iter']  = list1
 			AUC[kk]['value'] = list2
+			AUC[kk]['epoch'] = np.array(list1) / list1[0]
+			for IndxV in range(len(AUC[kk][args.method])):
+				nIter = AUC[kk][args.method][IndxV]
+				nIterV = AUC[kk]['value'][IndxV]
+				if nIter in AUCavg.keys():
+					AUCavg[nIter].append(nIterV)
+				else:
+					AUCavg[nIter] = {}
+					AUCavg[nIter] = [float(nIterV)]
 			for nIter in EachIterPR:
 				print(nIter)
 				print(nIter.split("_")[-uPos-2])
@@ -115,11 +127,11 @@ def main(args):
 				iterV = int(nIter.split("_")[-uPos-2-ustep2].split('k/out')[0])
 				PR[kk]['iter'].append(iterV)
 				PR[kk]['ref'].append(float(nIter.split("_")[-3]))
-				if iterV in PRavg.keys():
-					PRavg[iterV].append(float(nIter.split("_")[-uPos-2]))
-				else:
-					PRavg[iterV] = {}
-					PRavg[iterV] = [float(nIter.split("_")[-uPos-2])]
+				#if iterV in PRavg.keys():
+				#	PRavg[iterV].append(float(nIter.split("_")[-uPos-2]))
+				#else:
+				#	PRavg[iterV] = {}
+				#	PRavg[iterV] = [float(nIter.split("_")[-uPos-2])]
 			nIndx = sorted(range(len(PR[kk]['iter'])),key=PR[kk]['iter'] .__getitem__)
 			if curLabel=='macro':
 				list1 = []
@@ -128,6 +140,18 @@ def main(args):
 				list1, list2 = (list(t) for t in zip(*sorted(zip(PR[kk]['iter'], PR[kk]['value']))))
 			PR[kk]['iter']  = list1
 			PR[kk]['value'] = list2
+			if curLabel == 'macro':
+				PR[kk]['epoch'] = []
+			else:
+				PR[kk]['epoch'] = np.array(list1) / list1[0]
+				for IndxV in range(len(PR[kk]['value'])):
+					nIter = PR[kk][args.method][IndxV]
+					nIterV = PR[kk]['value'][IndxV]
+					if nIter in PRavg.keys():
+						PRavg[nIter].append(nIterV)
+					else:
+						PRavg[nIter] = {}
+						PRavg[nIter] = [float(nIterV)]
 		Xauc = []
 		Yauc = []
 		XYstd = []
@@ -158,7 +182,7 @@ def main(args):
 		for i, color, type, img in zip(AUC.keys(), colors, types, allIn):
     	                    print(i, color, type)
     	                    plt.plot(
-    	                       AUC[i]['iter'],
+    	                       AUC[i][args.method],
     	                       AUC[i]['value'],
     	                       color=color,
     	                       label=(img),
@@ -186,7 +210,10 @@ def main(args):
                                                 label=('baseline=0.5'),
                                                 linewidth=1,
                                                 linestyle='dotted')
-		plt.xlabel("Iterations", fontsize=FS)
+		if args.method == 'iter':
+			plt.xlabel("Iterations", fontsize=FS)
+		else:
+			plt.xlabel("Epoch", fontsize=FS)
 		plt.ylabel("AUC", fontsize=FS)
 		plt.fill_between(np.array(Xauc), np.array(Yauc) - np.array(XYstd), np.array(Yauc) + np.array(XYstd),
     	             color='lightcoral', alpha=0.2)
@@ -197,6 +224,8 @@ def main(args):
 		plt.axis('off')
 		ax2.legend(handles=handles, labels=labels,  loc="lower right", fontsize=6)
 		plt.savefig(os.path.join(Labadd + "_" + args.out + "_" + input_folders.replace("*", "_") + 'avg_roc_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
+		if curLabel=='macro':
+			continue
 		fig = plt.figure(figsize=(3, 6))
 		ax = plt.subplot(2, 1,1)
 		ax.tick_params(labelsize=FS)
@@ -205,7 +234,7 @@ def main(args):
 		for i, color, type, img in zip(PR.keys(), colors, types, allIn):
     	                    print(i, color, type)
     	                    plt.plot(
-    	                       PR[i]['iter'],
+    	                       PR[i][args.method],
     	                       PR[i]['value'],
     	                       color=color,
     	                       label=(img),
@@ -231,7 +260,10 @@ def main(args):
     						label=('baseline='+str(round(PR[kk]['ref'][0],4))),
     						linewidth=1,
     						linestyle='dotted')
-		plt.xlabel("Iterations", fontsize=FS)
+		if args.method == 'iter':
+			plt.xlabel("Iterations", fontsize=FS)
+		else:
+			plt.xlabel("Epoch", fontsize=FS)
 		plt.ylabel("PR", fontsize=FS)
 		plt.fill_between(np.array(Xpr), np.array(Ypr) - np.array(XYprstd), np.array(Ypr) + np.array(XYprstd),
     	             color='lightcoral', alpha=0.2)
@@ -281,6 +313,13 @@ if __name__ == '__main__':
       default='',
       help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1 - to be used IF classes were already combined in the input directories (only the labels will be combined here)'
   )
+  parser.add_argument(
+      '--method',
+      type=str,
+      default='iter',
+      help='iter (if all folds have the same iterations) or epoch (if folds have different iterations, and if each folder corresponds to 1 epoch)'
+  )
+
 
 
   args = parser.parse_args()
