@@ -848,9 +848,16 @@ class DeepZoomImageTiler(object):
                   # coordinates
                   vertices = []
                   for eachv in range(len(xmlcontent['features'][eachR]['geometry']['coordinates'])):
-                    for eachXY in range(len(xmlcontent['features'][eachR]['geometry']['coordinates'][eachv])): 
-                      vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachXY][0] )
-                      vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachXY][1] )
+                    if xmlcontent['features'][eachR]['geometry']['type'] == "LineString":
+                      #HALO format
+                      vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][0] )
+                      vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][1] ) 
+                    else:
+                      #QuPath format
+                      for eachXY in range(len(xmlcontent['features'][eachR]['geometry']['coordinates'][eachv])): 
+                        print(xmlcontent['features'][eachR]['geometry']['coordinates'][eachv])
+                        vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachXY][0] )
+                        vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachXY][1] )
                   regionID = str(NbRg)
                   xy[regionID] =  [ii / NewFact for ii in vertices]
                   NbRg += 1
