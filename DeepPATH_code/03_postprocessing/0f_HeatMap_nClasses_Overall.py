@@ -27,7 +27,7 @@ import numpy as np
 import glob
 import time
 import cv2
-import csv 
+import csv
 
 import matplotlib
 matplotlib.use('Agg')
@@ -40,12 +40,13 @@ import scipy.misc
 from imageio import imwrite as imsave
 from imageio import imread
 from PIL import Image
+from xml_writer import *
 
 FLAGS = None
-
-
-
-
+TYPE_CONTOUR =  0 
+TYPE_BOX =      1
+TYPE_ELLIPSE =  2 
+TYPE_ARROW =    3 
 
 
 def make_colormap(seq):
@@ -284,6 +285,9 @@ def get_inference_from_file(lineProb_st):
 			elif oClass == 2:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('darkviolet')])
+			else:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('darkviolet')])
 
 				
 				
@@ -346,7 +350,14 @@ def Get_Binary_stats(bin_im):
 	fields = ['Nb_tumors', 'Nb_tumors_500px_Dia_or_more', 'Nb_tumors_1000px_Dia_or_more', 'Nb_tumors_2000px_Dia_or_more', 'Nb_tumors_3000px_Dia_or_more', 'Nb_tumors_4000px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'List_of_tumor_diameter', 'List_of_tumor_areas']
 	rows = [str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 500).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 2000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 3000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 4000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Mean_Dia), str(Each_Tumor_Area)]
 
-	return fields, rows, sum(Each_Tumor_Area)
+	# Convert contours to xml-compatible format
+	contoursC = []
+	for eachT in contours:
+		contoursC.append(np.array([nn[0] for nn in eachT]))
+
+	contoursC = np.array(contoursC)
+
+	return fields, rows, sum(Each_Tumor_Area), contoursC
 
 def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSlide, dir_name, HeatMap_bin_or):
 	# HeatMap_0_p: heatmap coded
@@ -496,8 +507,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb = {}
 			#class_rgb[0] = [0, 1.0, 1.0]
 			#class_rgb[1] = [0.41, 0.0, 0.59]
-			class_rgb[0] = [0.41, 0.0, 0.59]
-			class_rgb[1] = [0.98, 1.0, 0.3125]
+			class_rgb[0] = [0.98, 1.0, 0.3125] #[0.41, 0.0, 0.59]
+			class_rgb[1] = [0.41, 0.0, 0.59] #[0.98, 1.0, 0.3125]
 			class_rgb[2] = [0, 0, 0]
 			class_rgb[3] = [0, 0, 0]
 			class_rgb[4] = [0, 0, 0]
@@ -564,7 +575,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				Avg_Prob_Class2 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
 				ImStat2 = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
 				Avg_Prob_Class12 = Avg_Prob_Class1 + Avg_Prob_Class2
-				fields2, rows2, TumorArea2 = Get_Binary_stats(ImStat1 + ImStat2)
+				fields2, rows2, TumorArea2, contours = Get_Binary_stats(ImStat1 + ImStat2)
 				if (cl1+cl2+cl3) == 0:
 					cl3p1 = 1
 				else:
@@ -588,9 +599,9 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			elif FLAGS.project == '02_METliver':
 				Indx_Tumor = 3
 				Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
-				# fields2, rows2, TumorArea2 = Get_Binary_stats(HeatMap_bin_or[:,:,Indx_Tumor])
+				# fields2, rows2, TumorArea2, contours = Get_Binary_stats(HeatMap_bin_or[:,:,Indx_Tumor])
 				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
-				fields2, rows2, TumorArea2 = Get_Binary_stats(ImStat)
+				fields2, rows2, TumorArea2, contours = Get_Binary_stats(ImStat)
 				# ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor]
 				fields = ['imageName', 'Tumor_area','Non_tumor_area','Tumor_percentage', 'Tumor_avg_probability']
 				fields.extend(fields2)
@@ -623,10 +634,10 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl2,1)),str(round(cl1,1)), str(round(cl0,1))]]
 			elif FLAGS.project == '08_Melanoma_binary':
-				Indx_Tumor = 0
+				Indx_Tumor = 1
 				Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
 				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
-				fields2, rows2, TumorArea2 = Get_Binary_stats(ImStat)
+				fields2, rows2, TumorArea2, contours = Get_Binary_stats(ImStat)
 				fields = ['imageName','Tumor_area','Non_tumor_area','tumor_percentage','Tumor_avg_probability']
 				fields.extend(fields2)
 				csvwriter.writerow(fields)
@@ -637,6 +648,12 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				rows = [cTileRootName, str(round(cl1,0)),str(round(cl0,0)), str(round(100*cl1/cl0p1,2)), str(round(Avg_Prob_Class1*100, 2))]
 				rows.extend(rows2)
 				rows = [rows]
+				contour_colors = [(250, 255, 80) for x in range(len(contours))]
+				#from xml_writer import *
+				writer = ImageScopeXmlWriter()
+				contours2 = [nOb*FLAGS.resample_factor for nOb in contours]
+				writer.add_contours(contours2, contour_colors)
+				writer.write(os.path.join(heatmap_path,'_'.join(cTileRootName.split('_')[1:]) + '.xml'))
 
 
 			csvwriter.writerows(rows)       
