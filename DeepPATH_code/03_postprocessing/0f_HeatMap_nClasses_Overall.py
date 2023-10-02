@@ -141,9 +141,9 @@ def get_inference_from_file(lineProb_st):
 		else:
 			score_correction = 1.0 / len(class_all)
 		# Apply correction if some classes are merged
-		print("class adjustment:")
-		print(oClass)
-		print(score_correction)
+		#print("class adjustment:")
+		#print(oClass)
+		#print(score_correction)
 		#oClass = oClass + sum([oClass >= x for x in classesID[1:]])
 		print(oClass)
 		if FLAGS.project == '00_Adjacency':
@@ -354,6 +354,7 @@ def Get_Binary_stats(bin_im):
 	contoursC = []
 	for eachT in contours:
 		contoursC.append(np.array([nn[0] for nn in eachT]))
+
 
 	contoursC = np.array(contoursC)
 
@@ -651,7 +652,12 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				contour_colors = [(250, 255, 80) for x in range(len(contours))]
 				#from xml_writer import *
 				writer = ImageScopeXmlWriter()
-				contours2 = [nOb*FLAGS.resample_factor for nOb in contours]
+				if FLAGS.PxsMag == "Mag":
+					print(contours)
+					contours2 = [nOb*FLAGS.resample_factor*FLAGS.testPixelSizeMag/FLAGS.trainPixelSizeMag for nOb in contours]
+					print(contours2)
+				else:
+					contours2 = [nOb*FLAGS.resample_factor*FLAGS.trainPixelSizeMag/FLAGS.testPixelSizeMag for nOb in contours]
 				writer.add_contours(contours2, contour_colors)
 				writer.write(os.path.join(heatmap_path,'_'.join(cTileRootName.split('_')[1:]) + '.xml'))
 
@@ -926,11 +932,30 @@ if __name__ == '__main__':
       default='',
       help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1'
   )
-
+  parser.add_argument(
+      '--trainPixelSizeMag',
+      type=float,
+      default=20.0,
+      help='Pixelsize of training set'
+  )
+  parser.add_argument(
+      '--testPixelSizeMag',
+      type=float,
+      default=0.5,
+      help='Pixelsize of test set - will be used to scale the xml file'
+  )
+  parser.add_argument(
+      '--PxsMag',
+      type=str,
+      default='Mag',
+      help='set to Mag or PixelSize depending on what output you want.'
+  )
 
   FLAGS, unparsed = parser.parse_known_args()
   FLAGS.tiles_size = FLAGS.tiles_size + 2 * FLAGS.tiles_overlap
   FLAGS.tiles_overlap = 2 * FLAGS.tiles_overlap
+  if FLAGS.testPixelSizeMag == 0:
+    FLAGS.testPixelSizeMag = FLAGS.trainPixelSizeMag
   main()
   #tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
 
