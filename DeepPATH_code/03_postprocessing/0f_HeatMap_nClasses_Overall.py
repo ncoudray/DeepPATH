@@ -296,6 +296,7 @@ def get_inference_from_file(lineProb_st):
 	# print(lineProb)
 	# print(oClass, current_score, (current_score-score_correction)/(1.0-score_correction),  [class_all[1], class_all[2], class_all[3]])
 	class_allC = [class_all[k] for k in range(len(class_all))]
+	#class_allC = [(class_all[k]-score_correction)/(1.0-score_correction) for k in range(len(class_all))]
 	return oClass, cmap, (current_score-score_correction)/(1.0-score_correction), class_allC
 
 
@@ -373,6 +374,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 	HeatMap_0 = np.divide(HeatMap_0, HeatMap_divider[:,:,0:3])
 	alpha = 0.33
 	out = HeatMap_0 * 255 * (1.0 - alpha) + WholeSlide_0 * alpha
+	# # #out = HeatMap_0 * 255 
 	out = out.transpose((1, 0, 2))
 	heatmap_path = os.path.join(FLAGS.output_dir,'heatmaps')
 	# print(heatmap_path)
@@ -515,6 +517,13 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[4] = [0, 0, 0]
 			class_rgb[5] = [0, 0, 0]
 
+		#for kk in [0, 1, 2, 3]:
+		#	tmp = HeatMap_bin[:,:,0:3] * 0 
+		#	tmp[:,:,0]  = HeatMap_bin[:,:,kk]
+		#	tmp[:,:,1]  = HeatMap_bin[:,:,kk]
+		#	tmp[:,:,2]  = HeatMap_bin[:,:,kk]
+		#	filename = os.path.join(heatmap_path,"classes_heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + str(kk) + ".jpg")
+		#	imsave(filename,tmp * 255.)
 
 		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0])
 		cl1 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1])
@@ -653,11 +662,11 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				#from xml_writer import *
 				writer = ImageScopeXmlWriter()
 				if FLAGS.PxsMag == "Mag":
-					print(contours)
-					contours2 = [nOb*FLAGS.resample_factor*FLAGS.testPixelSizeMag/FLAGS.trainPixelSizeMag for nOb in contours]
-					print(contours2)
+					#print(contours)
+					contours2 = [(nOb * FLAGS.resample_factor - FLAGS.tiles_overlap/2) * FLAGS.testPixelSizeMag/FLAGS.trainPixelSizeMag for nOb in contours]
+					#print(contours2)
 				else:
-					contours2 = [nOb*FLAGS.resample_factor*FLAGS.trainPixelSizeMag/FLAGS.testPixelSizeMag for nOb in contours]
+					contours2 = [(nOb * FLAGS.resample_factor - FLAGS.tiles_overlap/2) * FLAGS.trainPixelSizeMag/FLAGS.testPixelSizeMag for nOb in contours]
 				writer.add_contours(contours2, contour_colors)
 				writer.write(os.path.join(heatmap_path,'_'.join(cTileRootName.split('_')[1:]) + '.xml'))
 

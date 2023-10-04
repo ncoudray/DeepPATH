@@ -24,7 +24,7 @@ def main():
                         Objective = 1.
                         OrgPixelSizeX = 0
                         print("Error: No information found in the header")
-        print(OrgPixelSizeX)
+        print(OrgPixelSizeX, Objective)
         if FLAGS.PxsMag == "PixelSize":
                 sys.exit(OrgPixelSizeX) 
         elif FLAGS.PxsMag == "Mag":
