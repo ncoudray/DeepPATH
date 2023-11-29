@@ -3,6 +3,8 @@ import os
 import matplotlib.pyplot as plt
 import argparse
 import matplotlib.image as mpimg
+import matplotlib
+matplotlib.use('Agg')
 import glob
 from matplotlib import cm
 import numpy as np
@@ -45,6 +47,13 @@ parser.add_argument(
       default='',
       help='combine classes (sum of the probabilities); comma separated string (2,3). Class ID starts at 1'
 )
+parser.add_argument(
+      '--mode',
+      type=int,
+      default=1,
+      help='1&2: display tiles with highest / lowest probability for each expected true class; 1: detailed with titles; 2: show tiles only'
+)
+
 args = parser.parse_args()
 
 
@@ -191,24 +200,32 @@ for RefLabel in range(1, len(AllLabels)):
 				image_info[ImgNb]['Class probability'] = SProb
 				image_info[ImgNb]['Real targetclass probability'] = TProb
 				ImgNb += 1
-			if ImgNb ==32:
+			if ImgNb ==144:
 				break
-		_, axs = plt.subplots(4, 8, figsize=(16, 8))
-		plt.tight_layout(pad=1.2)
+		fig, axs = plt.subplots(12, 12, figsize=(18, 18))
+		if args.mode == 1:
+			plt.tight_layout(pad=1.2)
+		elif args.mode == 2:
+			 plt.tight_layout(pad=0)
 		axs = axs.flatten()
-		#axs.axis('off')
 		for index, ax in zip(range(0,ImgNb), axs):
 			ax.imshow(image_datas[index])
-			ax.title.set_text(image_info[index]['name'] + ':\n%s: %.3f\n%s: %.3f' % (eachLabel, image_info[index]['Class probability'], RefLabel_Prob, image_info[index]['Real targetclass probability']))
-			ax.title.set_fontsize(6)
-			#ax.axis('off')
 			ax.set_xticks([])
 			ax.set_yticks([])
-			for side in ax.spines.keys():
-				ax.spines[side].set_linewidth(image_info[index]['Class probability']*10)
-				ax.spines[side].set_color(cm.jet(image_info[index]['Class probability']))
-		plt.savefig(os.path.join(outputPath, RefLabel_Prob + '_as_' + eachLabel + '.png'))
-		
+			if args.mode == 1:
+				ax.title.set_text(image_info[index]['name'] + ':\n%s: %.3f\n%s: %.3f' % (eachLabel, image_info[index]['Class probability'], RefLabel_Prob, image_info[index]['Real targetclass probability']))
+				ax.title.set_fontsize(6)
+				for side in ax.spines.keys():
+					ax.spines[side].set_linewidth(image_info[index]['Class probability']*10)
+					ax.spines[side].set_color(cm.jet(image_info[index]['Class probability']))
+			elif args.mode == 2:
+				continue
+		if args.mode == 1:
+			plt.savefig(os.path.join(outputPath, RefLabel_Prob + '_reference_labeled_as_' + eachLabel + '_wTitles.png'))
+		elif args.mode == 2:
+			fig.subplots_adjust(wspace=0, hspace=0)
+			plt.savefig(os.path.join(outputPath, RefLabel_Prob + '_reference_labeled_as_' + eachLabel + '.png'))
+
 
 
 

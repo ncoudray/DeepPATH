@@ -290,6 +290,7 @@ module load python/gpu/3.6.5
 * (optional) `threshold`: threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability); (should be a string, separated by commas if more than 1 label desired)
 * (optinal) `Balance`: balance the percentage of tiles in each datasets by: 0-tiles (default); 1-slides; 2-patients (must give PatientID)
 * (optional) `outputtype`: Type of output: list source/destination in a file (```File```), do symlink (```Symlink```, default) or both (```Both```)
+* (optiomal) `MaxTilePerWSI`: maximum number of tiles to take randomly for each slide (or each labeled ROIs). Default: take everything
 
 The output will be generated in the current directory where the program is launched (so start it from a new empty folder). Images will not be copied but a symbolic link will be created toward the <tiled images path>. The links will be renamed ```<type>_<slide_root_name>_<x>_<y>.jpeg``` with <type> being 'train_', 'test_' or 'valid_' followed by the svs name and the tile ID. 
 
