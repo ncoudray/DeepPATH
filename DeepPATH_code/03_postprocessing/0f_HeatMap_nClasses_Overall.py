@@ -244,14 +244,15 @@ def get_inference_from_file(lineProb_st):
 				cmap = plt.get_cmap('binary')
 			elif oClass == 2:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('green')])
+				cmap = make_colormap([c('white'), c('#FFC107')])
+				# green')])
 			elif oClass == 3:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('blue')])
+				cmap = make_colormap([c('white'), c('#1E88E5')]) #blue')])
 			elif oClass == 4:
 				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('red')])
-				cmap = plt.get_cmap('Oranges')
+				cmap = make_colormap([c('white'), c('#D81B60')]) #red')])
+				#cmap = plt.get_cmap('Oranges')
 			else:
 				cmap = plt.get_cmap('Purples')
 		elif FLAGS.project == '04_HN':
@@ -299,7 +300,7 @@ def get_inference_from_file(lineProb_st):
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('black')])
 		elif FLAGS.project == '10_Melanoma_3Classes':
-			 if oClass == 1:
+			if oClass == 1:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('red')])
 			elif oClass == 2:
@@ -323,6 +324,49 @@ def get_inference_from_file(lineProb_st):
 	return oClass, cmap, (current_score-score_correction)/(1.0-score_correction), class_allC
 
 
+
+def Get_Binary_stats2(bin_im):
+	t, b_tmp= cv2.threshold(np.uint8(bin_im)*255,128,255,cv2.THRESH_BINARY)
+	num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(b_tmp , 4 , cv2.CV_16S)
+	Each_Tumor_Area = []
+	Each_Tumor_Mean_Dia = []
+	nIt = 0
+	ImBin1 = np.ascontiguousarray(bin_im)
+	contoursC = []
+	for i in range(0,labels.max()+1):
+		if stats[i,0] > 0:
+			mask = cv2.compare(labels,i,cv2.CMP_EQ)
+			_,contours,_ = cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+			Each_Tumor_Area.append(stats[i,4]* FLAGS.resample_factor * FLAGS.resample_factor)
+			eachT = contours[0]
+			if len(eachT) >= 5:
+				ellipse = cv2.fitEllipse(eachT)
+				MinAx = min(ellipse[1]) * FLAGS.resample_factor
+				MaxAx = max(ellipse[1]) * FLAGS.resample_factor
+				Each_Tumor_Mean_Dia.append( (MinAx + MaxAx) / 2 )
+			else
+				Each_Tumor_Mean_Dia.append(np.sqrt( Each_Tumor_Area[-1] / np.pi) )
+			M = cv2.moments(eachT)
+			if M["m00"] != 0:
+				cx= int(M['m10']/M['m00'])
+				cy= int(M['m01']/M['m00'])
+			else:
+				cx = 0
+				cy = 0
+			ImBin1 = cv2.putText(ImBin1, text = str(nIt), org=(cx, cy),  fontFace= cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=(255,211,25), thickness=4, lineType=cv2.LINE_AA)
+			for eachT in contours:
+				contoursC.append(np.array([nn[0] for nn in eachT]))
+
+	Nb_Tumor = len(Each_Tumor_Area)
+	fields = ['Nb_tumors', 'Nb_tumors_500px_Dia_or_more', 'Nb_tumors_1000px_Dia_or_more', 'Nb_tumors_2000px_Dia_or_more', 'Nb_tumors_3000px_Dia_or_more', 'Nb_tumors_4000px_Dia_or_more', 'Nb_tumors_5000px_Dia_or_more', 'List_of_tumor_diameter', 'List_of_tumor_areas']
+	rows = [str(Nb_Tumor), str((np.asarray(Each_Tumor_Mean_Dia) > 500).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 1000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 2000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 3000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 4000).sum()), str((np.asarray(Each_Tumor_Mean_Dia) > 5000).sum()), str(Each_Tumor_Mean_Dia), str(Each_Tumor_Area)]
+
+	contoursC = np.array(contoursC)
+
+	return fields, rows, sum(Each_Tumor_Area), contoursC
+				
+			
+
 def Get_Binary_stats(bin_im):
 	#print(bin_im)
 	#imsave('bin_im.jpeg',bin_im)
@@ -338,7 +382,6 @@ def Get_Binary_stats(bin_im):
 	ImBin1 = np.ascontiguousarray(bin_im)
 	for eachT in contours:
 		nIt += 1
-		# Each_Tumor_Area.append( (cv2.contourArea(eachT)+len(eachT)) * FLAGS.resample_factor * FLAGS.resample_factor)
 		if len(eachT>2):
 			Each_Tumor_Area.append(cv2.contourArea(eachT) * FLAGS.resample_factor * FLAGS.resample_factor)
 		else:
@@ -492,9 +535,12 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		elif FLAGS.project == '03_OSA':
 			class_rgb = {}
 			class_rgb[0] = [0, 0, 0]
-			class_rgb[1] = [0, 1.0, 0]
-			class_rgb[2] = [0, 0.0, 1.0]
-			class_rgb[3] = [1.0, 0, 0.0]
+			#class_rgb[1] = [0, 1.0, 0]
+			class_rgb[1] = [1.0, 193.0/255.0, 7.0/255.0]
+			#class_rgb[2] = [0, 0.0, 1.0]
+			class_rgb[2] = [30.0/255.0, 136.0/255.0, 229.0/255.0]
+			#class_rgb[3] = [1.0, 0, 0.0]
+			class_rgb[3] = [216.0/255.0, 27.0/255.0, 96.0/255.0]
 			class_rgb[4] = [1, 1, 1]
 			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '04_HN':
@@ -741,7 +787,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				Avg_Prob_Class2 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
 				Avg_Prob_Class0 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)	
 				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
-				fields2, rows2, TumorArea2, contours = Get_Binary_stats(ImStat)
+				fields2, rows2, TumorArea2, contours = Get_Binary_stats2(ImStat)
 				fields = ['imageName','Tumor_area','Necrosis_area','Other_area','tumor_percentage','Necrosis_percentage','Tumor_avg_probability','Necrosis_avg_probability']
 				fields.extend(fields2)
 				csvwriter.writerow(fields)
@@ -751,7 +797,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 					cl0p1 = cl0 + cl1 + cl2
 				rows = [cTileRootName, str(round(cl2,0)),str(round(cl0,0)),str(round(cl1,0)), str(round(100*cl2/cl0p1,2)), str(round(100*cl0/cl0p1,2)), str(round(Avg_Prob_Class2*100, 2)), str(round(Avg_Prob_Class0*100, 2))]
 				rows.extend(rows2)
-				rows.extend(rows2)
+				rows = [rows]
+				#rows.extend(rows2)
 				contour_colors = [(250, 255, 80) for x in range(len(contours))]
 				writer = ImageScopeXmlWriter()
 				if FLAGS.PxsMag == "Mag":
