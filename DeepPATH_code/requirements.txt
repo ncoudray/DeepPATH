@@ -71,7 +71,7 @@ imageio==2.8.0
 imagesize==1.0.0
 importlib==1.0.4
 ipykernel==4.8.2
-ipython==6.4.0
+ipython==7.16.3
 ipython-genutils==0.2.0
 ipywidgets==7.3.0
 isodate==0.6.0
