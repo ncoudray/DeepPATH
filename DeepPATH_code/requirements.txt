@@ -98,7 +98,7 @@ locket==0.2.0
 logomaker==0.8
 lxml==4.3.2
 m2r==0.2.1
-Mako==1.0.7
+Mako==1.2.2
 Markdown==2.6.11
 MarkupSafe==1.0
 matplotlib==3.2.2
