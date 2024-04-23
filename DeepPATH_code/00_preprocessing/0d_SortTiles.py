@@ -513,6 +513,7 @@ if __name__ == '__main__':
     print("imgFolders: " + str(len(imgFolders)))
     print(imgFolders[0:min(10,len(imgFolders))])
     NbrPatientsCateg_Total = 0
+    NbrPatientsCateg_Total_meta = 0
     for cFolderName in imgFolders:
 
         NbSlides += 1
@@ -526,6 +527,7 @@ if __name__ == '__main__':
         imgRootName = os.path.basename(cFolderName)
         imgRootName = imgRootName.replace('_files', '')
 
+        metaSubDir = "metaPatient"
         if args.SortingOption == 10:
             SubDir = os.path.basename(os.path.normpath(SourceFolder))
         elif args.SortingOption == 19:
@@ -611,21 +613,26 @@ if __name__ == '__main__':
             NbrTilesCateg[SubDir + "_train"] = 0
             NbrTilesCateg[SubDir + "_test"] = 0
             NbrTilesCateg[SubDir + "_valid"] = 0
+
             PercentTilesCateg[SubDir + "_train"] = 0
             PercentTilesCateg[SubDir + "_test"] = 0
             PercentTilesCateg[SubDir + "_valid"] = 0
+
             NbrImagesCateg[SubDir] = 0
             NbrImagesCateg[SubDir + "_train"] = 0
             NbrImagesCateg[SubDir + "_test"] = 0
             NbrImagesCateg[SubDir + "_valid"] = 0
+
             PercentSlidesCateg[SubDir + "_train"] = 0
             PercentSlidesCateg[SubDir + "_test"] = 0
             PercentSlidesCateg[SubDir + "_valid"] = 0
+
             NbrPatientsCateg[SubDir + "_NameList"] = {}
             NbrPatientsCateg[SubDir] = 0
             NbrPatientsCateg[SubDir + "_train"] = 0
             NbrPatientsCateg[SubDir + "_test"] = 0
-            NbrPatientsCateg[SubDir + "_valid"] = 0            
+            NbrPatientsCateg[SubDir + "_valid"] = 0    
+
             PercentPatientsCateg[SubDir + "_train"] = 0
             PercentPatientsCateg[SubDir + "_test"] = 0
             PercentPatientsCateg[SubDir + "_valid"] = 0
@@ -637,6 +644,22 @@ if __name__ == '__main__':
                     ttv_split[SubDir].append("train")
                     nbr_valid[SubDir].append(0)
                 ttv_split[SubDir][0] = "test"
+
+
+
+        if metaSubDir in NbrPatientsCateg.keys():
+            print("%s Already in meta dictionary" % SubDir)
+            # print(SubDir)
+        else:
+            NbrPatientsCateg[metaSubDir + "_NameList"] = {}
+            NbrPatientsCateg[metaSubDir] = 0
+            NbrPatientsCateg[metaSubDir + "_train"] = 0
+            NbrPatientsCateg[metaSubDir + "_test"] = 0
+            NbrPatientsCateg[metaSubDir + "_valid"] = 0   
+
+            PercentPatientsCateg[metaSubDir + "_train"] = 0
+            PercentPatientsCateg[metaSubDir + "_test"] = 0
+            PercentPatientsCateg[metaSubDir + "_valid"] = 0
 
         NbTiles = 0
         ttv = 'None'
@@ -685,6 +708,13 @@ if __name__ == '__main__':
                     ttv = "valid"
                 else:
                     ttv = "train"
+            elif args.Balance == 3:
+                if (PercentPatientsCateg.get(metaSubDir + "_test") <= PercentTest) and (PercentTest > 0):
+                    ttv = "test"
+                elif (PercentPatientsCateg.get(metaSubDir + "_valid") <= PercentValid) and (PercentValid > 0):
+                    ttv = "valid"
+                else:
+                    ttv = "train"
             else :
                 # print("current percent in test, valid and ID (bal tile):" +  str(PercentTilesCateg.get(SubDir + "_test"))+ "; " +str(PercentTilesCateg.get(SubDir + "_valid")))
                 # print(PercentTilesCateg.get(SubDir + "_test"))
@@ -715,6 +745,7 @@ if __name__ == '__main__':
                         tileNewPatient = False
                     else:
                         NbrPatientsCateg_Total = NbrPatientsCateg_Total + 1
+                        NbrPatientsCateg_Total_meta = NbrPatientsCateg_Total_meta + 1
                         SetIndx = nbr_valid[SubDir].index(min(nbr_valid[SubDir]))
                         Patient_set[Patient] = SetIndx
                         tileNewPatient = True
@@ -744,6 +775,11 @@ if __name__ == '__main__':
                     if NewPatient:
                         if NbTiles == 1:
                             nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
+                elif args.Balance == 3:
+                    if NewPatient:
+                        if NbTiles == 1:
+                            nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
+                            nbr_valid[metaSubDir][SetIndx] = nbr_valid[metaSubDir][SetIndx] + 1
                 else:
                     nbr_valid[SubDir][SetIndx] = nbr_valid[SubDir][SetIndx] + 1
 
@@ -768,27 +804,54 @@ if __name__ == '__main__':
                     Patient = imgRootName
                 if True:
                     # check if patient in this particular class
-                    if Patient not in NbrPatientsCateg[SubDir + "_NameList"].keys():
-                        # it is not > check in other
-                        # Check if patient in ANY class is train/valid or test
-                        if Patient in Patient_set:
-                            ttv = Patient_set[Patient]
-                            NbrPatientsCateg[SubDir + "_NameList"][Patient] = Patient_set[Patient]
-                            # if NbTiles == 1:
-                            #   NewPatient = False
-                        else:
-                            Patient_set[Patient] = ttv
-                            NbrPatientsCateg[SubDir + "_NameList"][Patient] = ttv
-                            #if NbTiles == 1:
-           		                 #    NewPatient = True
-                        if NbTiles == 1:
-                        	NewPatient = True
+                    # overwrite if Balance 3 in option
+                    if args.Balance == 3:
+	                    if Patient not in NbrPatientsCateg[metaSubDir + "_NameList"].keys():
+	                        if Patient in Patient_set:
+	                            ttv = Patient_set[Patient]
+	                            NbrPatientsCateg[metaSubDir + "_NameList"][Patient] = Patient_set[Patient]
+	                            NbrPatientsCateg[SubDir + "_NameList"][Patient] = Patient_set[Patient]
+	                            # if NbTiles == 1:
+	                            #   NewPatient = False
+	                        else:
+	                            Patient_set[Patient] = ttv
+	                            NbrPatientsCateg[metaSubDir + "_NameList"][Patient] = ttv
+	                            NbrPatientsCateg[SubDir + "_NameList"][Patient] = ttv
+	                            #if NbTiles == 1:
+	           		                 #    NewPatient = True
+
+	                        if NbTiles == 1:
+	                        	NewPatient = True
+
+	                    else:
+	                        # It is in the class > not a new patient
+	                        ttv = Patient_set[Patient]
+	                        if NbTiles == 1:
+	                            NewPatient = False
 
                     else:
-                        # It is in the class > not a new patient
-                        ttv = Patient_set[Patient]
-                        if NbTiles == 1:
-                            NewPatient = False
+	                    if Patient not in NbrPatientsCateg[SubDir + "_NameList"].keys():
+	                        # it is not > check in other
+	                        # Check if patient in ANY class is train/valid or test
+	                        if Patient in Patient_set:
+	                            ttv = Patient_set[Patient]
+	                            NbrPatientsCateg[SubDir + "_NameList"][Patient] = Patient_set[Patient]
+	                            # if NbTiles == 1:
+	                            #   NewPatient = False
+	                        else:
+	                            Patient_set[Patient] = ttv
+	                            NbrPatientsCateg[SubDir + "_NameList"][Patient] = ttv
+	                            #if NbTiles == 1:
+	           	                     #    NewPatient = True
+	                        if NbTiles == 1:
+	                        	NewPatient = True
+
+	                    else:
+	                        # It is in the class > not a new patient
+	                        ttv = Patient_set[Patient]
+	                        if NbTiles == 1:
+	                            NewPatient = False
+
 
 
 
@@ -808,16 +871,19 @@ if __name__ == '__main__':
         if ttv == "train":
             if NewPatient: 
                 NbrPatientsCateg[SubDir + "_train"] = NbrPatientsCateg[SubDir + "_train"] + 1
+                NbrPatientsCateg[metaSubDir + "_train"] = NbrPatientsCateg[metaSubDir + "_train"] + 1
             NbrTilesCateg[SubDir + "_train"] = NbrTilesCateg.get(SubDir + "_train") + NbTiles
             NbrImagesCateg[SubDir + "_train"] = NbrImagesCateg[SubDir + "_train"] + 1
         elif ttv == "test":
             if NewPatient: 
                 NbrPatientsCateg[SubDir + "_test"] = NbrPatientsCateg[SubDir + "_test"] + 1
+                NbrPatientsCateg[metaSubDir + "_test"] = NbrPatientsCateg[metaSubDir + "_test"] + 1
             NbrTilesCateg[SubDir + "_test"] = NbrTilesCateg.get(SubDir + "_test") + NbTiles
             NbrImagesCateg[SubDir + "_test"] = NbrImagesCateg[SubDir + "_test"] + 1
         elif ttv == "valid":
             if NewPatient: 
                 NbrPatientsCateg[SubDir + "_valid"] = NbrPatientsCateg[SubDir + "_valid"] + 1
+                NbrPatientsCateg[metaSubDir + "_valid"] = NbrPatientsCateg[metaSubDir + "_valid"] + 1
             NbrTilesCateg[SubDir + "_valid"] = NbrTilesCateg.get(SubDir + "_valid") + NbTiles
             NbrImagesCateg[SubDir + "_valid"] = NbrImagesCateg[SubDir + "_valid"] + 1
         else:
@@ -826,11 +892,15 @@ if __name__ == '__main__':
         NbrImagesCateg[SubDir] = NbrImagesCateg.get(SubDir) + 1
         if NewPatient: 
             NbrPatientsCateg[SubDir] = NbrPatientsCateg.get(SubDir) + 1
+            NbrPatientsCateg[metaSubDir] = NbrPatientsCateg.get(metaSubDir) + 1
             if int(args.nSplit) > 0:
               NbrPatientsCateg[SubDir] = max(NbrPatientsCateg[SubDir], NbrPatientsCateg_Total)
+              NbrPatientsCateg[metaSubDir] = max(NbrPatientsCateg[metaSubDir], NbrPatientsCateg_Total_meta)
         else:
             if NbrPatientsCateg[SubDir]==0:
               NbrPatientsCateg[SubDir]=1
+            if NbrPatientsCateg[metaSubDir]==0:
+            	NbrPatientsCateg[metaSubDir]=1
 
         print("New Patient: " + str(NewPatient))
         print("NbrPatientsCateg[SubDir]: " + str(NbrPatientsCateg[SubDir]))
@@ -845,6 +915,10 @@ if __name__ == '__main__':
         PercentPatientsCateg[SubDir + "_train"] = float(NbrPatientsCateg.get(SubDir + "_train")) / float(NbrPatientsCateg.get(SubDir))
         PercentPatientsCateg[SubDir + "_test"] = float(NbrPatientsCateg.get(SubDir + "_test")) / float(NbrPatientsCateg.get(SubDir))
         PercentPatientsCateg[SubDir + "_valid"] = float(NbrPatientsCateg.get(SubDir + "_valid")) / float(NbrPatientsCateg.get(SubDir))
+        PercentPatientsCateg[metaSubDir + "_train"] = float(NbrPatientsCateg.get(metaSubDir + "_train")) / float(NbrPatientsCateg.get(metaSubDir))
+        PercentPatientsCateg[metaSubDir + "_test"] = float(NbrPatientsCateg.get(metaSubDir + "_test")) / float(NbrPatientsCateg.get(metaSubDir))
+        PercentPatientsCateg[metaSubDir + "_valid"] = float(NbrPatientsCateg.get(metaSubDir + "_valid")) / float(NbrPatientsCateg.get(metaSubDir))
+
 
         print("Done. %d tiles linked to %s " % (NbTiles, SubDir))
         print("Train / Test / Validation tiles sets for %s = %f %%  / %f %% / %f %%" % (
@@ -857,20 +931,35 @@ if __name__ == '__main__':
             print("Train / Test / Validation patients sets for %s = %f %%  / %f %% / %f %%" % (
                 SubDir, PercentPatientsCateg.get(SubDir + "_train"), PercentPatientsCateg.get(SubDir + "_test"),
                 PercentPatientsCateg.get(SubDir + "_valid")))
+            print("Train / Test / Validation meta patients sets for %s = %f %%  / %f %% / %f %%" % (
+                SubDir, PercentPatientsCateg.get(metaSubDir + "_train"), PercentPatientsCateg.get(metaSubDir + "_test"),
+                PercentPatientsCateg.get(metaSubDir + "_valid")))
 
-    for k, v in sorted(Classes.items()):
+
+    
+    for k, v in sorted(Classes.items()): 
         print('list of images in class %s :' % k)
         print(v)
 
+    print(" -- per tile info -- ")
     for k, v in sorted(NbrTilesCateg.items()):
         print(k, v)
     for k, v in sorted(PercentTilesCateg.items()):
         print(k, v)
+    print(" -- per slide info -- ")
     for k, v in sorted(NbrImagesCateg.items()):
         print(k, v)
     if args.PatientID > 0:
+        print(" -- per patient info -- ")
         for k, v in sorted(NbrPatientsCateg.items()):
             print(k, v)
+        #if Balance == 3:
+        #    print(" -- per patient info -- ")
+        #    for k, v in sorted(NbrPatientsCateg.items()):
+        #        print(k, v)
+
+
+
 
     print("failed images:")
     print(failedimg)

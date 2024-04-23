@@ -288,7 +288,7 @@ module load python/gpu/3.6.5
 * (optional) `outFilenameStats`: if an "out_filename_Stats.txt file" is given, check if the tile exists in it an only copy the tile if its value is "true".
 * (optional) `expLabel`: Index of the label to sort on within the outFilenameStats file (if only True/False is needed, leave this option empty) - tiles will only be included if there labels is the one predicted (dominant) in the  outFilenameStats file. (should be a string, separated by commas if more than 1 label desired; label 0 is for inception background class; label 1 to n for the user's in alphabetical order)
 * (optional) `threshold`: threshold above which the probability the class should be to be considered as true (if not specified, it would be considered as true if it has the max probability); (should be a string, separated by commas if more than 1 label desired)
-* (optinal) `Balance`: balance the percentage of tiles in each datasets by: 0-tiles (default); 1-slides; 2-patients (must give PatientID)
+* (optinal) `Balance`: balance the percentage of tiles in each datasets by: 0-tiles (default); 1-slides; 2-patients (must give PatientID); 3-patients (must give PatientID and works on the whole set instead of per class - developped for manually annotated tiles - note: not tested yes with the split cross-validation option on) 
 * (optional) `outputtype`: Type of output: list source/destination in a file (```File```), do symlink (```Symlink```, default) or both (```Both```)
 * (optiomal) `MaxTilePerWSI`: maximum number of tiles to take randomly for each slide (or each labeled ROIs). Default: take everything
 

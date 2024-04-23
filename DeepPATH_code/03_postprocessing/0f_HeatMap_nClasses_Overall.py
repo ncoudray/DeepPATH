@@ -344,7 +344,7 @@ def Get_Binary_stats2(bin_im):
 				MinAx = min(ellipse[1]) * FLAGS.resample_factor
 				MaxAx = max(ellipse[1]) * FLAGS.resample_factor
 				Each_Tumor_Mean_Dia.append( (MinAx + MaxAx) / 2 )
-			else
+                        else:
 				Each_Tumor_Mean_Dia.append(np.sqrt( Each_Tumor_Area[-1] / np.pi) )
 			M = cv2.moments(eachT)
 			if M["m00"] != 0:
