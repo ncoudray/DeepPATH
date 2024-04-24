@@ -68,7 +68,12 @@ def main(args):
                                 	#print(lineProb)
                                 stats_dict[cTileRootName]['tiles'][tilename] = [str(ixTile), str(iyTile), lineProb, lineProb.index(max(lineProb)), int(line2[-1])]
 
-#balanced_accuracy_score(y_true = , y_pred= )
+	if tilename.startswith('test_'):
+		PatientID = PatientID + 5
+	elif tilename.startswith('valid_'):
+		 PatientID = PatientID + 6
+
+	#balanced_accuracy_score(y_true = , y_pred= )
 
 
 	y_true_perTil = {}

@@ -306,7 +306,23 @@ def get_inference_from_file(lineProb_st):
 			elif oClass == 2:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('yellow')])
+			elif oClass == 3:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('darkviolet')])
+			else:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('darkviolet')])
+		elif FLAGS.project == '11_Melanoma_4Classes':
+			if oClass == 1:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('red')])
 			elif oClass == 2:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('yellow')])
+			elif oClass == 3:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('#40E0D0')])
+			elif oClass == 4:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('darkviolet')])
 			else:
@@ -601,7 +617,14 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[3] = [0, 0, 0]
 			class_rgb[4] = [0, 0, 0]
 			class_rgb[5] = [0, 0, 0]
-
+		elif FLAGS.project == '11_Melanoma_4Classes':
+			class_rgb = {}
+			class_rgb[0] = [1.0, .0, 0]
+			class_rgb[1] = [0.98, 1.0, 0.3125]
+			class_rgb[2] = [64.0/255.0, 224.0/255.0, 208.0/255.0]
+			class_rgb[3] = [0.41, 0.0, 0.59]
+			class_rgb[4] = [0, 0, 0]
+			class_rgb[5] = [0, 0, 0]
 
 
 		#for kk in [0, 1, 2, 3]:
@@ -785,7 +808,9 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			elif FLAGS.project == '10_Melanoma_3Classes':
 				Indx_Tumor = 2
 				Avg_Prob_Class2 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
+				Indx_Tumor = 0
 				Avg_Prob_Class0 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)	
+				Indx_Tumor = 2
 				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
 				fields2, rows2, TumorArea2, contours = Get_Binary_stats2(ImStat)
 				fields = ['imageName','Tumor_area','Necrosis_area','Other_area','tumor_percentage','Necrosis_percentage','Tumor_avg_probability','Necrosis_avg_probability']
@@ -808,7 +833,36 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				writer.add_contours(contours2, contour_colors)
 				writer.write(os.path.join(heatmap_path,'_'.join(cTileRootName.split('_')[1:]) + '.xml'))
 
+			elif FLAGS.project == '11_Melanoma_4Classes':
+				Indx_Tumor = 3
+				Avg_Prob_Class3 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
+				Indx_Tumor = 0
+				Avg_Prob_Class0 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)	
+				Indx_Tumor = 2
+				Avg_Prob_Class2 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)	
 
+				Indx_Tumor = 3
+				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
+				fields2, rows2, TumorArea2, contours = Get_Binary_stats2(ImStat)
+				fields = ['imageName','Tumor_area','Necrosis_area','RXeffects_area','Other_area','tumor_percentage','Necrosis_percentage','Tumor_avg_probability','Necrosis_avg_probability','RXeffects_avg_probability']
+				fields.extend(fields2)
+				csvwriter.writerow(fields)
+				if (cl0+cl1+cl2+cl3) == 0:
+					cl0p1 = 1
+				else:
+					cl0p1 = cl0 + cl1 + cl2+ cl3
+				rows = [cTileRootName, str(round(cl3,0)),str(round(cl0,0)),str(round(cl2,0)),str(round(cl1,0)), str(round(100*cl3/cl0p1,2)), str(round(100*cl0/cl0p1,2)), str(round(Avg_Prob_Class3*100, 2)), str(round(Avg_Prob_Class0*100, 2)), str(round(Avg_Prob_Class2*100, 2))]
+				rows.extend(rows2)
+				rows = [rows]
+				#rows.extend(rows2)
+				contour_colors = [(250, 255, 80) for x in range(len(contours))]
+				writer = ImageScopeXmlWriter()
+				if FLAGS.PxsMag == "Mag":
+					contours2 = [(nOb * FLAGS.resample_factor - FLAGS.tiles_overlap/2) * FLAGS.testPixelSizeMag/FLAGS.trainPixelSizeMag for nOb in contours]
+				else:
+					contours2 = [(nOb * FLAGS.resample_factor - FLAGS.tiles_overlap/2) * FLAGS.trainPixelSizeMag/FLAGS.testPixelSizeMag for nOb in contours]
+				writer.add_contours(contours2, contour_colors)
+				writer.write(os.path.join(heatmap_path,'_'.join(cTileRootName.split('_')[1:]) + '.xml'))
 
 
 			csvwriter.writerows(rows)       
@@ -1079,7 +1133,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet, 08_Melanoma_binary, 09_OSA_Surv, 10_Melanoma_3Classes'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet, 08_Melanoma_binary, 09_OSA_Surv, 10_Melanoma_3Classes', '11_Melanoma_4Classes'
   )
   parser.add_argument(
       '--combine',
