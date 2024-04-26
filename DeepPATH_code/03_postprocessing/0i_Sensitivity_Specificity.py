@@ -328,8 +328,8 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 			"F1score: " + str(round(F1score,4)) + "\n" +\
 			"balanced accuracy: " + str(round(FbalAcc,4))
 
-
-		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat.png"), nInfo, nCl, combine)
+		stats = "_spec_" + str(round(nspecificity,4)) + "_accu_" + str(round(naccuracy,4)) + "_prec_" + str(round(nprecision,4))  + "_rese_" + str(round(nRecall_sensitivity,4)) + "_F1sc_" + str(round(F1score,4))
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat" + stats + ".png"), nInfo, nCl, combine)
 
 		TPN_matrix = np.true_divide(TPN_matrix, TPN_matrix.sum(axis=1, keepdims=True))*100
 		TPN_matrix = TPN_matrix.round(decimals=2)
@@ -378,8 +378,10 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 			"F1score: " + str(round(F1score,4)) + "\n" +\
 			"balanced accuracy: " + str(round(FbalAcc,4))
 
-	
-		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_Normalized.png"), nInfo, nCl, combine)
+		stats = "_spec_" + str(round(nspecificity, 4)) + "_accu_" + str(round(naccuracy, 4)) + "_prec_" + str(
+			round(nprecision, 4)) + "_rese_" + str(round(nRecall_sensitivity, 4)) + "_F1sc_" + str(round(F1score, 4))
+
+		plot_Confusion(TPN_matrix, labelFile, os.path.join(outputPath, save_basename + "_Class" + str(nCl) + "_ConfusionMat_Normalized" + stats + ".png"), nInfo, nCl, combine)
 	
 		TPN_matrix = np.true_divide(TPN_matrix, TPN_matrix.sum(axis=1, keepdims=True))*100
 		TPN_matrix = TPN_matrix.round(decimals=1)
@@ -405,7 +407,10 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 		"F1score: " + str(round(F1score_avg,4)) + "\n" +\
 		"balanced accuracy: " + str(round(FbalAcc_avg,4))
 
-	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat.png"), nInfo, -1, combine)
+	stats = "_spec_" + str(round(nspecificity_avg, 4)) + "_accu_" + str(round(naccuracy_avg, 4)) + "_prec_" + str(
+		round(nprecision_avg, 4)) + "_rese_" + str(round(nRecall_sensitivity_avg, 4)) + "_F1sc_" + str(round(F1score_avg, 4))
+
+	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat" + stats + ".png"), nInfo, -1, combine)
 	TPN_matrix_full = np.true_divide(TPN_matrix_full, TPN_matrix_full.sum(axis=1, keepdims=True))*100
 	TPN_matrix_full = TPN_matrix_full.round(decimals=1)
 	plot_Confusion(TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvg_ConfusionMat_percent.png"), nInfo, -1, combine)
@@ -418,8 +423,11 @@ def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, 
 		"recall/sensitivity: " + str(round(nRecall_sensitivity_avg_norm,4)) + "\n" +\
 		"F1score: " + str(round(F1score_avg_norm,4)) + "\n" +\
 		"balanced accuracy: " + str(round(FbalAcc_avg_norm,4))
-	
-	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized.png"), nInfo, -1, combine)
+
+	stats = "_spec_" + str(round(nspecificity_avg_norm, 4)) + "_accu_" + str(round(naccuracy_avg_norm, 4)) + "_prec_" + str(
+		round(nprecision_avg_norm, 4)) + "_rese_" + str(round(nRecall_sensitivity_avg_norm, 4)) + "_F1sc_" + str(round(F1score_avg_norm, 4))
+
+	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized" + stats + ".png"), nInfo, -1, combine)
 	t_TPN_matrix_full = np.true_divide(t_TPN_matrix_full, t_TPN_matrix_full.sum(axis=1, keepdims=True))*100
 	t_TPN_matrix_full = t_TPN_matrix_full.round(decimals=1)
 	plot_Confusion(t_TPN_matrix_full, labelFile, os.path.join(outputPath, save_basename + "_ClassAvgNorm_ConfusionMat_Normalized_percent.png"), nInfo, -1, combine)

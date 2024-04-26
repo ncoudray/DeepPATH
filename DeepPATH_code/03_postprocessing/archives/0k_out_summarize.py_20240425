@@ -25,71 +25,6 @@ from matplotlib import gridspec
 import glob
 from itertools import cycle
 
-
-
-def plot_and_save(args, ToPlot, ToAvg, whatisit, Label, Labadd, input_folders, allIn, kk):
-		X_toPlot = []
-		Y_toPlot = []
-		std_toPlot = []
-		for mm in ToAvg.keys():
-			X_toPlot.append(mm)
-			Y_toPlot.append(np.average(ToAvg[mm]))
-			std_toPlot.append(np.std(ToAvg[mm], ddof=1) / np.sqrt(np.size(ToAvg[mm])))
-		X_toPlot, Y_toPlot, std_toPlot = (list(t) for t in zip(*sorted(zip(X_toPlot, Y_toPlot, std_toPlot))))
-
-		fig = plt.figure(figsize=(3, 6))
-		FS = 8
-		ax = plt.subplot(2, 1,1)
-		ax.tick_params(labelsize=FS)
-		colors = cycle(["black", "black", "gray", "gray","lightgray"])
-		types = cycle(["solid","dashed","dotted","dashed","solid"])
-		for i, color, type, img in zip(ToPlot.keys(), colors, types, allIn):
-    	                    print(i, color, type)
-    	                    plt.plot(
-    	                       ToPlot[i][args.method][:args.MaxX],
-    	                       ToPlot[i]['value'][:args.MaxX],
-    	                       color=color,
-    	                       label=(img),
-    	                       linewidth=0.5,
-    	                       linestyle=type
-    	                    )
-		if args.OptIter is None:
-			OptIndx = np.argmax(np.array(Y_toPlot[:args.MaxX]))
-		else:
-			OptIndx = np.where(np.array(X_toPlot[:args.MaxX]) == args.OptIter)[0][0]
-
-		plt.plot(
-    	                       X_toPlot[:args.MaxX],
-    	                       Y_toPlot[:args.MaxX],
-    	                       color='red',
-    	                       label=("average " + whatisit + " (" + str(round(Y_toPlot[OptIndx],4)) + " at " + str(X_toPlot[OptIndx]) + ")"),
-    	                       linewidth=1.2,
-    	                       linestyle='solid'
-    	                    )
-		plt.plot(
-                                                [X_toPlot[0], X_toPlot[args.MaxX-1]],
-                                                [ToPlot[kk]['ref'][0], ToPlot[kk]['ref'][0]],
-                                                color='blue',
-                                                label=('baseline=0.5'),
-                                                linewidth=1,
-                                                linestyle='dotted')
-		if args.method == 'iter':
-			plt.xlabel("Iterations", fontsize=FS)
-		else:
-			plt.xlabel("Epoch", fontsize=FS)
-		plt.ylabel(whatisit, fontsize=FS)
-		plt.fill_between(np.array(X_toPlot[:args.MaxX]), np.array(Y_toPlot[:args.MaxX]) - np.array(std_toPlot[:args.MaxX]), np.array(Y_toPlot[:args.MaxX]) + np.array(std_toPlot)[:args.MaxX],
-    	             color='lightcoral', alpha=0.2)
-		plt.title(Label)
-		handles, labels = ax.get_legend_handles_labels()
-		plt.ylim([-0.05, 1.05])
-		ax2 = plt.subplot(2, 1,2)
-		plt.axis('off')
-		ax2.legend(handles=handles, labels=labels,  loc="lower right", fontsize=6)
-		plt.savefig(os.path.join(Labadd + "_" + args.out + "_" + input_folders.replace("*", "_") + 'avg_' + whatisit + '_data_' +  Label + '.png'), dpi=1000, bbox_inches='tight')
-
-
-
 def main(args):
 	unique_labels = []
 	with open(args.labels_names, "r") as f:
@@ -146,38 +81,34 @@ def main(args):
 			if curLabel=='micro':
 				EachIterAUC = glob.glob(kk + "/test_*/" + nOut + "_roc_data_AvPb_micro_a*")
 				EachIterPR = glob.glob(kk + "/test_*/" + nOut + "_PrecRec_data_AvPb_cmicro_A*")
-				EachIterspecN = glob.glob(kk + "/test_*/" + nOut + "_ClassAvg_ConfusionMat_spec_*.png")
+				EachIterspec = glob.glob(kk + "/test_*/" + nOut + "out3_ClassAvg_ConfusionMat_Normalized_spec_*.png)
 				uPos = 4
 				ustep = 6
 				ustep2 = 8
-				ustep3 = 6
-				print(EachIterAUC)
-				print(EachIterPR)
+				ustep3 = 5
+				#print(EachIterAUC)
+				#print(EachIterPR)
 			elif curLabel=='macro':
 				EachIterAUC = glob.glob(kk + "/test_*/" + nOut + "_roc_data_AvPb_macro_a*")
 				EachIterPR = [] # glob.glob(kk + "/test_*/" + nOut + "_PrecRec_data_AvPb_cmacro_A*")
-				EachIterspecN = glob.glob(kk + "/test_*/" + nOut + "_ClassAvgNorm_ConfusionMat_Normalized_spec_*.png")
+				EachIterspecN = glob.glob(kk + "/test_*/" + nOut + "out3_ClassAvgNorm_ConfusionMat_Normalized_spec_*.png)
 				uPos = 4
 				ustep = 6
 				ustep2 = 8
-				ustep3 = 7
+				ustep3 = 5
 				print(EachIterAUC)
 				print(EachIterPR)
 			else:
 				EachIterAUC = glob.glob(kk + "/test_*/" + nOut + "_roc_data_AvPb_c" + str(idxL+1) + "a*")
 				EachIterPR = glob.glob(kk + "/test_*/" + nOut + "_PrecRec_data_AvPb_c" + str(idxL+1) + "A*")
-				EachIterspecN = glob.glob(kk + "/test_*/" + nOut + "_Class" + str(idxL)  + "_ConfusionMat_spec_*.png")
+				EachIterspecN = glob.glob(kk + "/test_*/" + nOut + "out3_Class" + str(idxL+1)  + "_ConfusionMat_spec_*.png)
 				uPos = 6
 				ustep = 5
 				ustep2 = 5
 				ustep3 = 4
-				print(EachIterAUC)
-				print(EachIterPR)
-				print(EachIterspecN)
 			AUC[kk] = {}
 			AUC[kk]['value'] = []
 			AUC[kk]['iter'] = []
-			AUC[kk]['ref'] = []
 			AUC[kk]['epoch'] = []
 			PR[kk] = {}
 			PR[kk]['value'] = []
@@ -194,7 +125,7 @@ def main(args):
 			accu[kk]['iter'] = []
 			accu[kk]['ref'] = []
 			accu[kk]['epoch'] = []
-			prec[kk] = {}
+			accu[kk] = {}
 			prec[kk]['value'] = []
 			prec[kk]['iter'] = []
 			prec[kk]['ref'] = []
@@ -210,15 +141,17 @@ def main(args):
 			F1sc[kk]['ref'] = []
 			F1sc[kk]['epoch'] = []
 
-			print("AUC loop 1")
 			for nIter in EachIterAUC:
 				print(nIter)
 				print(nIter.split("_")[-uPos])
 				AUC[kk]['value'].append(float(nIter.split("_")[-uPos]))
 				iterV = int(nIter.split("_")[-uPos-ustep].split('k/out')[0])
 				AUC[kk]['iter'].append(iterV)
-				AUC[kk]['ref'].append(float(0.5))
-
+				#if iterV in AUCavg.keys():
+				#	AUCavg[iterV].append(float(nIter.split("_")[-uPos]))
+				#else:
+				#	AUCavg[iterV] = {}
+				#	AUCavg[iterV] = [float(nIter.split("_")[-uPos])]
 			nIndx = sorted(range(len(AUC[kk]['iter'])),key=AUC[kk]['iter'] .__getitem__)
 			list1, list2 = (list(t) for t in zip(*sorted(zip(AUC[kk]['iter'], AUC[kk]['value']))))
 			AUC[kk]['iter']  = list1
@@ -233,7 +166,7 @@ def main(args):
 					AUCavg[nIter] = {}
 					AUCavg[nIter] = [float(nIterV)]
 
-			print("PR loop 1")
+
 			for nIter in EachIterPR:
 				print(nIter)
 				print(nIter.split("_")[-uPos-2])
@@ -241,7 +174,11 @@ def main(args):
 				iterV = int(nIter.split("_")[-uPos-2-ustep2].split('k/out')[0])
 				PR[kk]['iter'].append(iterV)
 				PR[kk]['ref'].append(float(nIter.split("_")[-3]))
-
+				#if iterV in PRavg.keys():
+				#	PRavg[iterV].append(float(nIter.split("_")[-uPos-2]))
+				#else:
+				#	PRavg[iterV] = {}
+				#	PRavg[iterV] = [float(nIter.split("_")[-uPos-2])]
 			nIndx = sorted(range(len(PR[kk]['iter'])),key=PR[kk]['iter'] .__getitem__)
 			if curLabel=='macro':
 				list1 = []
@@ -262,30 +199,28 @@ def main(args):
 					else:
 						PRavg[nIter] = {}
 						PRavg[nIter] = [float(nIterV)]
-			print("Matrix loop 1")
-			print(EachIterspecN)
-			for nIter in EachIterspecN:
+
+
+			for nIter in EachIterspec:
 				print(nIter)
 				print(nIter.split("_")[-9])
 				spec[kk]['value'].append(float(nIter.split("_")[-9]))
 				accu[kk]['value'].append(float(nIter.split("_")[-7]))
 				prec[kk]['value'].append(float(nIter.split("_")[-5]))
 				rese[kk]['value'].append(float(nIter.split("_")[-3]))
-				F1sc[kk]['value'].append(float(nIter.split("_")[-1].split('.png')[0]))
+				F1sc[kk]['value'].append(float(nIter.split("_")[-1]))
 
-				print(nIter.split("_")[-uPos-3-ustep3].split('k/out'))
-				iterV = int(nIter.split("_")[-uPos-3-ustep3].split('k/out')[0])
+				iterV = int(nIter.split("_")[-uPos-2-ustep3].split('k/out')[0])
 				spec[kk]['iter'].append(iterV)
-				spec[kk]['ref'].append(float(-1))
+				spec[kk]['ref'].append(float(nIter.split("_")[-3]))
 				accu[kk]['iter'].append(iterV)
-				accu[kk]['ref'].append(float(-1))
+				accu[kk]['ref'].append(float(nIter.split("_")[-3]))
 				prec[kk]['iter'].append(iterV)
-				prec[kk]['ref'].append(float(-1))
+				prec[kk]['ref'].append(float(nIter.split("_")[-3]))
 				rese[kk]['iter'].append(iterV)
-				rese[kk]['ref'].append(float(-1))
+				rese[kk]['ref'].append(float(nIter.split("_")[-3]))
 				F1sc[kk]['iter'].append(iterV)
-				F1sc[kk]['ref'].append(float(-1))
-				print(spec)
+				F1sc[kk]['ref'].append(float(nIter.split("_")[-3]))
 				#	AUCavg[iterV] = [float(nIter.split("_")[-uPos])]
 			nIndx = sorted(range(len(spec[kk]['iter'])),key=spec[kk]['iter'] .__getitem__)
 			list1, list2 = (list(t) for t in zip(*sorted(zip(spec[kk]['iter'], spec[kk]['value']))))
@@ -358,17 +293,136 @@ def main(args):
 				else:
 					F1scavg[nIter] = {}
 					F1scavg[nIter] = [float(nIterV)]
+				######## END HERE
 
 
-		plot_and_save(args, AUC, AUCavg, 'AUC', curLabel, Labadd, input_folders, allIn, kk)
-		if curLabel != 'macro':
-			plot_and_save(args, PR, PRavg, 'PR', curLabel, Labadd, input_folders, allIn, kk)
-			#continue
-		plot_and_save(args, spec, specavg, 'specificity', curLabel, Labadd, input_folders, allIn, kk)
-		plot_and_save(args, accu, accuavg, 'accuracy', curLabel, Labadd, input_folders, allIn, kk)
-		plot_and_save(args, prec, precavg, 'precision', curLabel, Labadd, input_folders, allIn, kk)
-		plot_and_save(args, rese, reseavg, 'recallsensitivity', curLabel, Labadd, input_folders, allIn, kk)
-		plot_and_save(args, F1sc, F1scavg, 'F1score', curLabel, Labadd, input_folders, allIn, kk)
+		Xauc = []
+		Yauc = []
+		XYstd = []
+		for mm in AUCavg.keys():
+			Xauc.append(mm)
+			Yauc.append(np.average(AUCavg[mm]))
+			XYstd.append(np.std(AUCavg[mm], ddof=1) / np.sqrt(np.size(AUCavg[mm])))
+		Xauc, Yauc, XYstd = (list(t) for t in zip(*sorted(zip(Xauc, Yauc, XYstd))))
+		Xpr = []
+		Ypr = []
+		XYprstd = []
+		for mm in PRavg.keys():
+			Xpr.append(mm)
+			Ypr.append(np.average(PRavg[mm]))
+			XYprstd.append(np.std(PRavg[mm], ddof=1) / np.sqrt(np.size(PRavg[mm])))
+		if curLabel=='macro':
+			Xpr = []
+			Ypr = []
+			XYprstd = []
+		else:
+			Xpr, Ypr, XYprstd = (list(t) for t in zip(*sorted(zip(Xpr, Ypr, XYprstd))))
+		fig = plt.figure(figsize=(3, 6))
+		FS = 8
+		ax = plt.subplot(2, 1,1)
+		ax.tick_params(labelsize=FS)
+		colors = cycle(["black", "black", "gray", "gray","lightgray"])
+		types = cycle(["solid","dashed","dotted","dashed","solid"])
+		for i, color, type, img in zip(AUC.keys(), colors, types, allIn):
+    	                    print(i, color, type)
+    	                    plt.plot(
+    	                       AUC[i][args.method][:args.MaxX],
+    	                       AUC[i]['value'][:args.MaxX],
+    	                       color=color,
+    	                       label=(img),
+    	                       linewidth=0.5,
+    	                       linestyle=type
+    	                    )
+		if args.OptIter is None:
+			OptIndx = np.argmax(np.array(Yauc[:args.MaxX]))
+		else:
+			#OptIndx = np.where(np.array(Xpr[:args.MaxX]) == args.OptIter)[0][0]
+			OptIndx = np.where(np.array(Xauc[:args.MaxX]) == args.OptIter)[0][0]
+
+		plt.plot(
+    	                       Xauc[:args.MaxX],
+    	                       Yauc[:args.MaxX],
+    	                       color='red',
+    	                       label=("average AUC (" + str(round(Yauc[OptIndx],4)) + " at " + str(Xauc[OptIndx]) + ")"),
+    	                       linewidth=1.2,
+    	                       linestyle='solid'
+    	                    )
+		plt.plot(
+                                                [Xauc[0], Xauc[args.MaxX-1]],
+                                                [0.5, 0.5],
+                                                color='blue',
+                                                label=('baseline=0.5'),
+                                                linewidth=1,
+                                                linestyle='dotted')
+		if args.method == 'iter':
+			plt.xlabel("Iterations", fontsize=FS)
+		else:
+			plt.xlabel("Epoch", fontsize=FS)
+		plt.ylabel("AUC", fontsize=FS)
+		plt.fill_between(np.array(Xauc[:args.MaxX]), np.array(Yauc[:args.MaxX]) - np.array(XYstd[:args.MaxX]), np.array(Yauc[:args.MaxX]) + np.array(XYstd)[:args.MaxX],
+    	             color='lightcoral', alpha=0.2)
+		plt.title(curLabel)
+		handles, labels = ax.get_legend_handles_labels()
+		plt.ylim([-0.05, 1.05])
+		ax2 = plt.subplot(2, 1,2)
+		plt.axis('off')
+		ax2.legend(handles=handles, labels=labels,  loc="lower right", fontsize=6)
+		plt.savefig(os.path.join(Labadd + "_" + args.out + "_" + input_folders.replace("*", "_") + 'avg_roc_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
+		if curLabel=='macro':
+			continue
+		fig = plt.figure(figsize=(3, 6))
+		ax = plt.subplot(2, 1,1)
+		ax.tick_params(labelsize=FS)
+		colors = cycle(["black", "black", "gray", "gray","lightgray"])
+		types = cycle(["solid","dashed","dotted","dashed","solid"])
+		for i, color, type, img in zip(PR.keys(), colors, types, allIn):
+    	                    print(i, color, type)
+    	                    plt.plot(
+    	                       PR[i][args.method][:args.MaxX],
+    	                       PR[i]['value'][:args.MaxX],
+    	                       color=color,
+    	                       label=(img),
+    	                       linewidth=0.5,
+    	                       linestyle=type
+    	                    )
+		if args.OptIter is None:
+			OptIndx = np.argmax(np.array(Ypr[:args.MaxX]))
+		else:
+			OptIndx = np.where(np.array(Xpr[:args.MaxX]) == args.OptIter)[0][0]
+		plt.plot(
+    	                       Xpr[:args.MaxX],
+    	                       Ypr[:args.MaxX],
+    	                       color='red',
+    	                       label=("average PR (" + str(round(Ypr[OptIndx],4)) + " at " + str(Xpr[OptIndx]) + ")"),
+    	                       linewidth=1.2,
+    	                       linestyle='solid'
+    	                    )
+		plt.plot(
+						[Xpr[0], Xpr[args.MaxX-1]],
+    						[PR[kk]['ref'][0], PR[kk]['ref'][0]],
+    						color='blue',
+    						label=('baseline='+str(round(PR[kk]['ref'][0],4))),
+    						linewidth=1,
+    						linestyle='dotted')
+		if args.method == 'iter':
+			plt.xlabel("Iterations", fontsize=FS)
+		else:
+			plt.xlabel("Epoch", fontsize=FS)
+		plt.ylabel("PR", fontsize=FS)
+		plt.fill_between(np.array(Xpr[:args.MaxX]), np.array(Ypr[:args.MaxX]) - np.array(XYprstd[:args.MaxX]), np.array(Ypr[:args.MaxX]) + np.array(XYprstd)[:args.MaxX],
+    	             color='lightcoral', alpha=0.2)
+		plt.title(curLabel)
+		handles, labels = ax.get_legend_handles_labels()
+		plt.ylim([-0.05, 1.05])
+		ax2 = plt.subplot(2, 1,2)
+		plt.axis('off')
+		ax2.legend(handles=handles, labels=labels,  loc="lower right", fontsize=6)
+		plt.savefig(os.path.join(Labadd + "_" + args.out + "_" + input_folders.replace("*", "_") + 'avg_PR_data_' + curLabel + '.png'), dpi=1000, bbox_inches='tight')
+		print(curLabel)
+		print(Xauc, Yauc)
+		print(Xpr, Ypr)
+
+
 
 
 if __name__ == '__main__':
