@@ -124,12 +124,12 @@ def main(args):
 			PerPatientData[nslide[:PatientID]]['Sum_Labels'] = [0 for x in range(len(lineProb))]
 		sum_Labels = [0 for x in range(len(lineProb))]
 		for ntile in stats_dict[nslide]['tiles'].keys():
-			print("***")
+			#print("***")
 			true_label = stats_dict[nslide]['tiles'][ntile][-1] - 1
-			print(true_label)
+			#print(true_label)
 			if args.combine is not '':
 				true_label = true_label - (np.asarray(classesID[:-1])<=true_label).sum()
-			print(true_label)
+			#print(true_label)
 
 			assigned_label = stats_dict[nslide]['tiles'][ntile][-3]
 			for nkk in range(len(lineProb)):
@@ -192,6 +192,7 @@ def main(args):
 		PerPatientData[nslide[:PatientID]]['NbTiles'] = PerPatientData[nslide[:PatientID]]['NbTiles'] + float(len(stats_dict[nslide]['tiles'].keys()))
 		PerPatientData[nslide[:PatientID]]['true_label'] = true_label
 
+	print("PerPatientData")
 	for nPat in PerPatientData:
 		true_label = PerPatientData[nPat]['true_label']
 		Av_Slide = [x / PerPatientData[nPat]['NbTiles'] for x in PerPatientData[nPat]['Sum_Labels']]
@@ -200,6 +201,7 @@ def main(args):
 			for nC in range(len(nthreshold)):
 				NewT.append( (Av_Slide[nC + 1] - nthreshold[nC]) / (1 - nthreshold[nC]) )
 			t_assigned_label = NewT.index(max(NewT))
+			print(nPat, Av_Slide, NewT)
 			#if Av_Slide[true_label + 1] >= nthreshold[true_label]:
 			#	t_assigned_label = true_label
 			#else:
@@ -207,27 +209,35 @@ def main(args):
 		else:
 			t_assigned_label = Av_Slide.index(max(Av_Slide))-1
 		assigned_label = Av_Slide.index(max(Av_Slide)) - 1
-		#print(Av_Slide, assigned_label, t_assigned_label, true_label)
+		print(Av_Slide, assigned_label, t_assigned_label, true_label)
 		TPN_matrix_Pat[true_label][assigned_label] = TPN_matrix_Pat[true_label][assigned_label]  + 1
 		y_true_perPat[0].append( PerPatientData[nPat]['true_label']  )
 		y_pred_perPat[0].append( assigned_label )
 		t_TPN_matrix_Pat[true_label][t_assigned_label] = t_TPN_matrix_Pat[true_label][t_assigned_label]  + 1
 		t_y_true_perPat[0].append( PerPatientData[nPat]['true_label']  )
 		t_y_pred_perPat[0].append( t_assigned_label )
-
+	print(TPN_matrix_Pat)
+	print(t_TPN_matrix_Pat)
 
 		
+	print("************* PER TILE *************")
+	compute_stats(TPN_matrix_Til, y_true_perTil, y_pred_perTil, t_TPN_matrix_Til, t_y_true_perTil, t_y_pred_perTil, 'out1', args.labelFile, args.outputPath, args.combine)
+	print("************* PER SLIDE *************")
+	compute_stats(TPN_matrix_Sli, y_true_perSli, y_pred_perSli, t_TPN_matrix_Sli, t_y_true_perSli, t_y_pred_perSli, 'out2', args.labelFile, args.outputPath, args.combine)
+	print("************* PER PATIENT  *************")
+	compute_stats(TPN_matrix_Pat, y_true_perPat, y_pred_perPat, t_TPN_matrix_Pat, t_y_true_perPat, t_y_pred_perPat, 'out3', args.labelFile, args.outputPath, args.combine)
+
 
 #balanced_accuracy_score(y_true = , y_pred= )
 
-	print("************* PER TILE *************")
-	compute_stats(TPN_matrix_Til, y_true_perTil, y_pred_perTil, lineProb, stats_dict, nthreshold, t_TPN_matrix_Til, t_y_true_perTil, t_y_pred_perTil, 'out1', args.labelFile, args.outputPath, args.combine)
-	print("************* PER SLIDE *************")
-	compute_stats(TPN_matrix_Sli, y_true_perSli, y_pred_perSli, lineProb, stats_dict, nthreshold, t_TPN_matrix_Sli, t_y_true_perSli, t_y_pred_perSli, 'out2', args.labelFile, args.outputPath, args.combine)
-	print("************* PER PATIENT  *************")
-	compute_stats(TPN_matrix_Pat, y_true_perPat, y_pred_perPat, lineProb, stats_dict, nthreshold, t_TPN_matrix_Pat, t_y_true_perPat, t_y_pred_perPat, 'out3', args.labelFile, args.outputPath, args.combine)
+#	print("************* PER TILE *************")
+#	compute_stats(TPN_matrix_Til, y_true_perTil, y_pred_perTil, lineProb, stats_dict, nthreshold, t_TPN_matrix_Til, t_y_true_perTil, t_y_pred_perTil, 'out1', args.labelFile, args.outputPath, args.combine)
+#	print("************* PER SLIDE *************")
+#	compute_stats(TPN_matrix_Sli, y_true_perSli, y_pred_perSli, lineProb, stats_dict, nthreshold, t_TPN_matrix_Sli, t_y_true_perSli, t_y_pred_perSli, 'out2', args.labelFile, args.outputPath, args.combine)
+#	print("************* PER PATIENT  *************")
+#	compute_stats(TPN_matrix_Pat, y_true_perPat, y_pred_perPat, lineProb, stats_dict, nthreshold, t_TPN_matrix_Pat, t_y_true_perPat, t_y_pred_perPat, 'out3', args.labelFile, args.outputPath, args.combine)
 
-def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass,  combine):
+def plot_Confusion(TPN_matrix_plot, labelFile_plot, save_basename_plot, Info_plot, nClass_plot,  combine_plot):
 	font = {'family' : 'Times New Roman',
 	'weight' : 'medium',
 	'size'   : 8}
@@ -238,16 +248,16 @@ def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass,  combine)
 	# gs = gridspec.GridSpec(2, 1, width_ratios=[3, 1]) 
 	# ax = plt.subplot(2, 1,1)
 	ax = fig.add_subplot(gs[0, 0])
-	ax.matshow(TPN_matrix, cmap=plt.cm.Blues)
-	for i in range(len(TPN_matrix)):
-		for j in range(len(TPN_matrix[0])):
-			c = TPN_matrix[j,i]
+	ax.matshow(TPN_matrix_plot, cmap=plt.cm.Blues)
+	for i in range(len(TPN_matrix_plot)):
+		for j in range(len(TPN_matrix_plot[0])):
+			c = TPN_matrix_plot[j,i]
 			ax.text(i, j, str(c), va='center', ha='center')
-	if os.path.exists(labelFile):
-		text_file = open(labelFile)
+	if os.path.exists(labelFile_plot):
+		text_file = open(labelFile_plot)
 		x = text_file.read().split('\n')
-		if combine is not '':
-			classesIDstr = combine.split(',')
+		if combine_plot is not '':
+			classesIDstr = combine_plot.split(',')
 			classesID = [int(x) for x in classesIDstr]
 			classesID = sorted(classesID, reverse = True)
 			NewID = ''
@@ -256,11 +266,11 @@ def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass,  combine)
 				x.pop(nCl-1)
 			NewID = NewID + '_' + x[classesID[-1]-1]
 			x[classesID[-1]-1] = NewID
-		if nClass >= 0:
-			x = [x[nClass], "all_other_classes"] 
+		if nClass_plot >= 0:
+			x = [x[nClass_plot], "all_other_classes"]
 		else:
-			x = x[0:len(TPN_matrix)]
-		default_x_ticks = range(len(TPN_matrix))
+			x = x[0:len(TPN_matrix_plot)]
+		default_x_ticks = range(len(TPN_matrix_plot))
 		plt.xticks(default_x_ticks, x)
 		plt.yticks(default_x_ticks, x)
 		ax.set_xticklabels(x,rotation=90)
@@ -269,12 +279,13 @@ def plot_Confusion(TPN_matrix, labelFile, save_basename, Info, nClass,  combine)
 	# ax2 = plt.subplot(2, 1,2)
 	ax2 = fig.add_subplot(gs[1, 0])
 	plt.axis('off')
-	ax2.text(0, 0, Info)
-	plt.savefig(save_basename, dpi=1000, bbox_inches='tight')     
+	ax2.text(0, 0, Info_plot)
+	plt.savefig(save_basename_plot, dpi=1000, bbox_inches='tight')
 
 
-
-def compute_stats(TPN_matrix, y_true, y_pred, lineProb, stats_dict, nthreshold, t_TPN_matrix, t_y_true, t_y_pred, save_basename, labelFile, outputPath, combine):
+#def compute_stats(TPN_matrix, y_true, y_pred, olineProb, ostats_dict, onthreshold, t_TPN_matrix, t_y_true, t_y_pred, save_basename, labelFile, outputPath, combine):
+def compute_stats(TPN_matrix, y_true, y_pred, t_TPN_matrix, t_y_true, t_y_pred,
+					  save_basename, labelFile, outputPath, combine):
 	TPN_matrix_full = np.array(TPN_matrix)
 	t_TPN_matrix_full = np.array(t_TPN_matrix)
 	nspecificity_avg =  0

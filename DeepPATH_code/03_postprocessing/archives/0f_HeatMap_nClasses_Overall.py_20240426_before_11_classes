@@ -328,43 +328,6 @@ def get_inference_from_file(lineProb_st):
 			else:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('darkviolet')])
-		elif FLAGS.project == '12_Colon_11Classes':
-			if oClass == 1:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('grey')])
-			elif oClass == 2:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('red')])
-			elif oClass == 3:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('yellow')])
-			elif oClass == 4:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('brown')])
-			elif oClass == 5:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('lightpink')])
-			elif oClass == 6:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('blue')])
-			elif oClass == 7:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('whitesmoke')])
-			elif oClass == 8:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('#800020')])
-			elif oClass == 9:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('black')])
-			elif oClass == 10:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('purple')])
-			elif oClass == 11:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('deeppink')])
-			else:
-				c = mcolors.ColorConverter().to_rgb
-				cmap = make_colormap([c('white'), c('darkviolet')])	
 
 
 				
@@ -397,7 +360,7 @@ def Get_Binary_stats2(bin_im):
 				MinAx = min(ellipse[1]) * FLAGS.resample_factor
 				MaxAx = max(ellipse[1]) * FLAGS.resample_factor
 				Each_Tumor_Mean_Dia.append( (MinAx + MaxAx) / 2 )
-			else:
+                        else:
 				Each_Tumor_Mean_Dia.append(np.sqrt( Each_Tumor_Area[-1] / np.pi) )
 			M = cv2.moments(eachT)
 			if M["m00"] != 0:
@@ -484,10 +447,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 	# HeatMap_0_p: heatmap coded
 	# HeatMap_bin_or: sum of probabilities
 	# WholeSlide_0: whole slide images
-	if FLAGS.project == '12_Colon_11Classes':
-		NbrClasses = 11+1
-	else:
-		NbrClasses = 5+1
+
 	# save the previous heat maps if any
 	HeatMap_divider = HeatMap_divider_p0 * 1.0 + 0.0
 	HeatMap_0 = HeatMap_0_p
@@ -553,14 +513,12 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 
 		else:
 			Tmax = np.max(HeatMap_bin,2)
-			for Cln in range(NbrClasses):
-				ImBin[:, :, Cln] = HeatMap_bin[:, :, Cln] == Tmax
-			#ImBin[:,:,0] = HeatMap_bin[:,:,0] == Tmax
-			#ImBin[:,:,1] = HeatMap_bin[:,:,1] == Tmax
-			#ImBin[:,:,2] = HeatMap_bin[:,:,2] == Tmax
-			#ImBin[:,:,3] = HeatMap_bin[:,:,3] == Tmax
-			#ImBin[:,:,4] = HeatMap_bin[:,:,4] == Tmax
-			#ImBin[:,:,5] = HeatMap_bin[:,:,5] == Tmax
+			ImBin[:,:,0] = HeatMap_bin[:,:,0] == Tmax
+			ImBin[:,:,1] = HeatMap_bin[:,:,1] == Tmax
+			ImBin[:,:,2] = HeatMap_bin[:,:,2] == Tmax
+			ImBin[:,:,3] = HeatMap_bin[:,:,3] == Tmax
+			ImBin[:,:,4] = HeatMap_bin[:,:,4] == Tmax
+			ImBin[:,:,5] = HeatMap_bin[:,:,5] == Tmax
 
 		if FLAGS.project == '00_Adjacency':
 			class_rgb = {}
@@ -667,20 +625,6 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[3] = [0.41, 0.0, 0.59]
 			class_rgb[4] = [0, 0, 0]
 			class_rgb[5] = [0, 0, 0]
-		elif FLAGS.project == '12_Colon_11Classes':
-			class_rgb = {}
-			class_rgb[0] = [0.5, 0.5, 0.5]
-			class_rgb[1] = [1,0, 0.0, 0.0]
-			class_rgb[2] = [1.0, 1.0, 0.0]
-			class_rgb[3] = [0.588, 0.294, 0.]
-			class_rgb[4] = [1.0, 0.71, 0.76]
-			class_rgb[5] = [0.0, 0.0, 1.0]
-			class_rgb[6] = [0.96, 0.96, 0.96]
-			class_rgb[7] = [0.502, 0.0, 0.125]
-			class_rgb[8] = [0, 0, 0]
-			class_rgb[9] = [0.627, 0.125, 0.941]
-			class_rgb[10] = [1.0, 0.08, 0.58]
-			class_rgb[11] = [0, 0, 0]
 
 
 		#for kk in [0, 1, 2, 3]:
@@ -694,16 +638,10 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0])
 		cl1 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1])
 		cl2 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,2])
-		cl3 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,3])
+		cl3 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,3]) 
 		cl4 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,4])
 		cl5 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,5])
-		if FLAGS.project == '12_Colon_11Classes':
-			cl6 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 6])
-			cl7 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 7])
-			cl8 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 8])
-			cl9 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 9])
-			cl10 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 10])
-			cl11 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 11])
+
 
 		# HeatMap_divider_p = np.zeros([ImBin.shape[0],ImBin.shape[1], 3])
 		# HeatMap_divider_p[:,:,0] = HeatMap_divider_p0[:,:,1]
@@ -711,15 +649,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		# HeatMap_divider_p[:,:,2] = HeatMap_divider_p0[:,:,3]
 		
 		ImBinf = np.zeros([ImBin.shape[0],ImBin.shape[1], 3])
-		if FLAGS.project == '12_Colon_11Classes':
-			for rgb in [0, 1, 2]:
-				ImBinf[:, :, rgb] = ImBin[:, :, 0] * class_rgb[0][rgb] + ImBin[:, :, 1] * class_rgb[1][rgb] + ImBin[:,
-																											  :, 2] * \
-									class_rgb[2][rgb] + ImBin[:, :, 3] * class_rgb[3][rgb] + ImBin[:, :, 4] * \
-									class_rgb[4][rgb] + ImBin[:, :, 5] * class_rgb[5][rgb] + ImBin[:, :, 6] * class_rgb[6][rgb] + ImBin[:, :, 7] * class_rgb[7][rgb] + ImBin[:, :, 8] * class_rgb[8][rgb] + ImBin[:, :, 9] * class_rgb[9][rgb] + ImBin[:, :, 10] * class_rgb[10][rgb] + ImBin[:, :, 11] * class_rgb[11][rgb]
-		else:
-			for rgb in [0,1,2]:
-				ImBinf[:,:,rgb] = ImBin[:,:,0] * class_rgb[0][rgb] + ImBin[:,:,1] * class_rgb[1][rgb] + ImBin[:,:,2] * class_rgb[2][rgb] + ImBin[:,:,3] * class_rgb[3][rgb] + ImBin[:,:,4] * class_rgb[4][rgb]  +  ImBin[:,:,5] * class_rgb[5][rgb]
+		for rgb in [0,1,2]:
+			ImBinf[:,:,rgb] = ImBin[:,:,0] * class_rgb[0][rgb] + ImBin[:,:,1] * class_rgb[1][rgb] + ImBin[:,:,2] * class_rgb[2][rgb] + ImBin[:,:,3] * class_rgb[3][rgb] + ImBin[:,:,4] * class_rgb[4][rgb]  +  ImBin[:,:,5] * class_rgb[5][rgb] 
 
 		# ImBinf[HeatMap_divider_p==0] = 1
 		ImBinf[HeatMap_divider_p0[:,:,0:3]==0] = 1
@@ -932,10 +863,7 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 					contours2 = [(nOb * FLAGS.resample_factor - FLAGS.tiles_overlap/2) * FLAGS.trainPixelSizeMag/FLAGS.testPixelSizeMag for nOb in contours]
 				writer.add_contours(contours2, contour_colors)
 				writer.write(os.path.join(heatmap_path,'_'.join(cTileRootName.split('_')[1:]) + '.xml'))
-			elif FLAGS.project == '12_Colon_11Classes':
-				fields = ['imageName','Artifact_area','Erythrocytes_Area','Fatty_tissue_area','Healthy_or_dysplastic_colon_epithelium','Healthy_stroma','Immune_cells','Mucus','Muscle_tissue','Necrosis','Tumor_epithelium','Tumor_stroma','other']
-				csvwriter.writerow(fields)
-				rows = [[cTileRootName, str(round(cl0,1)),str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1)),str(round(cl4,1)),str(round(cl5,1)),str(round(cl6,1)),str(round(cl7,1)),str(round(cl8,1)),str(round(cl9,1)),str(round(cl10,1)),str(round(cl11,1))]]
+
 
 			csvwriter.writerows(rows)       
 
@@ -1010,10 +938,6 @@ def main():
 	## Aggregate the results and build heatmaps
 	dir_name = 'unknown'
 	# For each image in the out_filename_stats:
-	if FLAGS.project == '12_Colon_11Classes':
-		NbrClasses = 11+1
-	else:
-		NbrClasses = 5+1
 	for slide in sorted(filtered_dict.keys()):
 		NewSlide = True
 		t = time.time()
@@ -1032,8 +956,8 @@ def main():
 			req_yLength = int(req_yLength / FLAGS.resample_factor + 1)
 		WholeSlide_0 = np.zeros([req_xLength, req_yLength, 3])
 		HeatMap_0 = np.zeros([req_xLength, req_yLength, 3])
-		HeatMap_bin = np.zeros([req_xLength, req_yLength, NbrClasses])
-		HeatMap_divider = np.zeros([req_xLength, req_yLength, NbrClasses])
+		HeatMap_bin = np.zeros([req_xLength, req_yLength, 6])
+		HeatMap_divider = np.zeros([req_xLength, req_yLength, 6])
 		print("Checking slide " + slide)
 		print(req_xLength, req_yLength)
 		skip = saveMap(HeatMap_divider, HeatMap_0, WholeSlide_0, slide, NewSlide, dir_name, HeatMap_bin)
@@ -1209,7 +1133,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet, 08_Melanoma_binary, 09_OSA_Surv, 10_Melanoma_3Classes, 11_Melanoma_4Classes, 12_Colon_11Classes'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet, 08_Melanoma_binary, 09_OSA_Surv, 10_Melanoma_3Classes', '11_Melanoma_4Classes',''
   )
   parser.add_argument(
       '--combine',
