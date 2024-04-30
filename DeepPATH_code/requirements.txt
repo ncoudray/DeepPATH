@@ -247,7 +247,7 @@ umap==0.1.1
 umap-learn==0.5.1
 Unidecode==1.0.22
 update==0.0.1
-urllib3==1.23
+urllib3==1.26.5
 wcwidth==0.1.7
 websocket-client==0.54.0
 Werkzeug==0.14.1
