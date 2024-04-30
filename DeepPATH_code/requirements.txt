@@ -120,7 +120,7 @@ nilearn==0.5.0
 nimfa==1.4.0
 nipype==1.1.9
 nltk==3.3
-notebook==5.6.0
+notebook==6.4.12
 numba==0.53.1
 numexpr==2.6.9
 numpy==1.17.4
