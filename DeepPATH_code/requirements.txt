@@ -41,7 +41,7 @@ deepmedic==0.7.4
 dicom==0.9.9.post1
 dill==0.2.8.2
 distributed==1.23.2
-Django==2.1.1
+Django==2.2.24
 docker==3.5.1
 docker-pycreds==0.3.0
 docutils==0.14
