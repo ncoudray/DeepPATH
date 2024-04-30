@@ -611,8 +611,8 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[5] = [0, 0, 0]
 		elif FLAGS.project == '05_binary':
 			class_rgb = {}
-			class_rgb[0] = [0, 1.0, 1.0]
-			class_rgb[1] = [0.41, 0.0, 0.59]
+			class_rgb[0] = [1.0, 1.0, 0.0]
+			class_rgb[1] = [0.561, 0.0, 1.0]
 			class_rgb[2] = [0, 0, 0]
 			class_rgb[3] = [0, 0, 0]
 			class_rgb[4] = [0, 0, 0]
