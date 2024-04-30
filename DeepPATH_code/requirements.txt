@@ -123,7 +123,7 @@ nltk==3.3
 notebook==5.6.0
 numba==0.53.1
 numexpr==2.6.9
-numpy==1.17.4
+numpy==1.22.0
 numpydoc==0.8.0
 opencv-python==4.4.0.42
 OpenMM==7.4.0
