@@ -18,7 +18,7 @@ boto==2.49.0
 boto3==1.9.43
 botocore==1.12.43
 bz2file==0.98
-certifi==2018.4.16
+certifi==2022.12.7
 cffi==1.11.2
 chainer==7.4.0
 chardet==3.0.4
