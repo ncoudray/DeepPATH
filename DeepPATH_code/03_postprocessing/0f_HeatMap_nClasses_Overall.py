@@ -691,19 +691,19 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 		#	filename = os.path.join(heatmap_path,"classes_heatmap_" + FLAGS.Cmap + "_" + cTileRootName + "_" + str(kk) + ".jpg")
 		#	imsave(filename,tmp * 255.)
 
-		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0])
-		cl1 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1])
-		cl2 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,2])
-		cl3 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,3])
-		cl4 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,4])
-		cl5 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,5])
+		cl0 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,0]) * FLAGS.resample_factor * FLAGS.resample_factor
+		cl1 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,1]) * FLAGS.resample_factor * FLAGS.resample_factor
+		cl2 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,2]) * FLAGS.resample_factor * FLAGS.resample_factor
+		cl3 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,3]) * FLAGS.resample_factor * FLAGS.resample_factor
+		cl4 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,4]) * FLAGS.resample_factor * FLAGS.resample_factor
+		cl5 = sum(ImBin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,5]) * FLAGS.resample_factor * FLAGS.resample_factor
 		if FLAGS.project == '12_Colon_11Classes':
-			cl6 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 6])
-			cl7 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 7])
-			cl8 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 8])
-			cl9 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 9])
-			cl10 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 10])
-			cl11 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 11])
+			cl6 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 6]) * FLAGS.resample_factor * FLAGS.resample_factor
+			cl7 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 7]) * FLAGS.resample_factor * FLAGS.resample_factor
+			cl8 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 8]) * FLAGS.resample_factor * FLAGS.resample_factor
+			cl9 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 9]) * FLAGS.resample_factor * FLAGS.resample_factor
+			cl10 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 10]) * FLAGS.resample_factor * FLAGS.resample_factor
+			cl11 = sum(ImBin[(HeatMap_divider_p0[:, :, 1] * 1.0 + 0.0) > 0, 11]) * FLAGS.resample_factor * FLAGS.resample_factor
 
 		# HeatMap_divider_p = np.zeros([ImBin.shape[0],ImBin.shape[1], 3])
 		# HeatMap_divider_p[:,:,0] = HeatMap_divider_p0[:,:,1]
