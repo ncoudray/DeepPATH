@@ -275,14 +275,16 @@ def _process_image(filename, coder, flipRot, indx):
   #print(flipRot)
   # Rot_Mir = False
   # image = coder.decode_jpeg(image_data)
+  image = coder.decode_jpeg(image_data)
   if flipRot > 0:
-    image = coder.decode_jpeg(image_data)
+    #image = coder.decode_jpeg(image_data)
     rotate_img = rotate(image, 90 * (flipRot%4))
     if flipRot > 3:
       rotate_img = np.flipud(rotate_img)
-    image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
+    image = rotate_img
+    #image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
   if FLAGS.rescale > 0:
-    image = coder.decode_jpeg(image_data)
+    #image = coder.decode_jpeg(image_data)
     Factor = max(image.shape[0], image.shape[1]) / FLAGS.rescale;
     x = int(image.shape[1] / Factor);
     y = int(image.shape[0] / Factor);
@@ -290,15 +292,16 @@ def _process_image(filename, coder, flipRot, indx):
     print(image.shape, int(y),int(x))
     # image_data = cv2.imencode('.jpg', res)[1].tostring()    
     image = np.resize(image, (int(y),int(x),3))
-    image_data = cv2.imencode('.jpg', rotate_img)[1].tostring()
+    #image_data = cv2.imencode('.jpg', image)[1].tostring()
   #gcd(100,round(FLAGS.hed_pc*100))
   if (FLAGS.hed > 0)  & ( (indx%(100/FLAGS_div)) < (FLAGS.hed_pc*100/FLAGS_div)):
-    image = coder.decode_jpeg(image_data)
+    #image = coder.decode_jpeg(image_data)
     image = random_color(image)
-    image_data = cv2.imencode('.jpg', image)[1].tostring()
+    #image_data = cv2.imencode('.jpg', image)[1].tostring()
 
+  #image_data = cv2.imencode('.jpg', image)[1].tostring()
   # Decode the RGB JPEG.
-  image = coder.decode_jpeg(image_data)
+  #image = coder.decode_jpeg(image_data)
 
   # Check that image converted to RGB
   assert len(image.shape) == 3
