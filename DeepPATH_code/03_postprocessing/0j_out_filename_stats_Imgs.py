@@ -53,7 +53,12 @@ parser.add_argument(
       default=1,
       help='1&2: display tiles with highest / lowest probability for each expected true class; 1: detailed with titles; 2: show tiles only'
 )
-
+parser.add_argument(
+      '--MaxTilePerSlide',
+      type=int,
+      default=10,
+      help='Maximum number of tiles per slide'
+)
 args = parser.parse_args()
 
 
@@ -177,7 +182,10 @@ for RefLabel in range(1, len(AllLabels)):
 		image_info = {}
 		ImgNb = 0
 		for row in dfloop:
-			slidename = df_sorted['slide_name'][row].split('test_')[-1]
+			if "test_" in df_sorted['slide_name'][row]:
+				slidename = df_sorted['slide_name'][row].split('test_')[-1]
+			else:
+				slidename = df_sorted['slide_name'][row].split('valid_')[-1]
 			tileNumber  =  df_sorted['Tile_ID'][row]
 			tilename = os.path.join(imagePath,  slidename + '_files', Mag,  tileNumber + '.jpeg')
 			if  not os.path.exists(tilename):
@@ -191,7 +199,8 @@ for RefLabel in range(1, len(AllLabels)):
 				SlideCount[slidename] = SlideCount[slidename] + 1
 			else:
 				SlideCount[slidename] = 1
-			if SlideCount[slidename] > 10:
+			# no more than n tiles per slide
+			if SlideCount[slidename] > args.MaxTilePerSlide:
 				continue
 			elif  os.path.exists(tilename):
 				image_datas[ImgNb] = mpimg.imread(tilename)
@@ -200,26 +209,36 @@ for RefLabel in range(1, len(AllLabels)):
 				image_info[ImgNb]['Class probability'] = SProb
 				image_info[ImgNb]['Real targetclass probability'] = TProb
 				ImgNb += 1
-			if ImgNb ==144:
+			if ImgNb ==25:
 				break
-		fig, axs = plt.subplots(12, 12, figsize=(18, 18))
+		fig, axs = plt.subplots(5, 5, figsize=(9, 9))
 		if args.mode == 1:
-			plt.tight_layout(pad=1.2)
+			plt.tight_layout(pad=0.5)
 		elif args.mode == 2:
-			 plt.tight_layout(pad=0)
-		axs = axs.flatten()
+			 plt.tight_layout(pad=0.0)
+		axs = axs.flatten()		
 		for index, ax in zip(range(0,ImgNb), axs):
 			ax.imshow(image_datas[index])
 			ax.set_xticks([])
 			ax.set_yticks([])
 			if args.mode == 1:
 				ax.title.set_text(image_info[index]['name'] + ':\n%s: %.3f\n%s: %.3f' % (eachLabel, image_info[index]['Class probability'], RefLabel_Prob, image_info[index]['Real targetclass probability']))
-				ax.title.set_fontsize(6)
+				ax.title.set_fontsize(7)
 				for side in ax.spines.keys():
 					ax.spines[side].set_linewidth(image_info[index]['Class probability']*10)
 					ax.spines[side].set_color(cm.jet(image_info[index]['Class probability']))
 			elif args.mode == 2:
+				ax.title.set_fontsize(12)
+				t = ax.text(.5,.9,'%.3f' % (image_info[index]['Class probability']),horizontalalignment='center',transform=ax.transAxes, fontweight="bold", color=cm.jet(image_info[index]['Class probability']))
+				t.set_bbox(dict(facecolor='white', alpha=0.8, edgecolor='white'))
+				#bb = t.get_bbox_patch()
+				#bb.set_facecolor('white')
+				ax.set_xticks([])
+				ax.set_yticks([])
 				continue
+		for index, ax in zip(range(0,25), axs):
+			ax.set_xticks([])
+			ax.set_yticks([])
 		if args.mode == 1:
 			plt.savefig(os.path.join(outputPath, RefLabel_Prob + '_reference_labeled_as_' + eachLabel + '_wTitles.png'))
 		elif args.mode == 2:

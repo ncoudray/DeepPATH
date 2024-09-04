@@ -548,6 +548,7 @@ if __name__ == '__main__':
                     except KeyError:
                         print("file_name %s not found in metadata" % imgRootName[:args.PatientID])
                         continue
+            print(image_meta)
             SubDir = sort_function(image_meta, load_dic=mut_load)
         print("SubDir is %s" % SubDir)
 

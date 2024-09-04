@@ -852,6 +852,11 @@ class DeepZoomImageTiler(object):
                       #HALO format
                       vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][0] )
                       vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][1] ) 
+                    elif xmlcontent['features'][eachR]['geometry']['type'] == "MultiPolygon":
+                      for eachPoly in range(len(xmlcontent['features'][eachR]['geometry']['coordinates'][eachv])): 
+                        for eachXY in range(len(xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachPoly])): 
+                          vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachPoly][eachXY][0] )
+                          vertices.append( xmlcontent['features'][eachR]['geometry']['coordinates'][eachv][eachPoly][eachXY][1] )
                     else:
                       #QuPath format
                       for eachXY in range(len(xmlcontent['features'][eachR]['geometry']['coordinates'][eachv])): 

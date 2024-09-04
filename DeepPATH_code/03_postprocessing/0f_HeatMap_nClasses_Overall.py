@@ -365,7 +365,13 @@ def get_inference_from_file(lineProb_st):
 			else:
 				c = mcolors.ColorConverter().to_rgb
 				cmap = make_colormap([c('white'), c('darkviolet')])	
-
+		elif FLAGS.project == '13_Lung_2classes':
+			if oClass == 1:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('black')])
+			elif oClass == 2:
+				c = mcolors.ColorConverter().to_rgb
+				cmap = make_colormap([c('white'), c('#ed9121')])
 
 				
 
@@ -681,7 +687,14 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 			class_rgb[9] = [0.627, 0.125, 0.941]
 			class_rgb[10] = [1.0, 0.08, 0.58]
 			class_rgb[11] = [0, 0, 0]
-
+		elif FLAGS.project == '13_Lung_2classes':
+			class_rgb = {}
+			class_rgb[0] = [0.5, 0.5, 0.5]
+			class_rgb[1] = [237./255., 145./255, 33./255.]
+			class_rgb[2] = [0, 0, 0]
+			class_rgb[3] = [0, 0, 0]
+			class_rgb[4] = [0, 0, 0]
+			class_rgb[5] = [0, 0, 0]
 
 		#for kk in [0, 1, 2, 3]:
 		#	tmp = HeatMap_bin[:,:,0:3] * 0 
@@ -936,6 +949,21 @@ def saveMap(HeatMap_divider_p0, HeatMap_0_p, WholeSlide_0, cTileRootName, NewSli
 				fields = ['imageName','Artifact_area','Erythrocytes_Area','Fatty_tissue_area','Healthy_or_dysplastic_colon_epithelium','Healthy_stroma','Immune_cells','Mucus','Muscle_tissue','Necrosis','Tumor_epithelium','Tumor_stroma','other']
 				csvwriter.writerow(fields)
 				rows = [[cTileRootName, str(round(cl0,1)),str(round(cl1,1)),str(round(cl2,1)),str(round(cl3,1)),str(round(cl4,1)),str(round(cl5,1)),str(round(cl6,1)),str(round(cl7,1)),str(round(cl8,1)),str(round(cl9,1)),str(round(cl10,1)),str(round(cl11,1))]]
+			elif FLAGS.project == '13_Lung_2classes':
+				Indx_Tumor = 2
+				Avg_Prob_Class1 = np.sum(HeatMap_bin[(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0,Indx_Tumor])/np.sum(HeatMap_0[:,:,1]>0.0)
+				ImStat = np.multiply(np.array(ImBin[:,:,Indx_Tumor]), np.array(HeatMap_divider_p0[:,:,1] * 1.0 + 0.0)>0)
+				fields2, rows2, TumorArea2, contours = Get_Binary_stats(ImStat)
+				fields = ['imageName','Tumor_area','Non_tumor_area','tumor_percentage','Tumor_avg_probability']
+				fields.extend(fields2)
+				csvwriter.writerow(fields)
+				if (cl0+cl1) == 0:
+					cl0p1 = 1
+				else:
+					cl0p1 = cl0 + cl1
+				rows = [cTileRootName, str(round(cl1,0)),str(round(cl0,0)), str(round(100*cl1/cl0p1,2)), str(round(Avg_Prob_Class1*100, 2))]
+				rows.extend(rows2)
+				rows = [rows]
 
 			csvwriter.writerows(rows)       
 
@@ -1090,8 +1118,8 @@ def main():
 			if rTile!= cTile:
                                 continue
 			if FLAGS.resample_factor > 0:
-				# print("old / new r&cTile")
-				# print(rTile, cTile, xTile, yTile)
+				print("old / new r&cTile")
+				print(rTile, cTile, xTile, yTile)
 				rTile = int(round(float(rTile) / FLAGS.resample_factor, 0))
 				cTile = int(round(float(cTile) / FLAGS.resample_factor, 0))
 				if rTile<=0:
@@ -1106,7 +1134,7 @@ def main():
 					yTile = int(round(float(yTile) / FLAGS.resample_factor, 0))
 					req_xLength = xTile + rTile
 					req_yLength = yTile + cTile
-					# print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
+					print(rTile, cTile, xTile, yTile,req_xLength, req_yLength)
 			else:
 				im2s = im2
 			# Check score associated with that image:
@@ -1115,8 +1143,8 @@ def main():
 			if current_score < 0:
 				print("No probability found")
 			else:
-				# print(np.swapaxes(im2s,0,1).shape)
-				# print(xTile,req_xLength,yTile,req_yLength)
+				print(np.swapaxes(im2s,0,1).shape)
+				print(xTile,req_xLength,yTile,req_yLength)
 				# print(WholeSlide_0.shape)
 				WholeSlide_0[xTile:req_xLength, yTile:req_yLength,:] = np.swapaxes(im2s,0,1)
 				heattile = np.ones([req_xLength-xTile,req_yLength-yTile]) * current_score
@@ -1209,7 +1237,7 @@ if __name__ == '__main__':
       '--project',
       type=str,
       default='01_METbrain',
-      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet, 08_Melanoma_binary, 09_OSA_Surv, 10_Melanoma_3Classes, 11_Melanoma_4Classes, 12_Colon_11Classes'
+      help='Project name (will define the number of classes and colors assigned). Can be: 00_Adjacency, 01_METbrain, 02_METliver, 03_OSA, 04_HN, 05_binary, 06_TNBC_6folds, 07_Melanoma_Johannet, 08_Melanoma_binary, 09_OSA_Surv, 10_Melanoma_3Classes, 11_Melanoma_4Classes, 12_Colon_11Classes, 13_Lung_2classes'
   )
   parser.add_argument(
       '--combine',
