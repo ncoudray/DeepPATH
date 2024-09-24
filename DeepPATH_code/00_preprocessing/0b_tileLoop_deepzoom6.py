@@ -155,10 +155,10 @@ class TileWorker(Process):
                     avgBkg = np.average(bw)
                     bw = gray.point(lambda x: 0 if x<230 else 1, '1')
                     # do not save non-square tiles nearr the edges
-                    print(tile.height, tile.width, self._tile_size + 2*self._overlap)
+                    #print(tile.height, tile.width, self._tile_size + 2*self._overlap)
                     NbPx = (tile.height * tile.width)  - (self._tile_size + 2*self._overlap) * (self._tile_size + 2*self._overlap)
                     # check if the image is mostly background
-                    print("res: " + outfile + " is " + str(avgBkg) + " and std " + str(St) + " (threshold: " + str(self._Bkg / 100.0) + " and " + str(self._Std) + " and " + str(NbPx) + ") PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
+                    #print("res: " + outfile + " is " + str(avgBkg) + " and std " + str(St) + " (threshold: " + str(self._Bkg / 100.0) + " and " + str(self._Std) + " and " + str(NbPx) + ") PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                     if avgBkg <= (self._Bkg / 100.0) and St >= self._Std and NbPx == 0:
                         # print("PercentMasked: %.6f, %.6f" % (PercentMasked, self._ROIpc / 100.0) )
                         # if an Aperio selection was made, check if is within the selected region
@@ -170,7 +170,7 @@ class TileWorker(Process):
 
                             if (isrescale) and (resize_ratio != 1):
                                 # tile.save(outfile + '_orig.jpeg', quality=self._quality)
-                                print(self._tile_size, tile.width, resize_ratio, tile.height, int(round(tile.width / resize_ratio)), int(round(tile.height / resize_ratio)), min( (self._tile_size + 2*self._overlap), int(round(tile.width / resize_ratio)) ),  min( (self._tile_size+2*self._overlap), int(round(tile.height / resize_ratio))))
+                                # print(self._tile_size, tile.width, resize_ratio, tile.height, int(round(tile.width / resize_ratio)), int(round(tile.height / resize_ratio)), min( (self._tile_size + 2*self._overlap), int(round(tile.width / resize_ratio)) ),  min( (self._tile_size+2*self._overlap), int(round(tile.height / resize_ratio))))
                                 if resize_ratio > 1:
                                     tile = tile.resize(  (min( (self._tile_size + 2*self._overlap), int(round(tile.width / resize_ratio)) ), min( (self._tile_size+2*self._overlap), int(round(tile.height / resize_ratio)))))
                                 else:
@@ -373,7 +373,7 @@ class DeepZoomImageTiler(object):
             #return
             #print(self._dz.level_count)
 
-            print("111 :" + str(self._Mag) + " and pixelsize:" + str(self._pixelsize))
+            # print("111 :" + str(self._Mag) + " and pixelsize:" + str(self._pixelsize))
             if self._Mag <= 0:
                 if self._pixelsize > 0:
                     level_range = [level for level in range(self._dz.level_count-1,-1,-1)]
@@ -420,7 +420,7 @@ class DeepZoomImageTiler(object):
                         file_out.write(self._basenameJPG + "\t" + str(OrgPixelSizeX*pow(2,IndxX)) + "\t" + str(OrgPixelSizeX*pow(2,IndxX) * self._resize_ratio) + "\n")
  
 
-            print( range(self._dz.level_count-1,-1,-1) )
+            #print( range(self._dz.level_count-1,-1,-1) )
             for level in range(self._dz.level_count-1,-1,-1):
                 ThisMag = Available[0]/pow(2,self._dz.level_count-(level+1))
                 if self._Mag > 0:
@@ -569,7 +569,7 @@ class DeepZoomImageTiler(object):
     def _tile_done(self):
         self._processed += 1
         count, total = self._processed, self._dz.tile_count
-        if count % 100 == 0 or count == total:
+        if count % 500 == 0 or count == total:
             print("Tiling %s: wrote %d/%d tiles" % (
                     self._associated or 'slide', count, total),
                     end='\r', file=sys.stderr)
@@ -588,10 +588,10 @@ class DeepZoomImageTiler(object):
         # Original size of the image
         ImgMaxSizeX_orig = float(self._dz.level_dimensions[-1][0])
         ImgMaxSizeY_orig = float(self._dz.level_dimensions[-1][1])
-        print("Image Size:")
-        print(ImgMaxSizeX_orig, ImgMaxSizeY_orig)
         # Number of centers at the highest resolution
         cols, rows = self._dz.level_tiles[-1]
+        print("Image Size:")
+        print(ImgMaxSizeX_orig, ImgMaxSizeY_orig, cols, rows)
         # Img_Fact = int(ImgMaxSizeX_orig / 1.0 / cols)
         Img_Fact = 1
         try:
@@ -614,6 +614,11 @@ class DeepZoomImageTiler(object):
             return [], xml_valid, 1.0
         print("Mask size orig:")
         print(mask.shape)
+        Img_Fact = max(ImgMaxSizeX_orig, ImgMaxSizeY_orig) / max(mask.shape[0], mask.shape[1])
+        print("Factor: "  + str(Img_Fact))
+        #mask = np.rot90(mask, k=2)
+        Image.fromarray(np.array(mask*255)).convert('RGB').save(os.path.join(os.path.split(self._basename[:-1])[0], "mask_" + os.path.basename(self._basename) + "_rep" + ".jpeg"))  
+  
         return mask, xml_valid, Img_Fact
 
 
