@@ -155,7 +155,7 @@ prov==1.5.3
 psutil==5.7.0
 psycopg2==2.7.5
 ptyprocess==0.6.0
-py==1.5.4
+py==1.10.0
 pyaml==17.12.1
 pyasn1==0.4.4
 pycparser==2.18
