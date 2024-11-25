@@ -9,7 +9,7 @@ atomicwrites==1.1.5
 attrs==18.1.0
 aws-xray-sdk==0.95
 awscli==1.15.77
-Babel==2.6.0
+Babel==2.9.1
 backcall==0.1.0
 beautifulsoup4==4.6.0
 biopython==1.72
